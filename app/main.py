@@ -1,25 +1,41 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import health
+from app.core.config import get_settings
 
-app = FastAPI()
+settings = get_settings()
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    description=(
+        "COSC 310 Food-Delivery Application REST API by Team Blue Baboons.\n\n"
+        "Foundation setup providing service health verification and OpenAPI documentation."
+    ),
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
+
+# Enable CORS for local development and frontend clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include health router
+app.include_router(health.router)
 
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: bool | None = None
-
-
-@app.get("/test")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
-
-
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+@app.get("/", tags=["Root"], summary="API Root Overview")
+def root_overview():
+    """Welcome endpoint providing links to documentation and health status."""
+    return {
+        "app": settings.app_name,
+        "version": settings.app_version,
+        "documentation": "/docs",
+        "health_check": "/health"
+    }
