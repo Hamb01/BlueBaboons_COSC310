@@ -1,11 +1,8 @@
 from pydantic import BaseModel, Field
 
-class RestaurantResponse(BaseModel):
-    id: str = Field(..., description="Restaurant ID")
-    name: str = Field(..., description="Restaurant name")
-    location: str = Field(..., description="Restaurant location")
-    isOpen: bool = Field(..., description="Restaurant open status")
-    cuisine: str = Field(..., description="Restaurant's cuisine type")
+from app.schemas.restaurant import Restaurant
+
+class RestaurantResponse(Restaurant): #inherit from Restaurant schema
     model_config = {
         "json_schema_extra": {
             "example": {
