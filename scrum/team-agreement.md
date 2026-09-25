@@ -1,3 +1,5 @@
+# Team Agreement — Version 1 (V1)
+
 # Part 1 — Team Information
 -# Include the following information:
 
