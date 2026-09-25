@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from app.api.deps import get_health_service
-from app.schemas.health import HealthResponse
+from app.schemas.health_schema import HealthResponse
 from app.services.health_service import HealthService
 
 router = APIRouter(tags=["Health"])

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health
+from app.api.routes import health_routes
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # Include health router
-app.include_router(health.router)
+app.include_router(health_routes.router)
 
 
 @app.get("/", tags=["Root"], summary="API Root Overview")
