@@ -9,7 +9,7 @@ router = APIRouter(tags=["Resturant"])
 @router.get(
     "/resturant",
     response_model=ResturantResponse,
-    status_code=status.HTTP_201_OK,
+    status_code=status.HTTP_200_OK,
     summary="Service Resturant Check",
     description="Returns HTTP 200 and resturant information."
 )
