@@ -1,6 +1,6 @@
 from app.core.config import get_settings
 from app.repositories.resturant_repository import ResturantRepository
-from app.schemas.resturant_schema import resturantResponse
+from app.schemas.resturant_schema import ResturantResponse
 
 
 class ResturantService:
