@@ -1,0 +1,10 @@
+[
+      {
+        "restaurant_id": "r02",
+        "restaurant_name": "Coolio_Sushi",
+        "restaurant_location": "Rutland",
+        "restaurant_isOpen": true,
+        "restaurant_cuisine": "Japanese"
+        
+    }
+]
