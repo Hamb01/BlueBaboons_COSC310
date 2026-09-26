@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health
+from app.api.routes import health_routes, restaurant_routes
 from app.core.config import get_settings
 from app.schemas.restaurantResponse import RestaurantResponse 
 settings = get_settings()
@@ -9,7 +9,7 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description=(
-        "COSC 310 Food-Delivery Application REST API by Team Blue Baboons.\n\n"
+        "COSC 310 BILLION VFood-Delivery Application REST API by Team Blue Baboons.\n\n"
         "Foundation setup providing service health verification and OpenAPI documentation."
     ),
     docs_url="/docs",
@@ -26,8 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include health router
-app.include_router(health.router)                                                                                                                                           
+
+# Include routers
+app.include_router(health_routes.router)
+app.include_router(restaurant_routes.router)
 
 #just a placeholder to render on localhost:8000/docs                                                                                                                                                                                                            
 @app.get("/restaurants", response_model=list[RestaurantResponse], tags=["Restaurants"])                                                                                                              
@@ -41,5 +43,6 @@ def root_overview():
         "app": settings.app_name,
         "version": settings.app_version,
         "documentation": "/docs",
+        "restaurants": "/restaurant",
         "health_check": "/health"
     }

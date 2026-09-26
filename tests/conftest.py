@@ -8,9 +8,9 @@ from app.api.deps import get_health_repository, get_health_service
 from app.repositories.health_repository import HealthRepository
 from app.services.health_service import HealthService
 
-from app.api.deps import get_restaurant_repository #, get_restaurant_service
+from app.api.deps import get_restaurant_repository, get_restaurant_service
 from app.repositories.restaurant_repository import RestaurantRepository
-# from app.services.restaurant_service import RestaurantService
+from app.services.restaurant_service import RestaurantService
 
 # this document contains pytest fixtures,
 # fixtures are functions that can be injected into other tests 
@@ -63,10 +63,10 @@ def isolated_health_service(isolated_health_repo: HealthRepository) -> HealthSer
 ### Config for restaurants.py
 ############################################################################################
 
-# @pytest.fixture
-# def isolated_restaurant_repo(isolated_data_dir: Path) -> RestaurantRepository:
-#     return RestaurantRepository(data_dir = isolated_data_dir)
+@pytest.fixture
+def isolated_restaurant_repo(isolated_data_dir: Path) -> RestaurantRepository:
+    return RestaurantRepository(data_dir = isolated_data_dir)
 
-# @pytest.fixture
-# def isolated_restaurant_service(isolated_restaurant_repo: RestaurantRepository) -> RestaurantService:
-#     return RestaurantService(repository = isolated_restaurant_repo)
+@pytest.fixture
+def isolated_restaurant_service(isolated_restaurant_repo: RestaurantRepository) -> RestaurantService:
+    return RestaurantService(repository = isolated_restaurant_repo)

@@ -1,6 +1,6 @@
 from app.core.config import get_settings
 from app.repositories.health_repository import HealthRepository
-from app.schemas.health import HealthResponse
+from app.schemas.health_schema import HealthResponse
 
 
 class HealthService:
