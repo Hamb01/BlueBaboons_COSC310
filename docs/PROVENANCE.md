@@ -31,3 +31,13 @@ This document records externally assisted content, AI tooling, and design assist
   - Team verified all 5 tests run and pass cleanly using `pytest`.
   - Team validated that the health endpoint returns HTTP 200 through the complete Route → Service → Repository flow.
   - Team verified Docker and local virtual environment execution.
+
+- **Date:** 2026-09-25
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:**
+  - Error locating
+    - I told copilot to read through a long exception thrown out while running unit tests to tell me where the error was located
+    - Copilot told me the file and then I coded in the fix which came down to a type mismatch between 2 functions written by separeate team members
+- **Verification & Ownership:**
+  - Copilot made no edits to the code, just pointed out the offending code block
+  - Team verified all 11 tests run and pass cleanly using `pytest`.

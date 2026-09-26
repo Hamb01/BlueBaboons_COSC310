@@ -1,7 +1,7 @@
 from pathlib import Path
 from fastapi.testclient import TestClient
 from app.repositories.restaurant_repository import RestaurantRepository
-# from app.services.restaurant_service import RestaurantService
+from app.services.restaurant_service import RestaurantService
 
 def test_restaurants_added_to_main_dictionary():
     """Verify that all the restaurants added to the restaurant_file_names dictionary also have their keys added to the restaurant_keys dictionary"""
@@ -53,3 +53,16 @@ def test_restaurant_data_file_contents():
             print(f"Restaurant {Value} is Missing Information")
             break
     assert(passing)
+
+def test_get_restaurant_returns_200_and_ok(client: TestClient):
+    """Verify that GET /restaurant returns HTTP 200 with status ok."""
+    response = client.get("/restaurant")
+    assert response.status_code == 200
+    data = (response.json())
+    assert (data.get("id") == "r01")
+
+def test_restaurant_service_layer():
+    """Test restaurant layer coordinates correctly with repository."""
+    service = RestaurantService(RestaurantRepository())
+    result = service.get_restaurant_status()
+    assert result.id == "r01"
