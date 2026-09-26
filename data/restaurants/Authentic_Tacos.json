@@ -1,10 +1,9 @@
-[
-    {
-        "restaurant_id": "r01",
-        "restaurant_name": "Authentic_Tacos",
-        "restaurant_location": "Kelowna",
-        "restaurant_isOpen": true,
-        "restaurant_cuisine": "Mexican"
 
-    }
-]
+{
+    "restaurant_id": "r01",
+    "restaurant_name": "Authentic_Tacos",
+    "restaurant_location": "Kelowna",
+    "restaurant_isOpen": true,
+    "restaurant_cuisine": "Mexican"
+
+}
