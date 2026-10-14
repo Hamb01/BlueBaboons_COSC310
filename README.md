@@ -24,32 +24,44 @@ A modular, testable, and reliable food-delivery application backend built with *
 │   ├── api/
 │   │   ├── routes/
 │   │   │   ├── __init__.py
-│   │   │   └── health.py          # HTTP Route: /health endpoint
+│   │   │   ├── health_routes.py   # HTTP Route: /health endpoint
+│   │   │   └── restaurant_routes.py # HTTP Routes: /restaurants endpoints
 │   │   ├── __init__.py
-│   │   └── deps.py                # Dependency injection wiring (Route -> Service -> Repo)
+│   │   ├── deps.py                # Dependency injection wiring (Route -> Service -> Repo)
+│   │   └── restaurant_api.py
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── config.py              # Dynamic configuration & paths
 │   │   └── exceptions.py          # Domain & persistence exceptions
 │   ├── repositories/
 │   │   ├── __init__.py
-│   │   └── health_repository.py   # Repository layer: storage / persistence access
+│   │   ├── health_repository.py   # Repository layer: storage / persistence access
+│   │   └── restaurant_repository.py
 │   ├── schemas/
 │   │   ├── __init__.py
-│   │   └── health.py              # Pydantic data schemas
+│   │   ├── health_schema.py       # Pydantic data schemas
+│   │   ├── restaurant.py
+│   │   ├── restaurantResponse.py
+│   │   └── restaurant_schema.py
 │   ├── services/
 │   │   ├── __init__.py
-│   │   └── health_service.py      # Service layer: business logic & orchestration
+│   │   ├── health_service.py      # Service layer: business logic & orchestration
+│   │   └── restaurant_service.py
 │   ├── __init__.py
 │   └── main.py                    # FastAPI application entrypoint & middleware
 ├── data/                          # Data directory for JSON/CSV persistence
 ├── docs/                          # Project documentation & provenance tracking
 ├── scrum/
-│   └── team-agreement.md          # Team Agreement V1
+│   ├── README.md                  # How to write meeting notes + meeting log
+│   ├── team-agreement.md          # Team Agreement V1
+│   ├── templates/
+│   │   └── scrum-meeting-template.md # Template for every scrum meeting
+│   └── meetings/                  # One file per meeting: YYYY-MM-DD-meeting-NN.md
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py                # Test fixtures & isolated persistence
-│   └── test_health.py             # Route, Service, and Repository test suite
+│   ├── test_health.py             # Route, Service, and Repository test suite
+│   └── test_restaurants.py        # Restaurant flow and failure-case tests
 ├── .dockerignore                  # Docker build exclusions
 ├── .gitignore                     # Git ignore rules
 ├── Dockerfile                     # Production-ready container image definition
@@ -67,7 +79,7 @@ The backend follows strict separation of concerns:
 ```
 [HTTP Request]
        ↓
-[FastAPI Route]  (app/api/routes/health.py)
+[FastAPI Route]  (app/api/routes/health_routes.py)
        ↓
 [Service Layer]  (app/services/health_service.py)
        ↓

@@ -41,3 +41,17 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification & Ownership:**
   - Copilot made no edits to the code, just pointed out the offending code block
   - Team verified all 11 tests run and pass cleanly using `pytest`.
+
+---
+
+## Milestone 1 — Scrum Documentation
+
+- **Date:** 2026-10-14
+- **Tool / Assistant:** Claude Code (Claude)
+- **Scope / Assistance:**
+  - Documentation only. No application or test code was changed.
+    - Created `scrum/templates/scrum-meeting-template.md` and `scrum/README.md` (meeting log)
+    - Moved meeting notes into `scrum/meetings/` and reformatted them to the template without changing their content
+    - Updated the repository structure section of `README.md` to match the current files
+- **Verification & Ownership:**
+  - Reformatted meeting notes to be checked against the originals by the team during PR review.
