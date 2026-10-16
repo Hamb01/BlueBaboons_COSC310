@@ -8,7 +8,22 @@ class Restaurant(BaseModel):
     isOpen: bool = Field(..., description="Restaurant open status")
     cuisine: str = Field(..., description="Restaurant cuisine type")
     opening_hours: str = Field(..., description="Restaurant opening hours")
-    
+
+class RestaurantCreate(BaseModel):
+    name: str = Field(..., description="Restaurant name")
+    location: str = Field(..., description="Restaurant location")
+    isOpen: bool = Field(..., description="Restaurant open status")
+    cuisine: str = Field(..., description="Restaurant cuisine type")
+    opening_hours: str = Field(..., description="Restaurant opening hours")
+
+
+class RestaurantUpdate(BaseModel):
+    name: Optional[str] = Field(None, description="Restaurant name")
+    location: Optional[str] = Field(None, description="Restaurant location")
+    isOpen: Optional[bool] = Field(None, description="Restaurant open status")
+    cuisine: Optional[str] = Field(None, description="Restaurant cuisine type")
+    opening_hours: Optional[str] = Field(None, description="Restaurant opening hours")
+
 class MenuItemRequest(BaseModel):
     restaurant_id: int = Field(..., description="ID of the restaurant to which the menu item will be added")
     name: str = Field(..., description="Name of the menu item")
@@ -29,4 +44,3 @@ class RestaurantResponse(Restaurant): #inherit from Restaurant schema
             }
         }
     }
-    

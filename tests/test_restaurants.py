@@ -20,8 +20,7 @@ def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepositor
 
     passing = True
 
-    restaurants = [isolated_restaurant_repo.get_restaurant_data(restaurant_id)
-                   for restaurant_id in isolated_restaurant_repo.restaurant_names]
+    restaurants = isolated_restaurant_repo.get_all_restaurant()
     id = 0
 
     for data in restaurants:
