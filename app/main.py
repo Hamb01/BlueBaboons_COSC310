@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import health_routes, restaurant_routes
 from app.core.config import get_settings
-from app.schemas.restaurantResponse import RestaurantResponse 
 settings = get_settings()
 
 app = FastAPI(
@@ -30,11 +29,6 @@ app.add_middleware(
 # Include routers
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
-
-#just a placeholder to render on localhost:8000/docs                                                                                                                                                                                                            
-@app.get("/restaurants", response_model=list[RestaurantResponse], tags=["Restaurants"])                                                                                                              
-def sample_restaurants():                                                                                                                                                                                
-    return []     
 
 @app.get("/", tags=["Root"], summary="API Root Overview")
 def root_overview():
