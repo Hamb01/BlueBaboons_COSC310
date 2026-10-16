@@ -1,9 +1,10 @@
 
 {
-    "restaurant_id": "r02",
-    "restaurant_name": "Coolio_Sushi",
-    "restaurant_location": "Rutland",
-    "restaurant_isOpen": true,
-    "restaurant_cuisine": "Japanese"
+    "id": "r02",
+    "name": "Coolio_Sushi",
+    "location": "Rutland",
+    "isOpen": true,
+    "cuisine": "Japanese",
+    "opening_hours": "08:00-21:00"
     
 }
