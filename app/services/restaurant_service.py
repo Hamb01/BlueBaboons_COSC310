@@ -23,13 +23,7 @@ class RestaurantService:
     def get_restaurant_status(self) -> RestaurantResponse:
         information = self.repository.get_restaurant_data();
 
-        return RestaurantResponse(
-            id = information.get("restaurant_id"),
-            name = information.get("restaurant_name"),
-            location = information.get("restaurant_location"),
-            isOpen = information.get("restaurant_isOpen"),
-            cuisine = information.get("restaurant_cuisine")
-        )
+        return RestaurantResponse.model_validate(information)
     def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
