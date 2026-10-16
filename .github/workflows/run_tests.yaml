@@ -1,4 +1,4 @@
-name: BlueBaboons_COSC310
+name: Run Tests
 
 on: [push, pull_request]
 
