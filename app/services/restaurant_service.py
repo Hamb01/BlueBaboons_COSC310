@@ -30,7 +30,7 @@ class RestaurantService:
             isOpen = information.get("restaurant_isOpen"),
             cuisine = information.get("restaurant_cuisine")
         )
-    def add_new_menu_item(self, restaurant_id: string, menu_item: dict) -> dict:
+    def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
 
@@ -51,7 +51,7 @@ class RestaurantService:
             "description": menu_item.get("description"),
             "category": menu_item.get("category", "Uncategorized")
         }
-    def update_menu_item(self, restaurant_id: string, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
+    def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
         """Update an existing menu item for the specified restaurant."""
         if not os.path.exists(LOCAL_FILE_PATH):
             raise FileNotFoundError("Restaurant data file not found.")
