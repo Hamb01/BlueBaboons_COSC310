@@ -4,6 +4,12 @@ from app.schemas.restaurant_schema import RestaurantResponse, MenuItemRequest
 from app.services.restaurant_service import RestaurantService
 from app.schemas.menu_item import MenuItem
 from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
+from app.schemas.restaurant_schema import (
+    RestaurantResponse, 
+    MenuItemRequest, 
+    RestaurantCreate, 
+    RestaurantUpdate
+)
 
 router = APIRouter(tags=["Restaurant"])
 
@@ -68,3 +74,25 @@ def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService =
         return service.get_menu_item(restaurant_id, item_id)
     except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+@router.post("/restaurants", status_code = status.HTTP_201_CREATED)
+def create_restaurant(payload: RestaurantCreate, service: RestaurantService = 
+                      Depends(get_restaurant_service)):
+    try:
+        return service.create_restaurant(payload)
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+
+@router.put("/restaurants/{restaurant_id}", status_code = status.HTTP_200_OK)
+def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
+    RestaurantService = Depends(get_restaurant_service)):
+    
+    try:
+        return service.update_restaurant(restaurant_id, payload)
+    except RestaurantNotFoundError as e:
+        raise HTTPException(status_code = 404, detail = str(e))
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+                            
+    
+    
