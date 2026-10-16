@@ -30,7 +30,7 @@ class RestaurantService:
             isOpen = information.get("restaurant_isOpen"),
             cuisine = information.get("restaurant_cuisine")
         )
-    def add_new_menu_item(self, restaurant_id: int, menu_item: dict) -> dict:
+    def add_new_menu_item(self, restaurant_id: string, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
 
@@ -51,7 +51,7 @@ class RestaurantService:
             "description": menu_item.get("description"),
             "category": menu_item.get("category", "Uncategorized")
         }
-    def update_menu_item(self, restaurant_id: int, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
+    def update_menu_item(self, restaurant_id: string, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
         """Update an existing menu item for the specified restaurant."""
         if not os.path.exists(LOCAL_FILE_PATH):
             raise FileNotFoundError("Restaurant data file not found.")
@@ -88,13 +88,8 @@ class RestaurantService:
             json.dump(repository_data, file, indent=2)
 
         print(f"Menu Item Updated! Code: 200")
-
-
-
-
-
         #Appends the menu item to the restaurant's menu list
-        repository_data[restaurant_id]["menu"].append(new_menu_item)
+        repository_data[restaurant_id]["menu"].append(updated_item)
         with open(LOCAL_FILE_PATH, "w") as file:
             json.dump(repository_data, file, indent=2)
-        return new_menu_item
+        return updated_item
