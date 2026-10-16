@@ -7,6 +7,8 @@ import time
 from app.core.config import get_settings
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantResponse
+from app.schemas.menu_item import MenuItem
+from app.core.exceptions import MenuItemNotFoundError
 
 
 #Constants
@@ -23,14 +25,22 @@ class RestaurantService:
     def get_restaurant_status(self) -> RestaurantResponse:
         information = self.repository.get_restaurant_data();
 
-        return RestaurantResponse(
-            id = information.get("restaurant_id"),
-            name = information.get("restaurant_name"),
-            location = information.get("restaurant_location"),
-            isOpen = information.get("restaurant_isOpen"),
-            cuisine = information.get("restaurant_cuisine")
-        )
-    def add_new_menu_item(self, restaurant_id: string, menu_item: dict) -> dict:
+        return RestaurantResponse.model_validate(information)
+
+    def get_menu(self, restaurant_id: str) -> list[MenuItem]:
+        return [
+            MenuItem.model_validate(item)
+            for item in self.repository.get_menu_data(restaurant_id)
+            if item.get("restaurant_id") == restaurant_id
+        ]
+
+    def get_menu_item(self, restaurant_id: str, item_id: str) -> MenuItem:
+        for item in self.get_menu(restaurant_id):
+            if item.id == item_id:
+                return item
+        raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+
+    def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
 
@@ -51,7 +61,7 @@ class RestaurantService:
             "description": menu_item.get("description"),
             "category": menu_item.get("category", "Uncategorized")
         }
-    def update_menu_item(self, restaurant_id: string, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
+    def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
         """Update an existing menu item for the specified restaurant."""
         if not os.path.exists(LOCAL_FILE_PATH):
             raise FileNotFoundError("Restaurant data file not found.")

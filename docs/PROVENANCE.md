@@ -2,8 +2,6 @@
 
 This document records externally assisted content, AI tooling, and design assistance in accordance with the COSC 310 course policy.
 
----
-
 ## Milestone 0 — Foundational Gate
 
 - **Date:** 2026-09-24

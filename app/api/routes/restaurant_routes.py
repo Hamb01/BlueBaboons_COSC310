@@ -2,27 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import get_restaurant_service
 from app.schemas.restaurant_schema import RestaurantResponse, MenuItemRequest
 from app.services.restaurant_service import RestaurantService
+from app.schemas.menu_item import MenuItem
+from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
 
 router = APIRouter(tags=["Restaurant"])
 
-
-@router.get(
-    "/restaurant",
-    response_model=RestaurantResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Service Restaurant Check",
-    description="Returns HTTP 200 and restaurant information."
-)
-@router.post("/restaurant/{restaurant_id}/menu", 
-             status_code=status.HTTP_201_CREATED, 
-             summary="Add Menu Item", 
-             description="Add a new menu item to the restaurant's menu."
-)
-@router.patch("/restaurant/{restaurant_id}/menu/{item_id}", 
-              status_code=status.HTTP_200_OK, 
-              summary="Update Menu Item", 
-              description="Update an existing menu item for the specified restaurant."
-)
 
 @router.put("/restaurant/{restaurant_id}/menu/{item_id}", status_code=status.HTTP_200_OK,)
 
@@ -36,6 +20,7 @@ def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, serv
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
 def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
     """Modify an existing menu item for the specified restaurant."""
     try:
@@ -46,6 +31,7 @@ def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, servi
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.post("/restaurant/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
 def add_menu_item(payload: MenuItemRequest):
     try:
         item_data = {
@@ -60,8 +46,25 @@ def add_menu_item(payload: MenuItemRequest):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.get("/restaurant", response_model=RestaurantResponse)
 def check_restaurant_status(
     service: RestaurantService = Depends(get_restaurant_service)
 ) -> RestaurantResponse:
     """Check restaurant status by delegating through service and repository layers."""
     return service.get_restaurant_status()
+
+
+@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem])
+def get_menu(restaurant_id: str, service: RestaurantService = Depends(get_restaurant_service)):
+    try:
+        return service.get_menu(restaurant_id)
+    except RestaurantNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
+    try:
+        return service.get_menu_item(restaurant_id, item_id)
+    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
