@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import get_restaurant_service
 from app.schemas.restaurant_schema import RestaurantResponse, MenuItemRequest
 from app.services.restaurant_service import RestaurantService
+from app.schemas.menu_item import MenuItem
+from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
 
 router = APIRouter(tags=["Restaurant"])
 
@@ -50,3 +52,19 @@ def check_restaurant_status(
 ) -> RestaurantResponse:
     """Check restaurant status by delegating through service and repository layers."""
     return service.get_restaurant_status()
+
+
+@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem])
+def get_menu(restaurant_id: str, service: RestaurantService = Depends(get_restaurant_service)):
+    try:
+        return service.get_menu(restaurant_id)
+    except RestaurantNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
+    try:
+        return service.get_menu_item(restaurant_id, item_id)
+    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
