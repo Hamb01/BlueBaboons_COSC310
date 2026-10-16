@@ -1,0 +1,54 @@
+{
+    "r01":  {
+                "id": "r01",
+                "name": "Authentic_Tacos",
+                "location": "Kelowna",
+                "isOpen": true,
+                "cuisine": "Mexican",
+                "opening_hours": "09:00-21:00",
+                "menu": [
+                            {
+                                "name": "Beef Taco",
+                                "description": "Beef tacos with sour cream, onions and salsa", 
+                                "price": 7.99,
+                                "available": true
+                            },
+                            {
+                                "name": "Chicken Taco",
+                                "description": "Chicken tacos with sour cream, onions and salsa", 
+                                "price": 7.99,
+                                "available": true
+                            }
+                        ]
+            },
+    
+    "r02":  {
+                "id": "r02",
+                "name": "Coolio_Sushi",
+                "location": "Rutland",
+                "isOpen": true,
+                "cuisine": "Japanese",
+                "opening_hours": "08:00-21:00",
+                "menu": [
+                            {
+                                "name": "California Rolls",
+                                "description": "8 rolls with crab and avacado", 
+                                "price": 12.99,
+                                "available": true
+                            },
+                            {
+                                "name": "Tuna rolls",
+                                "description": "8 rolls with raw tuna", 
+                                "price": 15.99,
+                                "available": true
+                            },
+                            {
+                                "name": "Dynamite rolls",
+                                "description": "coming soon", 
+                                "price": 15.99,
+                                "available": false
+                            }
+                        ]
+            }
+
+}
