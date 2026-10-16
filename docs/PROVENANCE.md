@@ -2,6 +2,18 @@
 
 This document records externally assisted content, AI tooling, and design assistance in accordance with the COSC 310 course policy.
 
+## Menu browsing — 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex
+- **Scope / Assistance:** Corrected undefined string annotations blocking startup;
+  implemented the MenuItem model, menu read endpoints, service lookup and
+  repository reads; added seed menus, menu tests, and endpoint documentation.
+  Separated stacked restaurant route decorators, aligned restaurant response
+  mapping and existing tests with stored JSON, and repaired temporary-data fixtures.
+- **Verification:** Codex ran the complete pytest suite: 22 tests passed, with
+  one dependency deprecation warning. Team review and ownership verification
+  remain the team's responsibility.
+
 ---
 
 ## Milestone 0 — Foundational Gate

@@ -11,9 +11,9 @@ class RestaurantRepository:
 
     # Path to the data directory
     self.data_dir = data_dir or get_settings().data_dir
-    
+
     with open(self.data_dir / "Restaurant_Names.json", "r", encoding="utf-8") as file:
-      # Key:   Restaurant id 
+      # Key:   Restaurant id
       # Value: Restaurant_Name.json
       self.restaurant_names = json.load(file)
 
@@ -22,6 +22,12 @@ class RestaurantRepository:
       # Value: Restaurant id
       self.restaurant_keys = json.load(file)
 
+
+  def get_menu_data(self, restaurant_id: str) -> List[Dict[str, Any]]:
+    """Read a menu only after resolving its restaurant by stable ID."""
+    if restaurant_id not in self.restaurant_names:
+      raise RestaurantNotFoundError(restaurant_id)
+    return self.get_restaurant_data(restaurant_id).get("menu", [])
 
   def get_restaurant_data(self, id: str = "r01") -> Dict[str, Any]:
     """Method to return restaurant data. can be fed with either the restaurant name or id"""
@@ -32,14 +38,11 @@ class RestaurantRepository:
       file_name = self.restaurant_names.get(self.restaurant_keys.get(id)) + ".json"
     else:
         raise RestaurantNotFoundError(f"Restaurant does not exist: {id}")
-    
-    path = self.data_dir / "restaurants" / file_name 
-    
+
+    path = self.data_dir / "restaurants" / file_name
+
     if not path.exists():
       raise DataPersistenceError(f"File missing: {self.data_dir}")
 
     with open(path, "r", encoding = "utf-8") as file:
       return json.load(file)
-          
-
-        

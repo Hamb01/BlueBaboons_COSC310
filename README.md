@@ -154,12 +154,21 @@ docker compose down
 |---|---|---|
 | `/` | `GET` | API root overview with documentation links |
 | `/health` | `GET` | Health check verifying Route → Service → Repository → Persistence |
+| `/restaurants/{restaurant_id}/menu` | `GET` | Restaurant menu; returns an empty list when there are no items |
+| `/restaurants/{restaurant_id}/menu/{item_id}` | `GET` | One menu item belonging to the requested restaurant |
 | `/docs` | `GET` | Interactive Swagger UI (OpenAPI) |
 | `/redoc` | `GET` | ReDoc API documentation |
 
 - **OpenAPI Documentation:** [`http://127.0.0.1:8000/docs`](http://127.0.0.1:8000/docs)
 - **Health Check:** [`http://127.0.0.1:8000/health`](http://127.0.0.1:8000/health)
 - **Representative Data Directory:** Located in [`data/`](data/)
+
+Menus are stored in each restaurant JSON file under `menu`. Seed restaurants
+`r01` and `r02` each have menu items with stable identifiers. Each item includes
+`id`, `restaurant_id`, `name`, `description`, `price`, and `availability`.
+Unavailable items remain visible with `availability: false`. Unknown restaurants,
+unknown items, and items requested under another restaurant return HTTP 404.
+For example, request `/restaurants/r01/menu` or `/restaurants/r01/menu/m01`.
 
 ---
 
