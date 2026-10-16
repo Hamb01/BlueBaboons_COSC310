@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Generator
 import pytest
 from fastapi.testclient import TestClient
-import json
+from shutil import copytree
 
 from app.main import app
 from app.api.deps import get_health_repository, get_health_service
@@ -53,19 +53,18 @@ def client(
     app.dependency_overrides[get_restaurant_repository] = lambda: isolated_restaurant_repo
     app.dependency_overrides[get_restaurant_service]    = lambda: isolated_restaurant_service
 
-    with TestClient(app) as test_client:
-        yield test_client
-
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
 
 def populate_test_data(temp_data_dir: Path):
     """Copy Restaurant Data into Isolated Testing Directory"""
 
-    with open(get_settings().data_dir / "Restaurants.json", "r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    with open(temp_data_dir / "Restaurants.json", "w", encoding="utf-8") as file:
-        file.write(json.dumps(data), indent=4)
+    seed_data_dir = Path(__file__).resolve().parents[1] / "data"
+    copytree(seed_data_dir, temp_data_dir, dirs_exist_ok=True)
+    return temp_data_dir
 
 
 ############################################################################################
