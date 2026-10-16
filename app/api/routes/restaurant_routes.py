@@ -26,9 +26,20 @@ router = APIRouter(tags=["Restaurant"])
 
 @router.put("/restaurant/{restaurant_id}/menu/{item_id}", status_code=status.HTTP_200_OK,)
 
+
+def tests(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
+    """Update an existing menu item for the specified restaurant."""
+    if updated_data is None or not isinstance(updated_data, dict):
+                raise ValueError("Updated data must be a non-empty dictionary.")
+    elif updated_data.get("price") % -1 == 0 or not updated_data.get("name"):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Syntax Invalid: Price must be a number and/or Name must be provided.")
+
+    
 def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
     """Replace an existing menu item for the specified restaurant."""
     try:
+        tests(restaurant_id, item_id, updated_data, service)
+
         updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, littleBit=True)
         return {"message": "Menu item updated successfully", "item": updated_item}
     except ValueError as ve:
@@ -39,6 +50,7 @@ def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, serv
 def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
     """Modify an existing menu item for the specified restaurant."""
     try:
+        tests(restaurant_id, item_id, updated_data, service)
         updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
         return {"message": "Menu item updated successfully", "item": updated_item}
     except ValueError as ve:
@@ -54,7 +66,6 @@ def add_menu_item(payload: MenuItemRequest):
             "description": payload.description,
             "category": payload.category
         }
-
         saved_item = get_restaurant_service().add_new_menu_item(payload.restaurant_id, item_data)
         return {"message": "Menu item added successfully", "item": saved_item}
     except Exception as e:
