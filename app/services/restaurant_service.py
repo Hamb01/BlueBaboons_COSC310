@@ -30,7 +30,7 @@ class RestaurantService:
             isOpen = information.get("restaurant_isOpen"),
             cuisine = information.get("restaurant_cuisine")
         )
-    def add_new_menu_item(self, restaurant_id: string, menu_item: dict) -> dict:
+    def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
 
