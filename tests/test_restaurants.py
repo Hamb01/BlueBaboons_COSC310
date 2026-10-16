@@ -14,7 +14,7 @@ def test_get_restaurants(isolated_restaurant_repo: RestaurantRepository):
     assert data["id"] == "r01"
     assert data["name"] == "Authentic_Tacos"
     assert isolated_restaurant_repo.get_restaurant_data("r02")["name"] == "Coolio_Sushi"
-
+    
 def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepository):
     """Verify that restaurant files contain all the required info"""
 

@@ -68,3 +68,20 @@ def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService =
         return service.get_menu_item(restaurant_id, item_id)
     except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+@router.get(
+    "/restaurants/{restaurant_id}",
+    response_model=RestaurantResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_restaurant_details(
+    restaurant_id: str,
+    service: RestaurantService = Depends(get_restaurant_service),
+) -> RestaurantResponse:
+    try:
+        return service.get_restaurant_details(restaurant_id)
+    except RestaurantNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
