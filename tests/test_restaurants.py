@@ -11,6 +11,7 @@ def test_get_restaurants(isolated_restaurant_repo: RestaurantRepository):
 
     # following assertions were selected because to get them, you must read the file
     # and they are unlikely to change
+    assert data["id"] == "r01"
     assert data["name"] == "Authentic_Tacos"
     assert isolated_restaurant_repo.get_restaurant_data("r02")["name"] == "Coolio_Sushi"
 
@@ -19,8 +20,8 @@ def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepositor
 
     passing = True
 
-    restaurants = [isolated_restaurant_repo.get_restaurant_data(rid)
-                   for rid in isolated_restaurant_repo.restaurant_names]
+    restaurants = [isolated_restaurant_repo.get_restaurant_data(restaurant_id)
+                   for restaurant_id in isolated_restaurant_repo.restaurant_names]
     id = 0
 
     for data in restaurants:
@@ -38,6 +39,7 @@ def test_get_restaurant_returns_200_and_ok(client: TestClient):
     response = client.get("/restaurant")
     assert response.status_code == 200
     data = (response.json())
+    assert data["id"] == "r01"
     assert data["name"] == "Authentic_Tacos"
 
 def test_restaurant_service_layer(isolated_restaurant_service: RestaurantService):

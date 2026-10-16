@@ -10,7 +10,6 @@ from app.repositories.health_repository import HealthRepository
 from app.services.health_service import HealthService
 
 from app.api.deps import get_restaurant_repository, get_restaurant_service
-from app.core.config import get_settings
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.services.restaurant_service import RestaurantService
 
