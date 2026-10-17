@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.api.deps import get_restaurant_service
 from app.services.restaurant_service import RestaurantService
 from app.schemas.menu_item import MenuItem
@@ -50,6 +50,20 @@ def add_menu_item(payload: MenuItemRequest):
         return {"message": "Menu item added successfully", "item": saved_item}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get(
+    "/restaurants", response_model=list[RestaurantResponse], status_code=200,
+    summary="List, search, and filter restaurants",
+)
+def list_restaurants(
+    search: str | None = Query(None, description="Substring search name, cuisine, or location(ignore cases)"),
+    cuisine: str | None = Query(None, description="Cuisine exact search(ignore cases)"),
+    location: str | None = Query(None, description="Substring of location (ignores case)"),
+    is_open: bool | None = Query(None, description="Filter by status"),
+    service: RestaurantService = Depends(get_restaurant_service),
+) -> list[RestaurantResponse]:
+    return service.list_restaurants(search, cuisine, location, is_open)
+
 
 @router.get("/restaurant", response_model=RestaurantResponse)
 def check_restaurant_status(
@@ -115,10 +129,3 @@ def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
 @router.delete("/restaurants/{restaurant_id}/menu/{menu_item}", status_code = status.HTTP_204_NO_CONTENT)
 def remove_menu_item(restaurant_id: str, menu_item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
     service.remove_menu_item(restaurant_id, menu_item_id)
-    
-@router.get("/restaurants", response_model = list[RestaurantResponse], status_code = status.HTTP_200_OK)
-def get_all_restaurants(service: RestaurantService = Depends(get_restaurant_service)) -> list[RestaurantResponse]:
-    try:
-        return service.get_all_restaurants()
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e)) from e
