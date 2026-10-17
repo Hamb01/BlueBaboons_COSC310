@@ -1,208 +1,235 @@
-# Blue Baboons — Food Delivery Application Backend
+# Blue Baboons Food Delivery Application
 
-A modular, testable, and reliable food-delivery application backend built with **FastAPI**, **Pydantic**, and **pytest**, utilizing layered architecture (**Route → Service → Repository → Persistence**) and containerized with **Docker**.
+COSC 310 Milestone 1: restaurant discovery and menu browsing, built with
+FastAPI, Pydantic, JSON persistence, pytest, and an HTML/CSS/JavaScript frontend.
 
----
+[GitHub repository](https://github.com/Hamb01/BlueBaboons_COSC310)
 
-## Team Information
-- **Team Name:** Blue Baboons
+## Features
 
----
+- List restaurants and view restaurant details.
+- Search restaurant names, cuisines, and locations; filter by cuisine, location,
+  and open status through the search/filter feature.
+- Browse menus and retrieve individual menu items.
+- Create restaurants and update restaurant information.
+- Use the frontend at `/ui/` to browse and manage restaurants through REST calls.
 
-## Prerequisites & Requirements
-- **Python Version:** Python 3.10+ (Tested on Python 3.12 / 3.14)
-- **Package Manager:** `pip`
-- **Optional / Recommended:** Docker & Docker Compose
+The frontend and search/filter features are included in the merged application.
+If `/ui/` returns 404 or `/restaurants` ignores filters, update your checkout
+and restart or rebuild the application.
+Authentication, shopping carts, orders, and delivery are outside M1 scope.
 
----
+## Quick start: Docker
 
-## Repository Structure
+Install Docker with Compose, then run:
 
-```text
-.
-├── app/
-│   ├── api/
-│   │   ├── routes/
-│   │   │   ├── __init__.py
-│   │   │   └── health.py          # HTTP Route: /health endpoint
-│   │   ├── __init__.py
-│   │   └── deps.py                # Dependency injection wiring (Route -> Service -> Repo)
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── config.py              # Dynamic configuration & paths
-│   │   └── exceptions.py          # Domain & persistence exceptions
-│   ├── repositories/
-│   │   ├── __init__.py
-│   │   └── health_repository.py   # Repository layer: storage / persistence access
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── health.py              # Pydantic data schemas
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── health_service.py      # Service layer: business logic & orchestration
-│   ├── __init__.py
-│   └── main.py                    # FastAPI application entrypoint & middleware
-├── data/                          # Data directory for JSON/CSV persistence
-├── docs/                          # Project documentation & provenance tracking
-├── scrum/
-│   └── team-agreement.md          # Team Agreement V1
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py                # Test fixtures & isolated persistence
-│   └── test_health.py             # Route, Service, and Repository test suite
-├── .dockerignore                  # Docker build exclusions
-├── .gitignore                     # Git ignore rules
-├── Dockerfile                     # Production-ready container image definition
-├── docker-compose.yml             # Container orchestration config
-├── requirements.txt               # Project dependencies
-└── README.md                      # Setup and execution guide
-```
-
----
-
-## Architecture Flow
-
-The backend follows strict separation of concerns:
-
-```
-[HTTP Request]
-       ↓
-[FastAPI Route]  (app/api/routes/health.py)
-       ↓
-[Service Layer]  (app/services/health_service.py)
-       ↓
-[Repository Layer] (app/repositories/health_repository.py)
-       ↓
-[Persistence]    (data/)
-```
-
----
-
-## Local Setup Instructions
-
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd BlueBaboons_COSC310
-```
-
-### 2. Create and Activate a Virtual Environment
-
-**macOS / Linux:**
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-**Windows (PowerShell):**
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Install Dependencies
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
----
-
-## Starting the Application
-
-### Option A: Running Directly with Uvicorn (Local)
-Ensure your virtual environment is active, then run:
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The application will start at `http://127.0.0.1:8000`.
-
----
-
-### Option B: Running with Docker
-
-#### Using Docker Compose (Recommended)
-```bash
+git clone https://github.com/Hamb01/BlueBaboons_COSC310.git
+cd BlueBaboons_COSC310
+git switch main
+git pull origin main
 docker compose up --build
 ```
-To stop:
-```bash
-docker compose down
+
+Open **[http://localhost:8000/ui/](http://localhost:8000/ui/)**.
+API documentation is at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+The root `/` returns a JSON API overview.
+
+Stop the container with `docker compose stop`. Resume with `docker compose start`.
+Use `docker compose down` to remove the stack. Use `docker compose up --build`
+after code changes to build the updated application.
+
+### Container-name conflict
+
+Compose uses the fixed container name `bluebaboons-api`. Stop the Compose stack
+from the checkout that created it before starting another checkout/worktree.
+For example, from the frontend worktree on the existing Windows setup:
+
+```powershell
+docker compose -f C:\Users\tubul\BlueBaboons_COSC310\docker-compose.yml down
+docker compose up --build
 ```
 
-#### Using Docker CLI Directly
-1. Build the Docker image:
-   ```bash
-   docker build -t bluebaboons-api .
-   ```
-2. Run the container:
-   ```bash
-   docker run -d -p 8000:8000 --name bluebaboons-container bluebaboons-api
-   ```
-3. To stop:
-   ```bash
-   docker stop bluebaboons-container && docker rm bluebaboons-container
-   ```
+The current Compose configuration has no persistent data volume. JSON changes
+survive restarting the same container, but removing/recreating that container
+loses its writable data. Preserve required data before doing so, or configure a
+data volume for long-term Docker persistence.
 
----
+## Local development
 
-## API Endpoints & Interactive Documentation
+Python 3.12 is recommended and is used by the Docker image. No Node installation
+or frontend build step is required to run the application.
 
-| Endpoint | Method | Description |
+### Windows PowerShell
+
+From the project checkout:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
+
+### macOS / Linux
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn app.main:app --reload --port 8000
+```
+
+Open **http://localhost:8000/ui/**. Keep the terminal running; press **Ctrl+C**
+to stop. If port 8000 is occupied, use `--port 8001` and open the matching URL.
+
+### Existing frontend worktree
+
+If Git says `feature/restaurant-frontend` is already checked out in another
+worktree, change to that directory instead of checking it out again:
+
+```powershell
+cd C:\Users\tubul\BlueBaboons_COSC310\.worktrees\restaurant-frontend
+C:\Users\tubul\BlueBaboons_COSC310\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
+
+## Frontend walkthrough
+
+1. Open `/ui/` to fetch restaurants from the API.
+2. Enter search text or filters and select **Search**. **Clear** resets filters.
+3. Select a restaurant to view its details and menu.
+4. Select **View item** to fetch an individual menu item.
+5. Select **Add restaurant** to create a restaurant.
+6. Select **Edit restaurant** in its details to update its information.
+
+The interface displays loading, empty, unavailable-item, and error states.
+Saving refreshes the list and opens the saved restaurant. Restaurant data is
+fetched from the REST API rather than hard-coded in frontend files.
+The current frontend management forms cover restaurant creation and editing.
+
+## REST API
+
+| Method | Endpoint | Purpose |
 |---|---|---|
-| `/` | `GET` | API root overview with documentation links |
-| `/health` | `GET` | Health check verifying Route → Service → Repository → Persistence |
-| `/restaurants/{restaurant_id}/menu` | `GET` | Restaurant menu; returns an empty list when there are no items |
-| `/restaurants/{restaurant_id}/menu/{item_id}` | `GET` | One menu item belonging to the requested restaurant |
-| `/docs` | `GET` | Interactive Swagger UI (OpenAPI) |
-| `/redoc` | `GET` | ReDoc API documentation |
+| GET | `/` | API overview |
+| GET | `/health` | Service and persistence-directory status |
+| GET | `/restaurants` | List, search, and filter restaurants |
+| GET | `/restaurants/{restaurant_id}` | Restaurant details |
+| POST | `/restaurants` | Create restaurant (201) |
+| PUT | `/restaurants/{restaurant_id}` | Update restaurant information |
+| GET | `/restaurants/{restaurant_id}/menu` | Restaurant menu |
+| GET | `/restaurants/{restaurant_id}/menu/{item_id}` | Individual menu item |
+| GET | `/restaurant` | Legacy default-restaurant endpoint |
+| POST | `/restaurant/{restaurant_id}/menu` | Registered menu-create route |
+| PUT / PATCH | `/restaurant/{restaurant_id}/menu/{item_id}` | Registered menu-update routes |
+| DELETE | `/restaurants/{restaurant_id}/menu/{menu_item}` | Registered menu-delete route |
+| GET | `/ui/` | Restaurant frontend |
+| GET | `/docs` | Interactive Swagger documentation |
+| GET | `/redoc` | ReDoc documentation |
+| GET | `/openapi.json` | Generated API contract |
 
-- **OpenAPI Documentation:** [`http://127.0.0.1:8000/docs`](http://127.0.0.1:8000/docs)
-- **Health Check:** [`http://127.0.0.1:8000/health`](http://127.0.0.1:8000/health)
-- **Representative Data Directory:** Located in [`data/`](data/)
+Menu-write routes currently use different naming from menu reads. In the locally
+verified backend, update IDs are typed as integers despite string seed IDs,
+creation bypasses dependency injection, and the delete route's path parameter
+name differs from its function argument. Verify these routes before relying on
+menu management; repository/service tests alone do not verify these HTTP writes.
 
-Menus are stored in each restaurant JSON file under `menu`. Seed restaurants
-`r01` and `r02` each have menu items with stable identifiers. Each item includes
-`id`, `restaurant_id`, `name`, `description`, `price`, and `availability`.
-Unavailable items remain visible with `availability: false`. Unknown restaurants,
-unknown items, and items requested under another restaurant return HTTP 404.
-For example, request `/restaurants/r01/menu` or `/restaurants/r01/menu/m01`.
+Unknown restaurant/item reads return 404. A restaurant without menu items returns
+an empty menu. Menu item responses use `availability`, not `available`.
 
----
+### Search/filter parameters
 
-## Running Automated Tests
+| Parameter | Behavior |
+|---|---|
+| `search` | Substring of restaurant name, cuisine, or location |
+| `cuisine` | Exact cuisine match |
+| `location` | Substring of restaurant location |
+| `is_open` | Boolean `true` or `false` |
 
-The automated test suite uses `pytest` and runs against isolated temporary directories, guaranteeing zero mutations to persistent data:
+Text matching ignores case and surrounding whitespace. Empty text filters are
+ignored. Supplied filters combine with AND. No matches returns HTTP 200 with
+`[]`; invalid boolean values return 422.
 
-```bash
-pytest
+```text
+GET /restaurants?search=taco
+GET /restaurants?cuisine=Japanese&location=Rutland&is_open=true
+GET /restaurants/r01
+GET /restaurants/r01/menu
+GET /restaurants/r01/menu/m01
 ```
 
-For verbose output:
-```bash
-pytest -v
+### Create/update restaurant body
+
+```json
+{
+  "name": "Campus Cafe",
+  "location": "Kelowna",
+  "isOpen": true,
+  "cuisine": "Cafe",
+  "opening_hours": "08:00-17:00"
+}
 ```
 
-## Frontend
+The server assigns restaurant IDs. The update model also accepts partial fields.
 
-Start the API with `uvicorn app.main:app --reload`, then open
-[http://127.0.0.1:8000/ui/](http://127.0.0.1:8000/ui/).
-The frontend is plain HTML, CSS, and JavaScript under `app/frontend/`; it needs
-no Node packages or separate server and is included by the existing Dockerfile.
+## Architecture and persistence
 
-- Search/filter restaurants, select a restaurant, and view details and menu items.
-- Choose **Add restaurant** to create one, or **Edit restaurant** in its details.
-- Changes use POST/PUT REST requests and persist in the configured JSON data directory.
-- Loading, empty results, unavailable items, and API failures are displayed in the UI.
+```text
+Frontend -> REST route -> Service -> Repository -> JSON
+```
 
-Restaurant data is fetched from the API; it is not hard-coded in the frontend.
-Management covers restaurant creation and updates. Menu-item writes remain a
-separate backend feature and are not exposed by this interface.
+Routes handle HTTP input/output and dependency injection. Services coordinate
+operations, return Pydantic models, and apply search/filter rules. Repositories
+read/write `data/Restaurants.json`. Restaurant records are keyed by stable IDs;
+menus are nested under each restaurant's `menu` field.
 
-Verification: `pytest` covers frontend asset delivery and the management API
-flow with isolated storage and reload persistence. `node --check app/frontend/app.js`
-checks JavaScript syntax. Browser interactions and visual layout require manual
-verification: search, select a restaurant, view a menu item, create a restaurant,
-edit it, and reload the page to confirm the saved details.
+Local writes survive application restarts. `DATA_DIR` overrides the storage
+directory, for example `$env:DATA_DIR = "C:\path\to\data"` in PowerShell.
+Each checkout/worktree uses its own data directory unless configured otherwise.
+
+```text
+app/main.py                      FastAPI setup and /ui static hosting
+app/api/routes/                  Health and restaurant endpoints
+app/api/deps.py                  Dependency injection
+app/services/                    Application logic
+app/repositories/                JSON persistence
+app/schemas/                     Pydantic contracts
+app/core/                        Settings and domain exceptions
+app/frontend/                    HTML/CSS/JavaScript frontend assets
+data/Restaurants.json            Restaurant and menu data
+tests/                           Tests and isolated fixtures
+.github/workflows/run_tests.yaml  Automated pytest workflow
+docs/PROVENANCE.md                Assistance/provenance record
+scrum/                           Team agreement and meeting notes
+```
+
+## Tests and CI
+
+Use the checkout's virtual environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+On macOS/Linux: `.venv/bin/python -m pytest -q`.
+Tests use temporary data and dependency overrides. GitHub Actions installs
+requirements and runs pytest on pushes and pull requests.
+
+For Windows temporary-folder permission errors, use a fresh repository-local
+base directory whose parent already exists:
+
+```powershell
+New-Item -ItemType Directory -Force .test-tmp
+.\.venv\Scripts\python.exe -m pytest -q --basetemp=.test-tmp/run-1
+```
+
+Choose a new directory name on subsequent runs. Pytest manages the base directory.
+For optional JavaScript syntax checking: `node --check app/frontend/app.js`.
+Before the live demo, manually verify browsing, filters, details, menus,
+restaurant creation/editing, error states, and persistence after restarting.
+
+## Milestone records
+
+- Assistance and provenance: `docs/PROVENANCE.md`.
+- Team agreement and meeting notes: `scrum/`.
+- Submit the reviewed version using the immutable tag `m1-vertical-slice`.
+- The Canvas PDF must include repository, project-board and tag/release URLs,
+  the full tagged commit SHA, and agreed contribution percentages totaling 100%.
