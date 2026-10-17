@@ -24,14 +24,16 @@ def test_seed_menus_and_item_details(client, isolated_restaurant_repo, restauran
 
 
 @pytest.mark.parametrize("explicit_empty_menu", [True, False])
-def test_empty_menu(client, isolated_data_dir, explicit_empty_menu):
-    path = isolated_data_dir / "restaurants" / "Authentic_Tacos.json"
+def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
+    path = isolated_data_dir / "Restaurants.json"
     data = json.loads(path.read_text(encoding="utf-8"))
     if explicit_empty_menu:
-        data["menu"] = []
+        data["r01"]["menu"] = []
     else:
-        data.pop("menu")
+        data["r01"].pop("menu")
     path.write_text(json.dumps(data), encoding="utf-8")
+    # Construct the repository after updating the file: it loads data at startup.
+    client = request.getfixturevalue("client")
     response = client.get("/restaurants/r01/menu")
     assert response.status_code == 200
     assert response.json() == []
