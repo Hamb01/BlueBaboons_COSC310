@@ -131,26 +131,7 @@ class RestaurantService:
 
         if not updated_item:
             raise ValueError(f"Error 404: Menu item not found.")
-        else:
-            updated_item = {
-                "id": item_id,
-                "name": updated_data.get("name", target_item["name"]),
-                "price": float(updated_data.get("price", 0.0)),
-                "description": updated_data.get("description", target_item["description"]),
-                "category": updated_data.get("category", target_item["category"])
-            }
-        repository_data[restaurant_id]["menu"][target_index] = updated_item
-
-        with open(LOCAL_FILE_PATH, "w") as file:
-            json.dump(repository_data, file, indent=2)
-
-        print(f"Menu Item Updated! Code: 200")
-        #Appends the menu item to the restaurant's menu list
-        repository_data[restaurant_id]["menu"].append(updated_item)
-        with open(LOCAL_FILE_PATH, "w") as file:
-            json.dump(repository_data, file, indent=2)
         return updated_item
-            return updated_item
 
     def remove_menu_item(self, restaurant_id: str, item_id: str):
         self.repository.remove_menu_item(restaurant_id, item_id)

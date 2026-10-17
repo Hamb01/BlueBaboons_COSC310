@@ -129,10 +129,3 @@ def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
 @router.delete("/restaurants/{restaurant_id}/menu/{menu_item}", status_code = status.HTTP_204_NO_CONTENT)
 def remove_menu_item(restaurant_id: str, menu_item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
     service.remove_menu_item(restaurant_id, menu_item_id)
-    
-@router.get("/restaurants", response_model = list[RestaurantResponse], status_code = status.HTTP_200_OK)
-def get_all_restaurants(service: RestaurantService = Depends(get_restaurant_service)) -> list[RestaurantResponse]:
-    try:
-        return service.get_all_restaurants()
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e)) from e
