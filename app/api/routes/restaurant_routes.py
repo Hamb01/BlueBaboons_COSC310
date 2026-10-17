@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.api.deps import get_restaurant_service
 from app.schemas.restaurant_schema import RestaurantResponse, MenuItemRequest
 from app.services.restaurant_service import RestaurantService
@@ -51,6 +51,20 @@ def add_menu_item(payload: MenuItemRequest):
         return {"message": "Menu item added successfully", "item": saved_item}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get(
+    "/restaurants", response_model=list[RestaurantResponse], status_code=200,
+    summary="List, search, and filter restaurants",
+)
+def list_restaurants(
+    search: str | None = Query(None, description="Substring search name, cuisine, or location(ignore cases)"),
+    cuisine: str | None = Query(None, description="Cuisine exact search(ignore cases)"),
+    location: str | None = Query(None, description="Location exact search(ignore cases)"),
+    is_open: bool | None = Query(None, description="Filter by status"),
+    service: RestaurantService = Depends(get_restaurant_service),
+) -> list[RestaurantResponse]:
+    return service.list_restaurants(search, cuisine, location, is_open)
+
 
 @router.get("/restaurant", response_model=RestaurantResponse)
 def check_restaurant_status(
