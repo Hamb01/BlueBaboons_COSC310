@@ -1,7 +1,8 @@
 import json
+from uuid import uuid4
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from app.core.exceptions import DomainError, RestaurantNotFoundError, DataPersistenceError
+from app.core.exceptions import DomainError, RestaurantNotFoundError, DataPersistenceError, MenuItemNotFoundError
 from app.core.config import get_settings
 
 class RestaurantRepository:
@@ -88,3 +89,43 @@ class RestaurantRepository:
     self.save_to_file()
 
     return current_data
+
+  def add_menu_item(self, restaurant_id: str, item_data: dict) -> Dict[str, Any]:
+    """Persist a new item under an existing restaurant with a stable unique ID."""
+    from app.schemas.menu_item import MenuItem
+
+    if restaurant_id not in self.restaurants:
+      raise RestaurantNotFoundError(restaurant_id)
+    restaurant = self.restaurants[restaurant_id]
+    item = MenuItem.model_validate({
+      **item_data, "id": f"m_{uuid4().hex}", "restaurant_id": restaurant_id,
+    }).model_dump()
+    menu = restaurant.get("menu", [])
+    restaurant["menu"] = [*menu, item]
+    try:
+      self.save_to_file()
+    except DataPersistenceError:
+      restaurant["menu"] = menu
+      raise
+    return item
+
+  def update_menu_item(self, restaurant_id: str, item_id: str, updates: dict) -> Dict[str, Any]:
+    """Update one item in place, preserving identity and restaurant ownership."""
+    from app.schemas.menu_item import MenuItem
+
+    if restaurant_id not in self.restaurants:
+      raise RestaurantNotFoundError(restaurant_id)
+    menu = self.restaurants[restaurant_id].get("menu", [])
+    for index, item in enumerate(menu):
+      if item["id"] == item_id and item.get("restaurant_id") == restaurant_id:
+        updated = MenuItem.model_validate({
+          **item, **updates, "id": item_id, "restaurant_id": restaurant_id,
+        }).model_dump()
+        menu[index] = updated
+        try:
+          self.save_to_file()
+        except DataPersistenceError:
+          menu[index] = item
+          raise
+        return updated
+    raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")

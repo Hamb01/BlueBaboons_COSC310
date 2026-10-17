@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import get_restaurant_service
 from app.services.restaurant_service import RestaurantService
-from app.schemas.menu_item import MenuItem
+from app.schemas.menu_item import MenuItem, MenuItemCreate, MenuItemUpdate
 from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
 from app.schemas.restaurant_schema import (
     RestaurantResponse,
-    MenuItemRequest,
     RestaurantCreate,
     RestaurantUpdate
 )
@@ -13,43 +12,46 @@ from app.schemas.restaurant_schema import (
 router = APIRouter(tags=["Restaurant"])
 
 
-@router.put("/restaurant/{restaurant_id}/menu/{item_id}", status_code=status.HTTP_200_OK,)
+MENU_WRITE_ERRORS = {
+    404: {"description": "Restaurant or menu item not found"},
+    500: {"description": "Menu data could not be saved"},
+}
 
-def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
-    """Replace an existing menu item for the specified restaurant."""
+
+def _menu_write(operation):
+    from app.core.exceptions import DataPersistenceError
+
     try:
-        updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, littleBit=True)
-        return {"message": "Menu item updated successfully", "item": updated_item}
-    except ValueError as ve:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        return operation()
+    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except DataPersistenceError as error:
+        raise HTTPException(status_code=500, detail="Menu data could not be saved") from error
 
-@router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
-def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
-    """Modify an existing menu item for the specified restaurant."""
-    try:
-        updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
-        return {"message": "Menu item updated successfully", "item": updated_item}
-    except ValueError as ve:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.post("/restaurant/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
-def add_menu_item(payload: MenuItemRequest):
-    try:
-        item_data = {
-            "name": payload.name,
-            "price": payload.price,
-            "description": payload.description,
-            "category": payload.category
-        }
+@router.post("/restaurants/{restaurant_id}/menu", response_model=MenuItem,
+             status_code=201, responses=MENU_WRITE_ERRORS)
+def add_menu_item(restaurant_id: str, payload: MenuItemCreate,
+                  service: RestaurantService = Depends(get_restaurant_service)):
+    """Add a menu item to an existing restaurant. The URL determines ownership."""
+    return _menu_write(lambda: service.add_new_menu_item(restaurant_id, payload))
 
-        saved_item = get_restaurant_service().add_new_menu_item(payload.restaurant_id, item_data)
-        return {"message": "Menu item added successfully", "item": saved_item}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.put("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem,
+            responses=MENU_WRITE_ERRORS)
+def replace_menu_item(restaurant_id: str, item_id: str, payload: MenuItemCreate,
+                      service: RestaurantService = Depends(get_restaurant_service)):
+    """Replace editable fields; preserve item ID and restaurant ownership."""
+    return _menu_write(lambda: service.update_menu_item(restaurant_id, item_id, payload))
+
+
+@router.patch("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem,
+              responses=MENU_WRITE_ERRORS)
+def modify_menu_item(restaurant_id: str, item_id: str, payload: MenuItemUpdate,
+                     service: RestaurantService = Depends(get_restaurant_service)):
+    """Update only supplied fields, preserving omitted values and stable IDs."""
+    return _menu_write(lambda: service.update_menu_item(restaurant_id, item_id, payload))
+
 
 @router.get("/restaurant", response_model=RestaurantResponse)
 def check_restaurant_status(
