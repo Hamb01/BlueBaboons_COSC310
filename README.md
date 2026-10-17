@@ -184,3 +184,25 @@ For verbose output:
 ```bash
 pytest -v
 ```
+
+## Frontend
+
+Start the API with `uvicorn app.main:app --reload`, then open
+[http://127.0.0.1:8000/ui/](http://127.0.0.1:8000/ui/).
+The frontend is plain HTML, CSS, and JavaScript under `app/frontend/`; it needs
+no Node packages or separate server and is included by the existing Dockerfile.
+
+- Search/filter restaurants, select a restaurant, and view details and menu items.
+- Choose **Add restaurant** to create one, or **Edit restaurant** in its details.
+- Changes use POST/PUT REST requests and persist in the configured JSON data directory.
+- Loading, empty results, unavailable items, and API failures are displayed in the UI.
+
+Restaurant data is fetched from the API; it is not hard-coded in the frontend.
+Management covers restaurant creation and updates. Menu-item writes remain a
+separate backend feature and are not exposed by this interface.
+
+Verification: `pytest` covers frontend asset delivery and the management API
+flow with isolated storage and reload persistence. `node --check app/frontend/app.js`
+checks JavaScript syntax. Browser interactions and visual layout require manual
+verification: search, select a restaurant, view a menu item, create a restaurant,
+edit it, and reload the page to confirm the saved details.
