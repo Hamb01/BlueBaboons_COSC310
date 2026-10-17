@@ -74,3 +74,8 @@ This document records externally assisted content, AI tooling, and design assist
   44 tests, including the 18 search/filter tests. Existing dependency deprecation
   and pytest cache permission warnings remained. Team review and ownership
   verification remain the team's responsibility.
+
+- **Test simplification:** At the student's request, Codex condensed the
+  search/filter tests from 18 functions to 8, grouping related checks and removing
+  redundant assertions. Core listing, search, filters, validation, and read-only
+  checks remain. The complete suite passed: 34 tests.
