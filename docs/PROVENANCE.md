@@ -79,3 +79,13 @@ This document records externally assisted content, AI tooling, and design assist
   search/filter tests from 18 functions to 8, grouping related checks and removing
   redundant assertions. Core listing, search, filters, validation, and read-only
   checks remain. The complete suite passed: 34 tests.
+
+## Restaurant frontend - 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex (Sites skill, local-only workflow).
+- **Scope / Assistance:** Built the HTML/CSS/JavaScript interface at `/ui/`
+  using existing REST endpoints for restaurant browsing, search/filter, details,
+  menu viewing, and restaurant creation/editing. Added FastAPI static hosting,
+  README instructions, and frontend asset/management API tests.
+- **Verification:** JavaScript syntax check passed; 46 pytest tests passed.
+  Interactive browser verification and team review remain outstanding.
