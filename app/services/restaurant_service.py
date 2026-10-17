@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from typing import List, Dict, Any, Optional
 
 from app.core.exceptions import MenuItemNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -109,50 +110,27 @@ class RestaurantService:
                 return item
         raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
 
-    def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
+    def add_new_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new menu item to the specified restaurant."""
-        repository_data = {}
 
-        if os.path.exists(LOCAL_FILE_PATH):
-            try:
-                with open(LOCAL_FILE_PATH, "r") as file:
-                    repository_data = json.load(file)
-            except json.JSONDecodeError:
-                repository_data = {}
-        if restaurant_id not in repository_data:
-            repository_data[restaurant_id] = {"menu": []}
-            #Grabs all the shit from the dictionary extracted from the user and adds it to the menu list
         new_menu_item ={
-            #Grabs a unique ID from the current time in seconds
-            "id": f"item_{int(time.time())}",
             "name": menu_item.get("name"),
-            "price": float(menu_item.get("price", 0.0)),
             "description": menu_item.get("description"),
-            "category": menu_item.get("category", "Uncategorized")
+            "price": float(menu_item.get("price", 0.0)),
+            "availability": menu_item.get("availability", False)
         }
-    def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
+
+        self.repository.update_menu_item(restaurant_id, "", new_menu_item, True)
+
+        return new_menu_item
+
+    def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing menu item for the specified restaurant."""
-        if not os.path.exists(LOCAL_FILE_PATH):
-            raise FileNotFoundError("Restaurant data file not found.")
-        with open(LOCAL_FILE_PATH, "r") as file:
-            repository_data = json.load(file)
-        if restaurant_id not in repository_data:
-            raise ValueError(f"Error 404: Restaurant not found.")
-        menu_items = repository_data[restaurant_id].get("menu", [])
-        target_item = None
-        target_index = -1
 
-        if target_item is None:
+        updated_item = self.repository.update_menu_item(restaurant_id, item_id, updated_data, False)
+
+        if not updated_item:
             raise ValueError(f"Error 404: Menu item not found.")
-
-        if littleBit:
-             updated_item = {
-                 "id": item_id,
-                 "name": updated_data.get("name", target_item["name"]),
-                 "price": float(updated_data.get("price", target_item["price"])) if "price" in updated_data else target_item.get("price"),
-                 "description": updated_data.get("description", target_item["description"]),
-                 "category": updated_data.get("category", target_item["category"])
-             }
         else:
             updated_item = {
                 "id": item_id,
@@ -172,3 +150,7 @@ class RestaurantService:
         with open(LOCAL_FILE_PATH, "w") as file:
             json.dump(repository_data, file, indent=2)
         return updated_item
+            return updated_item
+
+    def remove_menu_item(self, restaurant_id: str, item_id: str):
+        self.repository.remove_menu_item(restaurant_id, item_id)
