@@ -1,14 +1,12 @@
-import os
-
-from pydantic import json
 import json
+import os
 import time
 
-from app.core.config import get_settings
-from app.repositories.restaurant_repository import RestaurantRepository
-from app.schemas.restaurant_schema import RestaurantResponse
-from app.schemas.menu_item import MenuItem
 from app.core.exceptions import MenuItemNotFoundError
+from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.menu_item import MenuItem
+from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
+
 
 
 #Constants
@@ -79,6 +77,25 @@ class RestaurantService:
 
         return matching_restaurants
 
+    def get_restaurant_details(self, restaurant_id: str) -> RestaurantResponse:
+        information = self.repository.get_restaurant_data(restaurant_id)
+        return RestaurantResponse.model_validate(information)
+
+    def get_all_restaurants(self) -> list[RestaurantResponse]:
+        restaurants_data = self.repository.get_all_restaurant()
+        return [RestaurantResponse.model_validate(item) for item in restaurants_data]
+
+
+    def create_restaurant(self, payload: RestaurantCreate) -> RestaurantResponse:
+        information = self.repository.create_restaurant(payload)
+        return RestaurantResponse.model_validate(information)
+
+    def update_restaurant(
+        self, restaurant_id: str, payload: RestaurantUpdate
+    ) -> RestaurantResponse:
+        information = self.repository.update_restaurant(restaurant_id, payload)
+        return RestaurantResponse.model_validate(information)
+
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
         return [
             MenuItem.model_validate(item)
@@ -145,7 +162,7 @@ class RestaurantService:
                 "category": updated_data.get("category", target_item["category"])
             }
         repository_data[restaurant_id]["menu"][target_index] = updated_item
-       
+
         with open(LOCAL_FILE_PATH, "w") as file:
             json.dump(repository_data, file, indent=2)
 
