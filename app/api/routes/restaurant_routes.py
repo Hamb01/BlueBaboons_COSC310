@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.deps import get_restaurant_service
 from app.services.restaurant_service import RestaurantService
 from app.schemas.menu_item import MenuItem, MenuItemCreate, MenuItemUpdate
-from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
+from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError, DataPersistenceError
 from app.schemas.restaurant_schema import (
     RestaurantResponse,
     RestaurantCreate,
@@ -18,23 +18,18 @@ MENU_WRITE_ERRORS = {
 }
 
 
-def _menu_write(operation):
-    from app.core.exceptions import DataPersistenceError
-
-    try:
-        return operation()
-    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    except DataPersistenceError as error:
-        raise HTTPException(status_code=500, detail="Menu data could not be saved") from error
-
-
 @router.post("/restaurants/{restaurant_id}/menu", response_model=MenuItem,
              status_code=201, responses=MENU_WRITE_ERRORS)
 def add_menu_item(restaurant_id: str, payload: MenuItemCreate,
                   service: RestaurantService = Depends(get_restaurant_service)):
     """Add a menu item to an existing restaurant. The URL determines ownership."""
-    return _menu_write(lambda: service.add_new_menu_item(restaurant_id, payload))
+    try:
+        saved_item = service.add_new_menu_item(restaurant_id, payload.model_dump())
+        return saved_item
+    except RestaurantNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except DataPersistenceError as error:
+        raise HTTPException(status_code=500, detail="Menu data could not be saved") from error
 
 
 @router.put("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem,
@@ -42,7 +37,13 @@ def add_menu_item(restaurant_id: str, payload: MenuItemCreate,
 def replace_menu_item(restaurant_id: str, item_id: str, payload: MenuItemCreate,
                       service: RestaurantService = Depends(get_restaurant_service)):
     """Replace editable fields; preserve item ID and restaurant ownership."""
-    return _menu_write(lambda: service.update_menu_item(restaurant_id, item_id, payload))
+    try:
+        updated_item = service.update_menu_item(restaurant_id, item_id, payload.model_dump(), littleBit=True)
+        return updated_item
+    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except DataPersistenceError as error:
+        raise HTTPException(status_code=500, detail="Menu data could not be saved") from error
 
 
 @router.patch("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem,
@@ -50,7 +51,13 @@ def replace_menu_item(restaurant_id: str, item_id: str, payload: MenuItemCreate,
 def modify_menu_item(restaurant_id: str, item_id: str, payload: MenuItemUpdate,
                      service: RestaurantService = Depends(get_restaurant_service)):
     """Update only supplied fields, preserving omitted values and stable IDs."""
-    return _menu_write(lambda: service.update_menu_item(restaurant_id, item_id, payload))
+    try:
+        updated_item = service.update_menu_item(restaurant_id, item_id, payload.model_dump(exclude_unset=True))
+        return updated_item
+    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except DataPersistenceError as error:
+        raise HTTPException(status_code=500, detail="Menu data could not be saved") from error
 
 
 @router.get("/restaurant", response_model=RestaurantResponse)

@@ -46,16 +46,20 @@ class RestaurantService:
                 return item
         raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
 
-    def add_new_menu_item(self, restaurant_id: str, payload: MenuItemCreate) -> MenuItem:
-        return MenuItem.model_validate(
-            self.repository.add_menu_item(restaurant_id, payload.model_dump())
-        )
+    def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> MenuItem:
+        """Add a new menu item to the specified restaurant."""
+        payload = MenuItemCreate.model_validate(menu_item)
+        saved_item = self.repository.add_menu_item(restaurant_id, payload.model_dump())
+        return MenuItem.model_validate(saved_item)
 
     def update_menu_item(
-        self, restaurant_id: str, item_id: str,
-        payload: MenuItemCreate | MenuItemUpdate,
+        self, restaurant_id: str, item_id: str, updated_data: dict,
+        littleBit: bool = False,
     ) -> MenuItem:
-        return MenuItem.model_validate(self.repository.update_menu_item(
-            restaurant_id, item_id, payload.model_dump(exclude_unset=True)
-            if isinstance(payload, MenuItemUpdate) else payload.model_dump(),
-        ))
+        """Update a menu item; littleBit retains the original PUT call convention."""
+        if littleBit:
+            updated_data = MenuItemCreate.model_validate(updated_data).model_dump()
+        else:
+            updated_data = MenuItemUpdate.model_validate(updated_data).model_dump(exclude_unset=True)
+        updated_item = self.repository.update_menu_item(restaurant_id, item_id, updated_data)
+        return MenuItem.model_validate(updated_item)

@@ -90,42 +90,64 @@ class RestaurantRepository:
 
     return current_data
 
-  def add_menu_item(self, restaurant_id: str, item_data: dict) -> Dict[str, Any]:
-    """Persist a new item under an existing restaurant with a stable unique ID."""
+  def add_menu_item(self, restaurant_id: str, menu_item: dict) -> Dict[str, Any]:
+    """Add a new menu item to the specified restaurant."""
     from app.schemas.menu_item import MenuItem
 
-    if restaurant_id not in self.restaurants:
+    repository_data = self.restaurants
+    if restaurant_id not in repository_data:
       raise RestaurantNotFoundError(restaurant_id)
-    restaurant = self.restaurants[restaurant_id]
-    item = MenuItem.model_validate({
-      **item_data, "id": f"m_{uuid4().hex}", "restaurant_id": restaurant_id,
-    }).model_dump()
-    menu = restaurant.get("menu", [])
-    restaurant["menu"] = [*menu, item]
+    new_menu_item = {
+      "id": f"item_{uuid4().hex}",
+      "restaurant_id": restaurant_id,
+      "name": menu_item.get("name"),
+      "price": float(menu_item.get("price", 0.0)),
+      "description": menu_item.get("description"),
+      "availability": menu_item.get("availability", True),
+    }
+    new_menu_item = MenuItem.model_validate(new_menu_item).model_dump()
+    menu_items = repository_data[restaurant_id].setdefault("menu", [])
+    menu_items.append(new_menu_item)
     try:
       self.save_to_file()
     except DataPersistenceError:
-      restaurant["menu"] = menu
+      menu_items.pop()
       raise
-    return item
+    return new_menu_item
 
-  def update_menu_item(self, restaurant_id: str, item_id: str, updates: dict) -> Dict[str, Any]:
-    """Update one item in place, preserving identity and restaurant ownership."""
+  def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: dict) -> Dict[str, Any]:
+    """Update an existing menu item for the specified restaurant."""
     from app.schemas.menu_item import MenuItem
 
-    if restaurant_id not in self.restaurants:
+    repository_data = self.restaurants
+    if restaurant_id not in repository_data:
       raise RestaurantNotFoundError(restaurant_id)
-    menu = self.restaurants[restaurant_id].get("menu", [])
-    for index, item in enumerate(menu):
+    menu_items = repository_data[restaurant_id].get("menu", [])
+    target_item = None
+    target_index = -1
+
+    for index, item in enumerate(menu_items):
       if item["id"] == item_id and item.get("restaurant_id") == restaurant_id:
-        updated = MenuItem.model_validate({
-          **item, **updates, "id": item_id, "restaurant_id": restaurant_id,
-        }).model_dump()
-        menu[index] = updated
-        try:
-          self.save_to_file()
-        except DataPersistenceError:
-          menu[index] = item
-          raise
-        return updated
-    raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+        target_item = item
+        target_index = index
+        break
+
+    if target_item is None:
+      raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+
+    updated_item = {
+      "id": item_id,
+      "restaurant_id": restaurant_id,
+      "name": updated_data.get("name", target_item["name"]),
+      "price": float(updated_data.get("price", target_item["price"])),
+      "description": updated_data.get("description", target_item["description"]),
+      "availability": updated_data.get("availability", target_item["availability"]),
+    }
+    updated_item = MenuItem.model_validate(updated_item).model_dump()
+    repository_data[restaurant_id]["menu"][target_index] = updated_item
+    try:
+      self.save_to_file()
+    except DataPersistenceError:
+      menu_items[target_index] = target_item
+      raise
+    return updated_item
