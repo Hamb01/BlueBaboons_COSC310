@@ -53,3 +53,24 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification & Ownership:**
   - Copilot made no edits to the code, just pointed out the offending code block
   - Team verified all 11 tests run and pass cleanly using `pytest`.
+
+
+## Restaurant search and filtering - 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex
+- **Scope / Assistance:** Implemented `GET /restaurants` with optional text
+  search across restaurant name, cuisine, and location; exact cuisine filtering;
+  partial location filtering; and open-status filtering. Text matching ignores
+  case and surrounding whitespace, and supplied filters combine with AND.
+  The route delegates to the service, which reads through the existing repository
+  and returns Pydantic restaurant response models.
+- **Tests / Readability:** Added 18 individually named search/filter tests using
+  isolated shared fixtures and direct assertions. Expanded the service logic
+  into explicit checks and named variables at the student's request.
+- **Integration Assistance:** Resolved the service conflict with `main`, preserving
+  both search/filter logic and existing restaurant methods. Removed the duplicate
+  `GET /restaurants` route so listing and filtering use one endpoint.
+- **Verification:** After conflict resolution, the complete pytest suite passed:
+  44 tests, including the 18 search/filter tests. Existing dependency deprecation
+  and pytest cache permission warnings remained. Team review and ownership
+  verification remain the team's responsibility.
