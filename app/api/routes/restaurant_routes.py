@@ -27,12 +27,16 @@ router = APIRouter(tags=["Restaurant"])
 @router.put("/restaurant/{restaurant_id}/menu/{item_id}", status_code=status.HTTP_200_OK,)
 
 
+
+
 def tests(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
     """Update an existing menu item for the specified restaurant."""
     if updated_data is None or not isinstance(updated_data, dict):
                 raise ValueError("Updated data must be a non-empty dictionary.")
     elif updated_data.get("price") % -1 == 0 or not updated_data.get("name"):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Syntax Invalid: Price must be a number and/or Name must be provided.")
+    elif restaurant_id is None or item_id is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Restaurant ID and Item ID are required.")
 
     
 def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
