@@ -28,6 +28,7 @@ class RestaurantService:
     def get_restaurant_details(self, restaurant_id: str) -> RestaurantResponse:
         information = self.repository.get_restaurant_data(restaurant_id)
         return RestaurantResponse.model_validate(information)
+    def get_all_restaurants(self)
 
     def create_restaurant(self, payload: RestaurantCreate) -> RestaurantResponse:
         information = self.repository.create_restaurant(payload)

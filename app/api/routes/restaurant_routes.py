@@ -111,3 +111,10 @@ def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
         raise HTTPException(status_code = 404, detail = str(e))
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+
+@router.get("/restaurants", response_model = list[RestaurantResponse], status_code = status.HTTP_200_OK)
+def get_all_restaurants(service: RestaurantService = Depends(get_restaurant_service)) -> list[RestaurantResponse]:
+    try:
+        return service.get_all_restaurants()
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e)) from e
