@@ -11,20 +11,20 @@ def test_get_restaurants(isolated_restaurant_repo: RestaurantRepository):
 
     # following assertions were selected because to get them, you must read the file
     # and they are unlikely to change
-    assert(data[0].get("restaurant_name") == "Authentic_Tacos")
-    assert(data[1].get("restaurant_name") == "Coolio_Sushi")
-
+    assert data["id"] == "r01"
+    assert data["name"] == "Authentic_Tacos"
+    assert isolated_restaurant_repo.get_restaurant_data("r02")["name"] == "Coolio_Sushi"
+    
 def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepository):
     """Verify that restaurant files contain all the required info"""
 
     passing = True
 
-    restaurants = isolated_restaurant_repo.get_restaurant_data()
+    restaurants = isolated_restaurant_repo.get_all_restaurant()
     id = 0
 
     for data in restaurants:
-        if not ("restaurant_id" in data and "restaurant_name" in data and
-                 "restaurant_location" in data and "restaurant_isOpen" in data and "restaurant_cuisine" in data):
+        if not {"id", "name", "location", "isOpen", "cuisine", "opening_hours"} <= data.keys():
             passing = False
             print(f"Restaurant {id} is Missing Information")
             break
@@ -38,8 +38,8 @@ def test_get_restaurant_returns_200_and_ok(client: TestClient):
     response = client.get("/restaurant")
     assert response.status_code == 200
     data = (response.json())
-    assert(data[0].get("restaurant_name") == "Authentic_Tacos")
-    assert(data[1].get("restaurant_name") == "Coolio_Sushi")
+    assert data["id"] == "r01"
+    assert data["name"] == "Authentic_Tacos"
 
 def test_restaurant_service_layer(isolated_restaurant_service: RestaurantService):
     """Test restaurant layer coordinates correctly with repository."""

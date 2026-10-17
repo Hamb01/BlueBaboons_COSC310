@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blue Baboons | Restaurants</title>
+  <link rel="stylesheet" href="/ui/styles.css">
+  <script src="/ui/app.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/ui/">BLUE BABOONS <span>Food discovery</span></a><a href="/docs">API docs ↗</a></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">FIND YOUR NEXT FAVORITE</p><h1>Good food. Close by.</h1><p>Explore local restaurants, see what's on the menu, and find your next meal.</p></div><button id="create-restaurant" type="button">+ Add restaurant</button></div>
+    <form id="filters" class="panel filters">
+      <label>Search<input name="search" type="search" placeholder="Name, cuisine, or location"></label>
+      <label>Cuisine<input name="cuisine" placeholder="e.g. Japanese"></label>
+      <label>Location<input name="location" placeholder="City or neighborhood"></label>
+      <label>Status<select name="is_open"><option value="">All restaurants</option><option value="true">Open</option><option value="false">Closed</option></select></label>
+      <button type="submit">Search</button><button type="reset" class="secondary">Clear</button>
+    </form>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <div class="workspace">
+      <section aria-labelledby="restaurants-title"><div class="section-heading"><h2 id="restaurants-title">Restaurants</h2><span id="count"></span></div><div id="restaurants" class="restaurant-list" aria-live="polite"></div></section>
+      <section id="details" class="panel details" aria-label="Selected restaurant"><p class="empty">Select a restaurant to explore its details and menu.</p></section>
+    </div>
+  </main>
+  <dialog id="editor">
+    <form id="restaurant-form">
+      <div class="section-heading"><h2 id="editor-title">Add restaurant</h2><button id="close-editor" type="button" class="secondary">Close</button></div>
+      <p>Keep restaurant information up to date.</p>
+      <label>Name<input name="name" required maxlength="200"></label>
+      <label>Cuisine<input name="cuisine" required maxlength="100"></label>
+      <label>Location<input name="location" required maxlength="300"></label>
+      <label>Opening hours<input name="opening_hours" required placeholder="e.g. 09:00–21:00" maxlength="100"></label>
+      <label class="checkbox"><input name="isOpen" type="checkbox" checked> Currently open</label>
+      <p id="form-error" role="alert"></p>
+      <button id="save-restaurant" type="submit">Save restaurant</button>
+    </form>
+  </dialog>
+</body>
+</html>

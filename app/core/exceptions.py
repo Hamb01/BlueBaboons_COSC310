@@ -10,6 +10,10 @@ class RestaurantNotFoundError(DomainError):
         self.restaurant_id = restaurant_id
 
 
+class MenuItemNotFoundError(DomainError):
+    """Raised when an item does not belong to the requested restaurant."""
+
+
 class DataPersistenceError(DomainError):
     """Raised when reading or writing data persistence files encounters an error."""
     pass
