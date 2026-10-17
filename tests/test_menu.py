@@ -73,12 +73,118 @@ def test_service_rejects_item_from_another_restaurant():
         RestaurantService(repository).get_menu_item("restaurant", "item")
 
 
+def test_service_add_menu_item_converts_price_and_uses_repository():
+    repository = Mock()
+    service = RestaurantService(repository)
+    menu_item = {
+        "name": "Soup",
+        "description": "Vegetable soup",
+        "price": "5.25",
+        "availability": True,
+    }
+    expected_item = {
+        "name": "Soup",
+        "description": "Vegetable soup",
+        "price": 5.25,
+        "availability": True,
+    }
+
+    result = service.add_new_menu_item("r01", menu_item)
+
+    assert result == expected_item
+    repository.update_menu_item.assert_called_once_with(
+        "r01", "", expected_item, True
+    )
+
+
+def test_service_add_menu_item_uses_defaults():
+    repository = Mock()
+    service = RestaurantService(repository)
+
+    result = service.add_new_menu_item(
+        "r01", {"name": "Soup", "description": "Vegetable soup"}
+    )
+
+    assert result["price"] == 0.0
+    assert result["availability"] is False
+    repository.update_menu_item.assert_called_once_with(
+        "r01", "", result, True
+    )
+
+
+def test_service_update_menu_item_returns_repository_result():
+    expected_item = {
+        "id": "m01",
+        "restaurant_id": "r01",
+        "name": "Soup",
+        "description": "Vegetable soup",
+        "price": 5.25,
+        "availability": True,
+    }
+    repository = Mock()
+    repository.update_menu_item.return_value = expected_item
+    service = RestaurantService(repository)
+
+    result = service.update_menu_item(
+        "r01", "m01", {"name": "Soup", "price": 5.25}
+    )
+
+    assert result == expected_item
+    repository.update_menu_item.assert_called_once_with(
+        "r01", "m01", {"name": "Soup", "price": 5.25}, False
+    )
+
+
+def test_service_update_menu_item_raises_when_repository_returns_empty_result():
+    repository = Mock()
+    repository.update_menu_item.return_value = {}
+    service = RestaurantService(repository)
+
+    with pytest.raises(ValueError, match="Menu item not found"):
+        service.update_menu_item("r01", "missing", {})
+
+
+def test_service_remove_menu_item_delegates_to_repository():
+    repository = Mock()
+    service = RestaurantService(repository)
+
+    result = service.remove_menu_item("r01", "m01")
+
+    assert result is None
+    repository.remove_menu_item.assert_called_once_with("r01", "m01")
+
+
 def test_repository_unknown_restaurant(isolated_restaurant_repo):
     with pytest.raises(RestaurantNotFoundError):
         isolated_restaurant_repo.get_menu_data("unknown")
+
+
+def test_generate_menu_id_from_menu_item_dictionaries(isolated_restaurant_repo):
+    assert isolated_restaurant_repo.generate_menu_item_id("r01") == "m03"
 
 
 def test_menu_item_rejects_negative_price():
     with pytest.raises(ValidationError):
         MenuItem(id="item", restaurant_id="r01", name="Soup",
                  description="Soup", price=-1, availability=True)
+
+
+
+def test_service_update_returns_repository_item():
+    """Updating delegates to the repository without running obsolete file code."""
+    repository = Mock()
+    item = {"id": "m01", "restaurant_id": "r01", "name": "Soup",
+            "description": "Soup", "price": 6, "availability": True}
+    repository.update_menu_item.return_value = item
+    service = RestaurantService(repository)
+
+    assert service.update_menu_item("r01", "m01", {"price": 6}) == item
+    repository.update_menu_item.assert_called_once_with("r01", "m01", {"price": 6}, False)
+
+
+def test_service_update_missing_item_raises():
+    """An unsuccessful repository update raises the existing not-found error."""
+    repository = Mock()
+    repository.update_menu_item.return_value = {}
+    with pytest.raises(ValueError):
+        RestaurantService(repository).update_menu_item("r01", "missing", {"price": 6})

@@ -18,7 +18,7 @@ router = APIRouter(tags=["Restaurant"])
 def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: RestaurantService = Depends(get_restaurant_service)):
     """Replace an existing menu item for the specified restaurant."""
     try:
-        updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, littleBit=True)
+        updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
         return {"message": "Menu item updated successfully", "item": updated_item}
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
@@ -125,3 +125,7 @@ def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
         raise HTTPException(status_code = 404, detail = str(e))
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+
+@router.delete("/restaurants/{restaurant_id}/menu/{menu_item}", status_code = status.HTTP_204_NO_CONTENT)
+def remove_menu_item(restaurant_id: str, menu_item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
+    service.remove_menu_item(restaurant_id, menu_item_id)

@@ -89,3 +89,13 @@ This document records externally assisted content, AI tooling, and design assist
   README instructions, and frontend asset/management API tests.
 - **Verification:** JavaScript syntax check passed; 46 pytest tests passed.
   Interactive browser verification and team review remain outstanding.
+## Milestone 1 - first vertical slice
+**Date:** 2026-10-16
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:**
+  - created a number generator function
+    - I had copilot generate the generate_menu_item_id function as while it is an easy operation, the syntax is easy to mess up on
+  - created some unit tests for adding, updating and removing menu items
+    - I had copilot generate some unit tests, I then reformatted all of them to better fit the coding style present in the other tests in test_menu.py (for continuities sake)
+- **Verification & Ownership:**
+  - code was reviewed by team members and all tests passed
