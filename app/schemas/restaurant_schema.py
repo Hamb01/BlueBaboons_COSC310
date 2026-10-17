@@ -14,7 +14,7 @@ class RestaurantCreate(BaseModel):
     location: str = Field(..., description="Restaurant location")
     isOpen: bool = Field(..., description="Restaurant open status")
     cuisine: str = Field(..., description="Restaurant cuisine type")
-    opening_hours: str = Field(..., description="Restaurant opening hours")
+    opening_hours: str = Field("09:00-22:00", description="Restaurant opening hours")
 
 
 class RestaurantUpdate(BaseModel):

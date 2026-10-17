@@ -37,6 +37,6 @@ def root_overview():
         "app": settings.app_name,
         "version": settings.app_version,
         "documentation": "/docs",
-        "restaurants": "/restaurant",
+        "restaurants": "/restaurants",
         "health_check": "/health"
     }

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurant Manager - MVP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        .panel { flex: 1; border: 1px solid #ccc; padding: 15px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 10px; cursor: pointer; color: blue; }
+        li:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>Restaurant Management MVP</h1>
+
+    <div class="container">
+        <!-- Panel 1: View Restaurants -->
+        <div class="panel">
+            <h2>Restaurants</h2>
+            <button onclick="loadRestaurants()">Refresh List</button>
+            <ul id="restaurant-list"></ul>
+        </div>
+
+        <!-- Panel 2: Restaurant Details & Update Form -->
+        <div class="panel">
+            <h2>Restaurant Details</h2>
+            <div id="restaurant-details">Click a restaurant to view details.</div>
+            
+            <div id="update-section" style="margin-top: 20px; display: none;">
+                <h3>Update Restaurant</h3>
+                <form id="update-form" onsubmit="updateRestaurant(event)">
+                    <input type="hidden" id="update-id">
+                    <input type="text" id="update-name" placeholder="Name" required><br><br>
+                    <input type="text" id="update-cuisine" placeholder="Cuisine" required><br><br>
+                    <input type="text" id="update-location" placeholder="Location" required><br><br>
+                    <input type="text" id="update-opening_hours" placeholder="Opening Hours" required><br><br>
+                    <label>
+                        <input type="checkbox" id="update-isOpen"> Is Open
+                    </label><br><br>
+                    <button type="submit">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel 3: Create Restaurant -->
+        <div class="panel">
+            <h2>Create Restaurant</h2>
+            <form id="create-form" onsubmit="createRestaurant(event)">
+                <input type="text" id="name" placeholder="Name" required><br><br>
+                <input type="text" id="cuisine" placeholder="Cuisine" required><br><br>
+                <input type="text" id="location" placeholder="Location (e.g. 123 Main St)" required><br><br>
+                <input type="text" id="opening_hours" placeholder="Opening Hours (e.g. 09:00 - 22:00)" required><br><br>
+                <label>
+                    <input type="checkbox" id="isOpen" checked> Is Open
+                </label><br><br>
+                <button type="submit">Create</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+        let currentSelectedId = null;
+
+        // 1. View all restaurants
+        async function loadRestaurants() {
+            try {
+                const response = await fetch(`${API_URL}/restaurants`);
+                const data = await response.json();
+                
+                const restaurants = Array.isArray(data) ? data : (data.restaurants || data.data || []);
+                
+                const listEl = document.getElementById("restaurant-list");
+                listEl.innerHTML = "";
+                
+                if (restaurants.length === 0) {
+                    listEl.innerHTML = "<li>No restaurants found.</li>";
+                    return;
+                }
+
+                restaurants.forEach(r => {
+                    const li = document.createElement("li");
+                    li.textContent = `${r.name} (${r.cuisine || 'General'})`;
+                    li.onclick = () => loadRestaurantDetails(r.id);
+                    listEl.appendChild(li);
+                });
+            } catch (err) {
+                console.error("Error loading restaurants:", err);
+            }
+        }
+
+        // 2. View restaurant details & populate update form
+        async function loadRestaurantDetails(id) {
+            currentSelectedId = id;
+            try {
+                const response = await fetch(`${API_URL}/restaurant/${id}`);
+                const r = await response.json();
+                
+                let html = `<h3>${r.name}</h3><p>ID: ${r.id}</p><p>Location: ${r.location}</p><p>Cuisine: ${r.cuisine}</p><p>Hours: ${r.opening_hours}</p><p>Status: ${r.isOpen ? 'Open' : 'Closed'}</p>`;
+                
+                document.getElementById("restaurant-details").innerHTML = html;
+
+                // Populate update form fields
+                document.getElementById("update-id").value = r.id;
+                document.getElementById("update-name").value = r.name;
+                document.getElementById("update-cuisine").value = r.cuisine;
+                document.getElementById("update-location").value = r.location;
+                document.getElementById("update-opening_hours").value = r.opening_hours;
+                document.getElementById("update-isOpen").checked = r.isOpen;
+
+                // Make update section visible
+                document.getElementById("update-section").style.display = "block";
+            } catch (err) {
+                console.error("Error loading details:", err);
+            }
+        }
+
+        // 3. Create a restaurant
+        async function createRestaurant(event) {
+            event.preventDefault();
+            const name = document.getElementById("name").value;
+            const cuisine = document.getElementById("cuisine").value;
+            const location = document.getElementById("location").value;
+            const opening_hours = document.getElementById("opening_hours").value;
+            const isOpen = document.getElementById("isOpen").checked;
+
+            try {
+                const response = await fetch(`${API_URL}/restaurant`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, cuisine, location, opening_hours, isOpen })
+                });
+                if (response.ok) {
+                    document.getElementById("create-form").reset();
+                    loadRestaurants();
+                } else {
+                    const errorData = await response.json();
+                    console.error("Validation Error:", errorData);
+                    alert("Failed to create restaurant.");
+                }
+            } catch (err) {
+                console.error("Error creating restaurant:", err);
+            }
+        }
+
+        // 4. Update a restaurant
+        async function updateRestaurant(event) {
+            event.preventDefault();
+            if (!currentSelectedId) return;
+
+            const payload = {
+                name: document.getElementById("update-name").value,
+                cuisine: document.getElementById("update-cuisine").value,
+                location: document.getElementById("update-location").value,
+                opening_hours: document.getElementById("update-opening_hours").value,
+                isOpen: document.getElementById("update-isOpen").checked
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/restaurant/${currentSelectedId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("Restaurant updated successfully!");
+                    loadRestaurants();
+                    loadRestaurantDetails(currentSelectedId);
+                } else {
+                    const errorData = await response.json();
+                    console.error("Update Error:", errorData);
+                    alert("Failed to update restaurant.");
+                }
+            } catch (err) {
+                console.error("Error updating restaurant:", err);
+            }
+        }
+
+        // Load list on initial page load
+        loadRestaurants();
+    </script>
+</body>
+</html>

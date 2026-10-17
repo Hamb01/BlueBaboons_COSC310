@@ -59,7 +59,7 @@ def check_restaurant_status(
     return service.get_restaurant_status()
 
 
-@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem])
+@router.get("/restaurant/{restaurant_id}/menu", response_model=list[MenuItem])
 def get_menu(restaurant_id: str, service: RestaurantService = Depends(get_restaurant_service)):
     try:
         return service.get_menu(restaurant_id)
@@ -67,7 +67,7 @@ def get_menu(restaurant_id: str, service: RestaurantService = Depends(get_restau
         raise HTTPException(status_code=404, detail=str(error)) from error
 
 
-@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+@router.get("/restaurant/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
 def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService = Depends(get_restaurant_service)):
     try:
         return service.get_menu_item(restaurant_id, item_id)
@@ -75,7 +75,7 @@ def get_menu_item(restaurant_id: str, item_id: str, service: RestaurantService =
         raise HTTPException(status_code=404, detail=str(error)) from error
 
 @router.get(
-    "/restaurants/{restaurant_id}",
+    "/restaurant/{restaurant_id}",
     response_model=RestaurantResponse,
     status_code=status.HTTP_200_OK,
 )
@@ -93,7 +93,7 @@ def get_restaurant_details(
         ) from error
 
 
-@router.post("/restaurants", status_code = status.HTTP_201_CREATED)
+@router.post("/restaurant", status_code = status.HTTP_201_CREATED)
 def create_restaurant(payload: RestaurantCreate, service: RestaurantService =
                       Depends(get_restaurant_service)):
     try:
@@ -101,7 +101,7 @@ def create_restaurant(payload: RestaurantCreate, service: RestaurantService =
     except Exception as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
 
-@router.put("/restaurants/{restaurant_id}", status_code = status.HTTP_200_OK)
+@router.put("/restaurant/{restaurant_id}", status_code = status.HTTP_200_OK)
 def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
     RestaurantService = Depends(get_restaurant_service)):
 

@@ -1,64 +1,70 @@
 {
-    "r01":  {
-                "id": "r01",
-                "name": "Authentic_Tacos",
-                "location": "Kelowna",
-                "isOpen": true,
-                "cuisine": "Mexican",
-                "opening_hours": "09:00-21:00",
-                "menu": [
-                            {
-                                "id": "m01",
-                                "restaurant_id": "r01",
-                                "name": "Beef Taco",
-                                "description": "Beef tacos with sour cream, onions and salsa", 
-                                "price": 7.99,
-                                "availability": true
-                            },
-                            {
-                                "id": "m02",
-                                "restaurant_id": "r01",
-                                "name": "Chicken Taco",
-                                "description": "Chicken tacos with sour cream, onions and salsa", 
-                                "price": 7.99,
-                                "availability": true
-                            }
-                        ]
+    "r01": {
+        "id": "r01",
+        "name": "Authentic_Tacos",
+        "location": "Kelowna",
+        "isOpen": true,
+        "cuisine": "Mexican",
+        "opening_hours": "09:00-21:00",
+        "menu": [
+            {
+                "id": "m01",
+                "restaurant_id": "r01",
+                "name": "Beef Taco",
+                "description": "Beef tacos with sour cream, onions and salsa",
+                "price": 7.99,
+                "availability": true
             },
-    
-    "r02":  {
-                "id": "r02",
-                "name": "Coolio_Sushi",
-                "location": "Rutland",
-                "isOpen": true,
-                "cuisine": "Japanese",
-                "opening_hours": "08:00-21:00",
-                "menu": [
-                            {
-                                "id": "m03",
-                                "restaurant_id": "r02",
-                                "name": "California Rolls",
-                                "description": "8 rolls with crab and avacado", 
-                                "price": 12.99,
-                                "availability": true
-                            },
-                            {
-                                "id": "m04",
-                                "restaurant_id": "r02",
-                                "name": "Tuna rolls",
-                                "description": "8 rolls with raw tuna", 
-                                "price": 15.99,
-                                "availability": true
-                            },
-                            {
-                                "id": "m05",
-                                "restaurant_id": "r02",
-                                "name": "Dynamite rolls",
-                                "description": "coming soon", 
-                                "price": 15.99,
-                                "availability": false
-                            }
-                        ]
+            {
+                "id": "m02",
+                "restaurant_id": "r01",
+                "name": "Chicken Taco",
+                "description": "Chicken tacos with sour cream, onions and salsa",
+                "price": 7.99,
+                "availability": true
             }
-
+        ]
+    },
+    "r02": {
+        "id": "r02",
+        "name": "Coolio_Sushi",
+        "location": "Rutland",
+        "isOpen": true,
+        "cuisine": "Japanese",
+        "opening_hours": "08:00-21:00",
+        "menu": [
+            {
+                "id": "m03",
+                "restaurant_id": "r02",
+                "name": "California Rolls",
+                "description": "8 rolls with crab and avacado",
+                "price": 12.99,
+                "availability": true
+            },
+            {
+                "id": "m04",
+                "restaurant_id": "r02",
+                "name": "Tuna rolls",
+                "description": "8 rolls with raw tuna",
+                "price": 15.99,
+                "availability": true
+            },
+            {
+                "id": "m05",
+                "restaurant_id": "r02",
+                "name": "Dynamite rolls",
+                "description": "coming soon",
+                "price": 15.99,
+                "availability": false
+            }
+        ]
+    },
+    "r03": {
+        "name": "supercool",
+        "location": "lawrence",
+        "isOpen": true,
+        "cuisine": "cookie",
+        "opening_hours": "09:00-12:00",
+        "id": "r03"
+    }
 }
