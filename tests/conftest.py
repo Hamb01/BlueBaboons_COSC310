@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Generator
 import pytest
 from fastapi.testclient import TestClient
+from shutil import copytree
 
 from app.main import app
 from app.api.deps import get_health_repository, get_health_service
@@ -24,8 +25,15 @@ from app.services.restaurant_service import RestaurantService
 ############################################################################################
 
 @pytest.fixture
-def isolated_data_dir(tmp_path: Path) -> Path:
+def isolated_data_dir(empty_isolated_data_dir: Path) -> Path:
     """Provides an isolated directory representing the persistence layer."""
+
+    return populate_test_data(empty_isolated_data_dir)
+
+@pytest.fixture
+def empty_isolated_data_dir(tmp_path: Path) -> Path:
+    """Provides an isolated directory representing the persistance layer for functions that do not need to read the existing files"""
+
     data_dir = tmp_path / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
@@ -34,15 +42,28 @@ def isolated_data_dir(tmp_path: Path) -> Path:
 def client(
     isolated_health_service: HealthService,
     isolated_health_repo: HealthRepository,
+    isolated_restaurant_service: RestaurantService,
+    isolated_restaurant_repo: RestaurantRepository
 ) -> Generator[TestClient, None, None]:
     """FastAPI TestClient fixture with dependency overrides for isolated testing."""
+
     app.dependency_overrides[get_health_repository] = lambda: isolated_health_repo
-    app.dependency_overrides[get_health_service] = lambda: isolated_health_service
+    app.dependency_overrides[get_health_service]    = lambda: isolated_health_service
+    app.dependency_overrides[get_restaurant_repository] = lambda: isolated_restaurant_repo
+    app.dependency_overrides[get_restaurant_service]    = lambda: isolated_restaurant_service
 
-    with TestClient(app) as test_client:
-        yield test_client
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
 
-    app.dependency_overrides.clear()
+def populate_test_data(temp_data_dir: Path):
+    """Copy Restaurant Data into Isolated Testing Directory"""
+
+    seed_data_dir = Path(__file__).resolve().parents[1] / "data"
+    copytree(seed_data_dir, temp_data_dir, dirs_exist_ok=True)
+    return temp_data_dir
 
 
 ############################################################################################

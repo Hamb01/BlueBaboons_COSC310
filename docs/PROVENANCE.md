@@ -2,6 +2,18 @@
 
 This document records externally assisted content, AI tooling, and design assistance in accordance with the COSC 310 course policy.
 
+## Menu browsing — 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex
+- **Scope / Assistance:** Corrected undefined string annotations blocking startup;
+  implemented the MenuItem model, menu read endpoints, service lookup and
+  repository reads; added seed menus, menu tests, and endpoint documentation.
+  Separated stacked restaurant route decorators, aligned restaurant response
+  mapping and existing tests with stored JSON, and repaired temporary-data fixtures.
+- **Verification:** Codex ran the complete pytest suite: 22 tests passed, with
+  one dependency deprecation warning. Team review and ownership verification
+  remain the team's responsibility.
+
 ---
 
 ## Milestone 0 — Foundational Gate
@@ -41,3 +53,49 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification & Ownership:**
   - Copilot made no edits to the code, just pointed out the offending code block
   - Team verified all 11 tests run and pass cleanly using `pytest`.
+
+
+## Restaurant search and filtering - 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex
+- **Scope / Assistance:** Implemented `GET /restaurants` with optional text
+  search across restaurant name, cuisine, and location; exact cuisine filtering;
+  partial location filtering; and open-status filtering. Text matching ignores
+  case and surrounding whitespace, and supplied filters combine with AND.
+  The route delegates to the service, which reads through the existing repository
+  and returns Pydantic restaurant response models.
+- **Tests / Readability:** Added 18 individually named search/filter tests using
+  isolated shared fixtures and direct assertions. Expanded the service logic
+  into explicit checks and named variables at the student's request.
+- **Integration Assistance:** Resolved the service conflict with `main`, preserving
+  both search/filter logic and existing restaurant methods. Removed the duplicate
+  `GET /restaurants` route so listing and filtering use one endpoint.
+- **Verification:** After conflict resolution, the complete pytest suite passed:
+  44 tests, including the 18 search/filter tests. Existing dependency deprecation
+  and pytest cache permission warnings remained. Team review and ownership
+  verification remain the team's responsibility.
+
+- **Test simplification:** At the student's request, Codex condensed the
+  search/filter tests from 18 functions to 8, grouping related checks and removing
+  redundant assertions. Core listing, search, filters, validation, and read-only
+  checks remain. The complete suite passed: 34 tests.
+
+## Restaurant frontend - 2026-10-16
+
+- **Tool / Assistant:** OpenAI Codex (Sites skill, local-only workflow).
+- **Scope / Assistance:** Built the HTML/CSS/JavaScript interface at `/ui/`
+  using existing REST endpoints for restaurant browsing, search/filter, details,
+  menu viewing, and restaurant creation/editing. Added FastAPI static hosting,
+  README instructions, and frontend asset/management API tests.
+- **Verification:** JavaScript syntax check passed; 46 pytest tests passed.
+  Interactive browser verification and team review remain outstanding.
+## Milestone 1 - first vertical slice
+**Date:** 2026-10-16
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:**
+  - created a number generator function
+    - I had copilot generate the generate_menu_item_id function as while it is an easy operation, the syntax is easy to mess up on
+  - created some unit tests for adding, updating and removing menu items
+    - I had copilot generate some unit tests, I then reformatted all of them to better fit the coding style present in the other tests in test_menu.py (for continuities sake)
+- **Verification & Ownership:**
+  - code was reviewed by team members and all tests passed

@@ -1,12 +1,13 @@
-import os
-
-from pydantic import json
 import json
+import os
 import time
+from typing import List, Dict, Any, Optional
 
-from app.core.config import get_settings
+from app.core.exceptions import MenuItemNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
-from app.schemas.restaurant_schema import RestaurantResponse
+from app.schemas.menu_item import MenuItem
+from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
+
 
 
 #Constants
@@ -48,12 +49,10 @@ class RestaurantService:
             #Grabs all the shit from the dictionary extracted from the user and adds it to the menu list
 
         new_menu_item ={
-            #Grabs a unique ID from the current time in seconds
-            "id": f"item_{int(time.time())}",
             "name": menu_item.get("name"),
-            "price": float(menu_item.get("price", 0.0)),
             "description": menu_item.get("description"),
-            "category": menu_item.get("category", "Uncategorized")
+            "price": float(menu_item.get("price", 0.0)),
+            "availability": menu_item.get("availability", False)
         }
         repository_data[restaurant_id]["menu"].append(new_menu_item)
         
@@ -87,6 +86,7 @@ class RestaurantService:
 
         if target_item is None:
             raise ValueError(f"Error 404: Menu item not found.")
+        return updated_item
 
         if littleBit:
              updated_item = {

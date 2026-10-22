@@ -1,7 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.api.deps import get_restaurant_service
-from app.schemas.restaurant_schema import RestaurantResponse, MenuItemRequest
 from app.services.restaurant_service import RestaurantService
+from app.schemas.menu_item import MenuItem
+from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
+from app.schemas.restaurant_schema import (
+    RestaurantResponse,
+    MenuItemRequest,
+    RestaurantCreate,
+    RestaurantUpdate
+)
 
 router = APIRouter(tags=["Restaurant"])
 

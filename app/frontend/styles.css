@@ -1,0 +1,53 @@
+:root { font-family: system-ui, sans-serif; color: #15253d; background: #f4f6fa; line-height: 1.5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header { background: white; border-bottom: 1px solid #dce3ed; padding: 22px max(24px, calc((100vw - 1200px) / 2)); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+a { color: #284fc5; }
+.brand { font-weight: 850; letter-spacing: .07em; color: #183f9c; text-decoration: none; }
+.brand span { display: block; font-size: 12px; font-weight: 400; letter-spacing: .03em; color: #64748b; }
+main { max-width: 1248px; margin: auto; padding: 38px 24px; }
+.intro { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 28px; }
+.eyebrow { color: #3456b2; font-size: 12px; letter-spacing: .13em; font-weight: 750; }
+h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.15; letter-spacing: -.04em; margin: 10px 0; }
+h2 { font-size: 22px; margin: 0; }
+h3 { margin: 0 0 6px; }
+p { color: #5a687c; }
+.panel { background: white; border: 1px solid #dce3ed; border-radius: 14px; padding: 24px; }
+.filters { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 12px; align-items: end; }
+label { display: grid; gap: 6px; font-size: 13px; font-weight: 650; }
+input, select, button { font: inherit; border-radius: 7px; padding: 11px 12px; }
+input, select { width: 100%; min-width: 0; border: 1px solid #bfcbdc; background: white; color: #15253d; }
+button { border: 1px solid #284fc5; background: #284fc5; color: white; font-weight: 650; cursor: pointer; }
+button:hover { filter: brightness(.94); }
+button:disabled { opacity: .6; cursor: wait; }
+button.secondary { background: white; border-color: #bdc9da; color: #233955; }
+:focus-visible { outline: 3px solid #eea82e; outline-offset: 3px; }
+.workspace { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 1.7fr); gap: 26px; align-items: start; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+#count { color: #64748b; font-size: 13px; }
+.restaurant-list { display: grid; gap: 12px; }
+.restaurant-card { width: 100%; text-align: left; color: #15253d; background: white; border: 1px solid #dce3ed; padding: 20px; border-radius: 12px; }
+.restaurant-card[aria-pressed="true"] { border: 2px solid #284fc5; padding: 19px; background: #eef3ff; }
+.restaurant-card strong { display: block; font-size: 18px; margin-bottom: 5px; }
+.restaurant-card small { display: block; color: #64748b; font-weight: 400; margin-bottom: 12px; }
+.badge { display: inline-block; font-size: 12px; border-radius: 20px; padding: 3px 10px; background: #e7f5ee; color: #216143; font-weight: 650; }
+.badge.closed { background: #f0f1f4; color: #687184; }
+.empty { text-align: center; padding: 35px 10px; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+.facts dt { font-size: 12px; color: #64748b; }
+.facts dd { margin: 4px 0 0; }
+.menu-item { border-top: 1px solid #e2e7ef; padding: 16px 0; }
+.menu-item p { margin: 5px 0; font-size: 14px; }
+.menu-item button { padding: 5px 9px; font-size: 12px; margin-top: 8px; }
+.item-price { float: right; font-weight: 700; }
+#notice { min-height: 24px; margin: 14px 0; }
+.error, #form-error { color: #aa2839; }
+dialog { width: min(480px, calc(100% - 32px)); border: 1px solid #dce3ed; border-radius: 16px; padding: 26px; color: #15253d; }
+dialog::backdrop { background: #15253d77; }
+#restaurant-form { display: grid; gap: 14px; }
+#restaurant-form .section-heading { margin-bottom: 0; }
+#restaurant-form p { margin: 0; }
+.checkbox { display: flex; align-items: center; gap: 10px; }
+.checkbox input { width: auto; }
+@media (max-width: 1000px) { .filters { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 650px) { main { padding: 24px 16px; } .intro { align-items: start; flex-direction: column; } .workspace { grid-template-columns: 1fr; } .filters { padding: 18px; } .filters label:first-child { grid-column: 1 / -1; } .facts { grid-template-columns: 1fr; } }
