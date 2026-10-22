@@ -66,3 +66,35 @@ def test_restaurant_service_layer():
     service = RestaurantService(RestaurantRepository())
     result = service.get_restaurant_status()
     assert result.id == "r01"
+
+
+#Case where I tested the business logic where everything goes right
+def test_business_logic():
+    """Test business logic for adding and updating menu items."""
+    service = RestaurantService(RestaurantRepository())
+    # Add assertions for the business logic tests
+    passing = True
+    try:
+        # Test adding a new menu item
+        new_item = {
+            "name": "Test Item",
+            "price": 9.99,
+            "description": "A test menu item",
+            "category": "Test Category"
+        }
+        added_item = service.add_new_menu_item("r01", new_item)
+        assert added_item["name"] == new_item["name"]
+
+        # Test updating an existing menu item
+        updated_data = {
+            "name": "Updated Test Item",
+            "price": 12.99
+        }
+        updated_item = service.update_menu_item("r01", added_item["id"], updated_data)
+        assert updated_item["name"] == updated_data["name"]
+        assert updated_item["price"] == updated_data["price"]
+    except Exception as e:
+        passing = False
+        print(f"Error occurred while testing business logic: {e}")
+
+    assert passing

@@ -30,6 +30,8 @@ class RestaurantService:
             isOpen = information.get("restaurant_isOpen"),
             cuisine = information.get("restaurant_cuisine")
         )
+
+    
     def add_new_menu_item(self, restaurant_id: str, menu_item: dict) -> dict:
         """Add a new menu item to the specified restaurant."""
         repository_data = {}
@@ -40,9 +42,11 @@ class RestaurantService:
                     repository_data = json.load(file)
             except json.JSONDecodeError:
                 repository_data = {}
+        #2. Ensure resturant entry skeleton exists
         if restaurant_id not in repository_data:
             repository_data[restaurant_id] = {"menu": []}
             #Grabs all the shit from the dictionary extracted from the user and adds it to the menu list
+
         new_menu_item ={
             #Grabs a unique ID from the current time in seconds
             "id": f"item_{int(time.time())}",
@@ -51,6 +55,17 @@ class RestaurantService:
             "description": menu_item.get("description"),
             "category": menu_item.get("category", "Uncategorized")
         }
+        repository_data[restaurant_id]["menu"].append(new_menu_item)
+        
+        os.makedirs(os.path.dirname(LOCAL_FILE_PATH), exist_ok=True)
+        with open(LOCAL_FILE_PATH, "w") as file:
+            json.dump(repository_data, file, indent=2)
+
+        return new_menu_item
+    
+
+
+
     def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: dict, littleBit: bool = False) -> dict:
         """Update an existing menu item for the specified restaurant."""
         if not os.path.exists(LOCAL_FILE_PATH):
@@ -62,6 +77,13 @@ class RestaurantService:
         menu_items = repository_data[restaurant_id].get("menu", [])
         target_item = None
         target_index = -1
+
+
+        for index, item in enumerate(menu_items):
+            if item.get("id") == item_id:
+                target_item = item
+                target_index = index
+                break
 
         if target_item is None:
             raise ValueError(f"Error 404: Menu item not found.")
@@ -90,6 +112,8 @@ class RestaurantService:
         print(f"Menu Item Updated! Code: 200")
         #Appends the menu item to the restaurant's menu list
         repository_data[restaurant_id]["menu"].append(updated_item)
+        
         with open(LOCAL_FILE_PATH, "w") as file:
             json.dump(repository_data, file, indent=2)
+
         return updated_item
