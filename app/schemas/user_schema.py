@@ -1,25 +1,23 @@
 from enum import Enum
-from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+# Owner: Person A (customers + auth) — but agree on these shapes as a team first,
+# because cart, orders, and the frontend all depend on them.
 
 
 class UserRole(str, Enum):
-    """Roles the backend authorizes against."""
+    """Roles the backend authorizes against (the three roles named in the project spec)."""
     CUSTOMER = "customer"
     RESTAURANT_OWNER = "restaurant_owner"
     ADMIN = "admin"
 
 
 class CurrentUser(BaseModel):
-    """The authenticated user, as returned by the get_current_user dependency.
-
-    This is what every protected route receives. It deliberately holds only
-    what authorization needs; services load the full record when they need more.
-    """
-    id: str = Field(..., description="User ID, e.g. 'u01'")
-    role: UserRole
-    restaurant_id: Optional[str] = Field(None, description="Restaurant a restaurant_owner manages")
+    """The authenticated user that every protected route receives from get_current_user."""
+    # TODO: what is the minimum a route/service needs to know to make an authorization decision?
+    # TODO: does a restaurant user need to carry which restaurant they manage?
+    pass
 
 
 ############################################################################################
@@ -27,24 +25,24 @@ class CurrentUser(BaseModel):
 ############################################################################################
 
 class CustomerRegister(BaseModel):
-    name: str = Field(..., min_length=1, description="Customer's display name")
-    email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", description="Login email (unique)")
-    password: str = Field(..., min_length=8, description="Plain-text password; only a hash is stored")
-    delivery_address: Optional[str] = Field(None, description="Default delivery address")
+    # TODO: which fields does registering need? Which are required vs optional?
+    # TODO: what validation belongs here (Pydantic) vs in the service (business rule)?
+    pass
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(..., description="Registered email")
-    password: str = Field(..., description="Account password")
+    # TODO: what does a customer send to sign in?
+    pass
 
 
 class CustomerUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, description="New display name")
-    email: Optional[str] = Field(None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", description="New login email")
+    # TODO: which profile fields may a customer change? How do you express "only update what was sent"?
+    pass
 
 
 class DeliveryAddressUpdate(BaseModel):
-    delivery_address: str = Field(..., min_length=1, description="New default delivery address")
+    # TODO: is an address one string or structured fields? What does checkout need from it?
+    pass
 
 
 ############################################################################################
@@ -52,30 +50,11 @@ class DeliveryAddressUpdate(BaseModel):
 ############################################################################################
 
 class TokenResponse(BaseModel):
-    access_token: str = Field(..., description="Send as 'Authorization: Bearer <token>'")
-    token_type: str = "bearer"
-    user_id: str
-    role: UserRole
+    # TODO: what does the client need back after signing in to make authenticated requests?
+    pass
 
 
 class CustomerResponse(BaseModel):
-    """Public view of a customer. Never includes the password hash."""
-    id: str
-    name: str
-    email: str
-    role: UserRole = UserRole.CUSTOMER
-    delivery_address: Optional[str] = None
-    is_active: bool = True
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": "u01",
-                "name": "Sam Customer",
-                "email": "sam@example.com",
-                "role": "customer",
-                "delivery_address": "1234 Lakeshore Rd, Kelowna",
-                "is_active": True,
-            }
-        }
-    }
+    """Public view of a customer."""
+    # TODO: which stored fields must NEVER be returned to the client?
+    pass

@@ -9,9 +9,8 @@ class Settings(BaseModel):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
     data_dir: Path = base_dir / "data"
 
-    # Cart and checkout pricing rules (the backend is the only place totals are calculated)
-    delivery_fee: float = 2.99
-    max_item_quantity: int = 20
+    # TODO (cart/checkout owners): pricing rules such as a delivery fee or a maximum quantity
+    # could live here as settings. Decide what your totals include and what limits apply.
 
     def __init__(self, **data):
         super().__init__(**data)

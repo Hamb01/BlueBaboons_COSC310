@@ -1,9 +1,6 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-from app.core.exceptions import AuthenticationError, PermissionDeniedError
 
 from app.repositories.health_repository import HealthRepository
 from app.services.health_service import HealthService
@@ -117,36 +114,27 @@ def get_order_service(
 
 
 ############################################################################################
-### Authentication and authorization
+### Authentication and authorization (Owner: Person A)
 ###
-### This is the ONE place the backend decides who is calling (get_current_user)
-### and whether their role is allowed (require_roles). Routes opt in by depending on them.
+### Routes depend on these two functions, so their NAMES and how routes use them are fixed;
+### their implementation is yours to design.
 ############################################################################################
 
-# auto_error=False so a missing header raises our AuthenticationError (401) instead of FastAPI's default
-bearer_scheme = HTTPBearer(auto_error=False, description="Token returned by POST /auth/login")
-
-
-def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    auth_service: AuthService = Depends(get_auth_service),
-) -> CurrentUser:
-    """Identify the caller from the 'Authorization: Bearer <token>' header. 401 if missing/invalid."""
-    if credentials is None:
-        raise AuthenticationError("Missing bearer token. Sign in with POST /auth/login.")
-    return auth_service.get_current_user(credentials.credentials)
+def get_current_user() -> CurrentUser:
+    """Identify who is calling this request."""
+    # TODO: where does the client put its credentials on each request? (look up fastapi.security)
+    # TODO: what should the response be when they are missing vs. invalid?
+    # TODO: this is a dependency — it can itself depend on get_auth_service.
+    raise NotImplementedError("get_current_user")
 
 
 def require_roles(*allowed_roles: UserRole) -> Callable[..., CurrentUser]:
-    """Build a dependency that only lets the given roles through. 403 otherwise.
+    """Build a dependency that only lets the given roles through.
 
-    Usage: current_user: CurrentUser = Depends(require_roles(UserRole.CUSTOMER))
+    Usage in a route: current_user: CurrentUser = Depends(require_roles(UserRole.CUSTOMER))
     """
     def check_role(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
-        if current_user.role not in allowed_roles:
-            raise PermissionDeniedError(
-                f"This operation requires role: {', '.join(role.value for role in allowed_roles)}."
-            )
-        return current_user
+        # TODO: what should happen when the role is not allowed? How is that different from not signed in?
+        raise NotImplementedError("require_roles")
 
     return check_role

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_customer_service, require_roles
-from app.schemas.error_schema import error_responses
 from app.schemas.user_schema import (
     CurrentUser,
     CustomerResponse,
@@ -12,7 +11,8 @@ from app.schemas.user_schema import (
 from app.services.customer_service import CustomerService
 
 # Owner: Person A (customers + auth)
-# Routes use /customers/me so a customer can only ever act on their own account.
+# TODO: these paths are a PROPOSAL — agree on them in the contracts PR review.
+# TODO: document each route's error responses in OpenAPI once you know them (see error_schema.py).
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
 customer_only = require_roles(UserRole.CUSTOMER)
@@ -22,7 +22,6 @@ customer_only = require_roles(UserRole.CUSTOMER)
     "/me",
     response_model=CustomerResponse,
     summary="Get my profile",
-    responses=error_responses(401, 403),
 )
 def get_my_profile(
     current_user: CurrentUser = Depends(customer_only),
@@ -35,7 +34,6 @@ def get_my_profile(
     "/me",
     response_model=CustomerResponse,
     summary="Update my name or email",
-    responses=error_responses(401, 403, 409, 422),
 )
 def update_my_profile(
     payload: CustomerUpdate,
@@ -49,7 +47,6 @@ def update_my_profile(
     "/me/address",
     response_model=CustomerResponse,
     summary="Replace my default delivery address",
-    responses=error_responses(401, 403, 422),
 )
 def update_my_address(
     payload: DeliveryAddressUpdate,
@@ -64,11 +61,9 @@ def update_my_address(
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
     summary="Deactivate my account",
-    responses=error_responses(401, 403),
 )
 def deactivate_my_account(
     current_user: CurrentUser = Depends(customer_only),
     service: CustomerService = Depends(get_customer_service),
 ) -> CustomerResponse:
-    """The account is kept (not deleted) so past orders stay valid, but it can no longer sign in or order."""
     return service.deactivate_customer(current_user.id)

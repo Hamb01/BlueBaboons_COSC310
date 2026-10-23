@@ -12,12 +12,9 @@ class OrderService:
     """Service layer for checkout and orders.
 
     Owner: Person C (checkout + orders).
-    Checkout order of operations (this order is a graded business rule):
-      1. customer_service.get_active_customer      -> valid customer state
-      2. cart_service.validate_for_checkout        -> current prices + availability
-      3. build the order snapshot (names, prices, restaurant name, delivery address)
-      4. repository.create                         -> persist the order
-      5. cart_service.close_cart                   -> ONLY after step 4 succeeded
+    TODO: write out the checkout steps in order before coding. The spec says what must happen
+          and one thing that must NOT happen before the order is saved — which step order satisfies both?
+    TODO: if saving fails halfway, what state are the cart and the order left in?
     """
 
     def __init__(
@@ -33,17 +30,12 @@ class OrderService:
         self.restaurant_service = restaurant_service
 
     def checkout(self, customer_id: str) -> OrderResponse:
-        """Turn the customer's active cart into a saved order (see steps above)."""
+        # TODO: what if the price or availability of an item changed since it was added to the cart?
         raise NotImplementedError("OrderService.checkout")
 
     def get_order(self, order_id: str, current_user: CurrentUser) -> OrderResponse:
-        """Return one order.
-
-        Customers may only see their own orders: raise OrderNotFoundError (not 403)
-        for someone else's, so order IDs cannot be probed. Admins may see any order.
-        """
+        # TODO: who is allowed to see which orders? What status code for someone else's order — and why?
         raise NotImplementedError("OrderService.get_order")
 
     def list_customer_orders(self, customer_id: str) -> List[OrderResponse]:
-        """Return the customer's order history, oldest first."""
         raise NotImplementedError("OrderService.list_customer_orders")

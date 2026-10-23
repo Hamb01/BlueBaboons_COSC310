@@ -12,7 +12,6 @@ from app.api.routes import (
     restaurant_routes,
 )
 from app.core.config import get_settings
-from app.core.exceptions import AuthenticationError, DomainError
 settings = get_settings()
 
 app = FastAPI(
@@ -37,15 +36,9 @@ app.add_middleware(
 )
 
 
-@app.exception_handler(DomainError)
-def handle_domain_error(request: Request, error: DomainError) -> JSONResponse:
-    """Single translation point from domain errors to HTTP responses (body matches ErrorResponse)."""
-    headers = {"WWW-Authenticate": "Bearer"} if isinstance(error, AuthenticationError) else None
-    return JSONResponse(
-        status_code=error.status_code,
-        content={"error": type(error).__name__, "detail": str(error)},
-        headers=headers,
-    )
+# TODO (team): right now every route translates domain errors to HTTP itself with try/except
+# (see restaurant_routes.py). Could one handler here do it for every DomainError instead?
+# (look up FastAPI "exception_handler"). Where would each error's status code come from?
 
 
 @app.exception_handler(NotImplementedError)

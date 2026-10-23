@@ -159,6 +159,7 @@ def login_as() -> Callable[..., CurrentUser]:
         role: UserRole = UserRole.CUSTOMER,
         restaurant_id: Optional[str] = None,
     ) -> CurrentUser:
+        # TODO: update this call once CurrentUser has its fields (it ignores unknown fields until then)
         user = CurrentUser(id = user_id, role = role, restaurant_id = restaurant_id)
         app.dependency_overrides[get_current_user] = lambda: user
         return user

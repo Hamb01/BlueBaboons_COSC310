@@ -14,5 +14,3 @@ __pycache__/
 .vscode/
 .idea/
 .DS_Store
-# Login tokens are created at runtime and must never be committed
-data/Sessions.json

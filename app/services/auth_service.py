@@ -3,37 +3,25 @@ from app.schemas.user_schema import CurrentUser, CustomerRegister, CustomerRespo
 
 
 class AuthService:
-    """Service layer for registration, sign-in, and resolving bearer tokens.
+    """Service layer for registration, sign-in, and identifying the caller of a request.
 
     Owner: Person A (customers + auth).
-    Suggested approach (stdlib only, no new dependencies):
-      - hash passwords with hashlib.pbkdf2_hmac + a random salt (secrets.token_hex)
-      - issue tokens with secrets.token_urlsafe and store them via UserRepository.save_session
+    TODO (design first): which authentication mechanism? (session token, JWT, ...)
+          Can you build it without adding a dependency? How are passwords stored safely?
     """
 
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
     def register_customer(self, payload: CustomerRegister) -> CustomerResponse:
-        """Create an active customer account.
-
-        Raises EmailAlreadyRegisteredError if the email is taken.
-        """
+        # TODO: which business rules apply when registering?
         raise NotImplementedError("AuthService.register_customer")
 
     def login(self, payload: LoginRequest) -> TokenResponse:
-        """Check the email/password and issue a new bearer token.
-
-        Raises AuthenticationError for a wrong email or password (same message for both),
-        and InactiveAccountError for a deactivated account.
-        """
+        # TODO: should "wrong email" and "wrong password" give the same error? Why?
+        # TODO: can a deactivated account sign in?
         raise NotImplementedError("AuthService.login")
 
     def get_current_user(self, token: str) -> CurrentUser:
-        """Resolve a bearer token to the user it belongs to.
-
-        Called by the get_current_user dependency on every protected request.
-        Raises AuthenticationError for an unknown token and InactiveAccountError
-        for a deactivated account.
-        """
+        # TODO: called on every protected request — what makes a token invalid?
         raise NotImplementedError("AuthService.get_current_user")

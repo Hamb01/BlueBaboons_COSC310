@@ -1,4 +1,3 @@
-from app.core.config import get_settings
 from app.repositories.cart_repository import CartRepository
 from app.schemas.cart_schema import CartItemAdd, CartResponse
 from app.services.customer_service import CustomerService
@@ -9,11 +8,8 @@ class CartService:
     """Service layer for the shopping cart.
 
     Owner: Person B (cart).
-    Reads other subsystems only through their services:
-      - customer_service.get_active_customer(...)        -> deactivated customers are rejected
-      - restaurant_service.get_restaurant_details(...)   -> restaurant exists / is open
-      - restaurant_service.get_menu_item(...)            -> item exists, current price, availability
-    Every method returns a CartResponse priced from the *current* menu.
+    Other subsystems are injected as services: use them instead of reading their JSON files.
+    TODO: list every cross-subsystem rule from the M2 spec (section 4) that this service must enforce.
     """
 
     def __init__(
@@ -25,47 +21,26 @@ class CartService:
         self.repository = repository
         self.restaurant_service = restaurant_service
         self.customer_service = customer_service
-        self.settings = get_settings()
 
     def get_cart(self, customer_id: str) -> CartResponse:
-        """Return the customer's active cart, creating an empty one if they have none.
-
-        Each customer has at most one active cart.
-        """
+        # TODO: what if the customer has no cart yet? Can they ever have two active carts?
         raise NotImplementedError("CartService.get_cart")
 
     def add_item(self, customer_id: str, payload: CartItemAdd) -> CartResponse:
-        """Add a menu item (or increase its quantity if it is already in the cart).
-
-        Raises MenuItemNotFoundError, MenuItemUnavailableError, RestaurantClosedError,
-        MixedRestaurantCartError (item from a different restaurant), InvalidQuantityError.
-        """
+        # TODO: what must be checked before an item is allowed into the cart?
         raise NotImplementedError("CartService.add_item")
 
     def update_item_quantity(self, customer_id: str, menu_item_id: str, quantity: int) -> CartResponse:
-        """Set the quantity of an item already in the cart.
-
-        Raises CartItemNotFoundError, InvalidQuantityError.
-        """
         raise NotImplementedError("CartService.update_item_quantity")
 
     def remove_item(self, customer_id: str, menu_item_id: str) -> CartResponse:
-        """Remove an item. Removing the last item clears restaurant_id. Raises CartItemNotFoundError."""
+        # TODO: after removing the last item, can the customer start ordering from a different restaurant?
         raise NotImplementedError("CartService.remove_item")
 
     def clear_cart(self, customer_id: str) -> CartResponse:
-        """Remove every item and clear restaurant_id."""
         raise NotImplementedError("CartService.clear_cart")
 
-    def validate_for_checkout(self, customer_id: str) -> CartResponse:
-        """Revalidate the active cart against current data, for OrderService.checkout.
-
-        Re-reads every menu item (availability + current price) and the restaurant.
-        Raises EmptyCartError, MenuItemNotFoundError, MenuItemUnavailableError, RestaurantClosedError.
-        Must not modify anything.
-        """
-        raise NotImplementedError("CartService.validate_for_checkout")
-
-    def close_cart(self, cart_id: str) -> None:
-        """Mark the cart checked_out. OrderService calls this only AFTER the order is saved."""
-        raise NotImplementedError("CartService.close_cart")
+    # TODO (with Person C): what does checkout need from the cart subsystem?
+    #   - a way to revalidate the cart against the *current* menu?
+    #   - a way to close/clear the cart afterwards — and *when* exactly should that happen?
+    # Agree on those method names and signatures here before either of you implements them.

@@ -9,9 +9,9 @@ class OrderRepository:
     """Repository layer for orders.
 
     Owner: Person C (checkout + orders).
-    Storage: data/Orders.json -> {"o01": {...all OrderResponse fields...}}
-    Orders are append-only in M2: once saved, their items and prices are never edited.
-    IDs use the prefix 'o' (o01, o02, ...) via JsonFileStore.next_id.
+    Storage: data/Orders.json
+    TODO: what does one stored order look like?
+    TODO: should any method ever be allowed to change an order's items or prices after it is saved?
     """
 
     def __init__(self, data_dir: Optional[Path] = None):
@@ -19,13 +19,10 @@ class OrderRepository:
         self.store = JsonFileStore(self.data_dir / "Orders.json")
 
     def create(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assign a new stable ID, save the order, and return it (including the ID)."""
         raise NotImplementedError("OrderRepository.create")
 
     def get_by_id(self, order_id: str) -> Optional[Dict[str, Any]]:
-        """Return the stored order, or None if it does not exist."""
         raise NotImplementedError("OrderRepository.get_by_id")
 
     def list_for_customer(self, customer_id: str) -> List[Dict[str, Any]]:
-        """Return every order placed by this customer, oldest first."""
         raise NotImplementedError("OrderRepository.list_for_customer")
