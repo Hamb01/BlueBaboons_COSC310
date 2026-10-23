@@ -99,3 +99,19 @@ This document records externally assisted content, AI tooling, and design assist
     - I had copilot generate some unit tests, I then reformatted all of them to better fit the coding style present in the other tests in test_menu.py (for continuities sake)
 - **Verification & Ownership:**
   - code was reviewed by team members and all tests passed
+
+## M2 contracts / scaffolding - 2026-10-23
+
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
+- **Scope / Assistance:** Generated the M2 contracts PR scaffolding: Pydantic schemas
+  (`user_schema.py`, `cart_schema.py`, `order_schema.py`, `error_schema.py`), domain error
+  classes with HTTP status codes and the shared error handler in `app/main.py`,
+  `get_current_user` / `require_roles` in `app/api/deps.py`, dependency providers,
+  route definitions with OpenAPI metadata, the `JsonFileStore` persistence helper,
+  repository and service method signatures (bodies intentionally left as
+  `NotImplementedError` for each owner to implement), test fixtures in `tests/conftest.py`,
+  `tests/test_m2_contracts.py`, and `docs/milestones/M2.md`.
+- **Not AI-generated:** All business logic for customers, auth, cart, checkout, and orders
+  is to be written by the owning team member.
+- **Verification:** Full pytest suite passed (103 tests: 54 existing + 49 contract tests).
+  Team review of the contract and ownership verification remain the team's responsibility.

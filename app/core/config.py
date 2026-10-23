@@ -9,6 +9,10 @@ class Settings(BaseModel):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
     data_dir: Path = base_dir / "data"
 
+    # Cart and checkout pricing rules (the backend is the only place totals are calculated)
+    delivery_fee: float = 2.99
+    max_item_quantity: int = 20
+
     def __init__(self, **data):
         super().__init__(**data)
         # Allow overriding data directory or file via environment variables
