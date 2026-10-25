@@ -8,7 +8,31 @@ from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.menu_item import MenuItem
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
 
+#Coding Notes:
 
+#Local file path is defined as a constant that points towards the master JSON
+#Restaurant response is a Pydantic model that inherits from the schemas 
+#defined in restaurant_schema.py. It is used to validate the data returned from the repository layer.
+
+#Payload is a dictionary that contains the data for creating or updating the restaurant or menu item. 
+# The payload is validated against the Pydantic models before being sent to the repository layer.
+
+#The service layer acts as the buisness controller for the application
+#The repository layer  acts as the data access layer
+#Our front end is the presentation layer
+
+
+
+#From top to bottom :
+#list restaurants - returns a list of restaurants based on the search criteria
+#get restaurant details - returns the details of a specific restaurant based on its ID
+#get all restaurants - returns a list of all restaurants
+#create restaurant - creates a new restaurant based on the provided payload
+#update restaurant - updates an existing restaurant based on the provided payload
+#get menu - returns a list of menu items for a specific restaurant based on its ID
+#get menu item - returns the details of a specific menu item for a specific restaurant based on its ID
+#update menu item - updates an existing menu item for a specific restaurant based on the provided payload
+#remove menu item - removes an existing menu item for a specific restaurant based on its ID
 
 #Constants
 

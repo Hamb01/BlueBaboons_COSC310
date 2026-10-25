@@ -10,6 +10,34 @@ from app.schemas.restaurant_schema import (
     RestaurantUpdate
 )
 
+
+
+#Coding Notes:
+#Basic CRUD operations for the restaurant and menu items
+#from top to bottom:
+
+#replace menu item - replaces an existing menu item for the specified restaurant
+#modify menu item - modifies an existing menu item for the specified restaurant
+#add menu item - adds a new menu item to a specific restaurant based on the provided payload
+#list restaurants - returns a list of restaurants based on the search criteria
+#check restaurant status - checks the status of the restaurant by delegating through service and repository layers
+#get menu - returns a list of menu items for a specific restaurant based on its ID
+#get menu item - returns the details of a specific menu item based on its ID and the restaurant ID
+#get restaurant details - returns the details of a specific restaurant based on its ID
+#create restaurant - creates a new restaurant based on the provided payload
+#update restaurant - updates an existing restaurant based on the provided payload
+#remove menu item - removes a specific menu item from a specific restaurant based on its ID and the restaurant ID
+
+
+#Each API endpoint and what they do:
+
+#Get - Retrieves data from the master json
+#put - Updates an existing menu item for a specific restaurant based on the provided payload
+#patch - Modifies an existing menu item for a specific restaurant based on the provided payload
+#post - Creates a new restaurant or menu item based on the provided payload
+#delete - Removes a specific menu item from a specific restaurant based on its ID and the restaurant ID
+
+
 router = APIRouter(tags=["Restaurant"])
 
 
