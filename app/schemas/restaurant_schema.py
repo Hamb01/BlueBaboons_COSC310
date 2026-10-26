@@ -1,6 +1,15 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
+
+#Coding Notes:
+
+#Schema is defined using Pydantic to model data for our application
+#Optional is data fields that are not explicitly required for the schema to be valid.
+#Restaurant Response is a Pydantic model that inherits from the restaurant schema and is used to validate the data returned from the service layer.
+#The rest is pretty straight forward, the schema defines the data structure for the restaurant and menu item entities, including their fields and types. 
+#The RestaurantResponse model includes an example of a valid restaurant object for documentation purposes.
+
 class Restaurant(BaseModel):
     id: str = Field(..., description="Restaurant ID")
     name: str = Field(..., description="Restaurant name")
