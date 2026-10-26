@@ -1,0 +1,17 @@
+[MAIN]
+# Python version the code targets (matches the Docker image).
+py-version=3.12
+
+[FORMAT]
+max-line-length=120
+indent-string="    "
+
+[MESSAGES CONTROL]
+disable=
+    # Pydantic schemas and small services legitimately have few public methods.
+    too-few-public-methods,
+
+[DESIGN]
+# FastAPI routes take query parameters plus injected dependencies.
+max-args=8
+max-positional-arguments=8

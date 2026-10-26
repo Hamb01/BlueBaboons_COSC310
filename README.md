@@ -213,6 +213,17 @@ On macOS/Linux: `.venv/bin/python -m pytest -q`.
 Tests use temporary data and dependency overrides. GitHub Actions installs
 requirements and runs pytest on pushes and pull requests.
 
+Lint with pylint (configured in `.pylintrc`) before opening a pull request:
+
+```bash
+.venv/bin/python -m pylint app
+.venv/bin/python -m pylint tests --disable=redefined-outer-name,missing-function-docstring
+```
+
+CI runs the same commands with a `--fail-under` score, so a pull request cannot
+lower the lint score. Raise the thresholds in `.github/workflows/run_tests.yaml`
+as files are cleaned up; the team goal is 10/10.
+
 For Windows temporary-folder permission errors, use a fresh repository-local
 base directory whose parent already exists:
 
