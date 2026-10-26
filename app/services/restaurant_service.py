@@ -3,9 +3,7 @@ import os
 import time
 from typing import List, Dict, Any, Optional
 
-from app.core.exceptions import MenuItemNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
-from app.schemas.menu_item import MenuItem
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
 
 #Coding Notes:
@@ -29,10 +27,7 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 #get all restaurants - returns a list of all restaurants
 #create restaurant - creates a new restaurant based on the provided payload
 #update restaurant - updates an existing restaurant based on the provided payload
-#get menu - returns a list of menu items for a specific restaurant based on its ID
-#get menu item - returns the details of a specific menu item for a specific restaurant based on its ID
-#update menu item - updates an existing menu item for a specific restaurant based on the provided payload
-#remove menu item - removes an existing menu item for a specific restaurant based on its ID
+#(menu operations live in menu_service.py)
 
 #Constants
 
@@ -120,42 +115,3 @@ class RestaurantService:
     ) -> RestaurantResponse:
         information = self.repository.update_restaurant(restaurant_id, payload)
         return RestaurantResponse.model_validate(information)
-
-    def get_menu(self, restaurant_id: str) -> list[MenuItem]:
-        return [
-            MenuItem.model_validate(item)
-            for item in self.repository.get_menu_data(restaurant_id)
-            if item.get("restaurant_id") == restaurant_id
-        ]
-
-    def get_menu_item(self, restaurant_id: str, item_id: str) -> MenuItem:
-        for item in self.get_menu(restaurant_id):
-            if item.id == item_id:
-                return item
-        raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
-
-    def add_new_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]) -> Dict[str, Any]:
-        """Add a new menu item to the specified restaurant."""
-
-        new_menu_item ={
-            "name": menu_item.get("name"),
-            "description": menu_item.get("description"),
-            "price": float(menu_item.get("price", 0.0)),
-            "availability": menu_item.get("availability", False)
-        }
-
-        self.repository.update_menu_item(restaurant_id, "", new_menu_item, True)
-
-        return new_menu_item
-
-    def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update an existing menu item for the specified restaurant."""
-
-        updated_item = self.repository.update_menu_item(restaurant_id, item_id, updated_data, False)
-
-        if not updated_item:
-            raise ValueError(f"Error 404: Menu item not found.")
-        return updated_item
-
-    def remove_menu_item(self, restaurant_id: str, item_id: str):
-        self.repository.remove_menu_item(restaurant_id, item_id)
