@@ -107,11 +107,14 @@ class RestaurantService:
 
 
     def create_restaurant(self, payload: RestaurantCreate) -> RestaurantResponse:
-        information = self.repository.create_restaurant(payload)
+        information = self.repository.create_restaurant(payload.model_dump())
         return RestaurantResponse.model_validate(information)
 
     def update_restaurant(
         self, restaurant_id: str, payload: RestaurantUpdate
     ) -> RestaurantResponse:
-        information = self.repository.update_restaurant(restaurant_id, payload)
+        # Only send the fields the client actually set, so omitted fields keep their values.
+        information = self.repository.update_restaurant(
+            restaurant_id, payload.model_dump(exclude_unset=True)
+        )
         return RestaurantResponse.model_validate(information)

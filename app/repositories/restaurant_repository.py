@@ -55,11 +55,7 @@ class RestaurantRepository:
     next_num = max(existing_ids) + 1 if existing_ids else 1
     return f"r{next_num:02d}"
 
-  def create_restaurant(self, restaurant_data: dict) -> Dict[str, Any]:
-    #convert to a dict so Pydantic models can be used
-    if hasattr(restaurant_data, "model_dump"):
-      restaurant_data = restaurant_data.model_dump()
-
+  def create_restaurant(self, restaurant_data: Dict[str, Any]) -> Dict[str, Any]:
     restaurant_id = self.generate_restaurant_id()
     restaurant_data["id"] = restaurant_id
 
@@ -68,12 +64,10 @@ class RestaurantRepository:
 
     return restaurant_data
 
-  def update_restaurant(self, restaurant_id: str, update_data: dict) -> Dict[str, Any]:
+  def update_restaurant(self, restaurant_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
     current_data = self.get_restaurant_data(restaurant_id)
 
-    update_dict = update_data.model_dump(exclude_unset = True) if hasattr(update_data,"model_dump") else update_data
-
-    for key, value  in update_dict.items():
+    for key, value  in update_data.items():
       if key == "id":
         continue #Skip attempts to update ID
       current_data[key] = value
