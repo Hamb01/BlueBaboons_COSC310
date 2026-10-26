@@ -13,6 +13,9 @@ from app.api.deps import get_restaurant_repository, get_restaurant_service
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.services.restaurant_service import RestaurantService
 
+from app.repositories.menu_repository import MenuRepository
+from app.services.menu_service import MenuService
+
 # this document contains pytest fixtures,
 # fixtures are functions that can be injected into other tests 
 # they are just setup code so we don't need to redefine this stuff for every indivdual test
@@ -91,3 +94,16 @@ def isolated_restaurant_repo(isolated_data_dir: Path) -> RestaurantRepository:
 @pytest.fixture
 def isolated_restaurant_service(isolated_restaurant_repo: RestaurantRepository) -> RestaurantService:
     return RestaurantService(repository = isolated_restaurant_repo)
+
+
+############################################################################################
+### Config for test_menu.py
+############################################################################################
+
+@pytest.fixture
+def isolated_menu_repo(isolated_restaurant_repo: RestaurantRepository) -> MenuRepository:
+    return MenuRepository(restaurant_repository = isolated_restaurant_repo)
+
+@pytest.fixture
+def isolated_menu_service(isolated_menu_repo: MenuRepository) -> MenuService:
+    return MenuService(repository = isolated_menu_repo)

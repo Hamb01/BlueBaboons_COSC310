@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health_routes, restaurant_routes
+from app.api.routes import health_routes, restaurant_routes, menu_routes
 from app.core.config import get_settings
 settings = get_settings()
 
@@ -31,6 +31,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
+app.include_router(menu_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount("/ui", StaticFiles(directory=Path(__file__).resolve().parent / "frontend", html=True), name="frontend")
