@@ -50,10 +50,11 @@ docker compose -f C:\Users\tubul\BlueBaboons_COSC310\docker-compose.yml down
 docker compose up --build
 ```
 
-The current Compose configuration has no persistent data volume. JSON changes
-survive restarting the same container, but removing/recreating that container
-loses its writable data. Preserve required data before doing so, or configure a
-data volume for long-term Docker persistence.
+Compose mounts the checkout's `data/` folder into the container, so changes made
+through the app are written to `data/*.json` on your machine and survive
+`docker compose down` and rebuilds. Don't commit data changes made while testing;
+undo them with `git checkout data/`. Code is still built into the image, so run
+`docker compose up --build` after changing code or switching branches.
 
 ## Local development
 
