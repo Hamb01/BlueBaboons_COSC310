@@ -15,7 +15,6 @@ from app.schemas.restaurant_schema import (
 #from top to bottom:
 
 #list restaurants - returns a list of restaurants based on the search criteria
-#check restaurant status - checks the status of the restaurant by delegating through service and repository layers
 #get restaurant details - returns the details of a specific restaurant based on its ID
 #create restaurant - creates a new restaurant based on the provided payload
 #update restaurant - updates an existing restaurant based on the provided payload
