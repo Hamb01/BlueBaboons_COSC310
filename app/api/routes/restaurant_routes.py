@@ -44,15 +44,6 @@ def list_restaurants(
 ) -> list[RestaurantResponse]:
     return service.list_restaurants(search, cuisine, location, is_open)
 
-
-@router.get("/restaurant", response_model=RestaurantResponse)
-def check_restaurant_status(
-    service: RestaurantService = Depends(get_restaurant_service)
-) -> RestaurantResponse:
-    """Check restaurant status by delegating through service and repository layers."""
-    return service.get_restaurant_status()
-
-
 @router.get(
     "/restaurants/{restaurant_id}",
     response_model=RestaurantResponse,
