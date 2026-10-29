@@ -1,4 +1,4 @@
-import json
+import json, os, tempfile
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from app.core.exceptions import DomainError, RestaurantNotFoundError, DataPersistenceError
@@ -7,11 +7,30 @@ from app.core.config import get_settings
 class RestaurantRepository:
   """Repository layer responsible for reading restaurant data from storage."""
 
+
+  def check_restaurant_json_persistence(path: str)-> dict:
+    """Checks file persistence of json file"""
+    with open(path, 'r', encoding="utf-8") as file:
+        data = json.load(file)
+    if not data:
+      raise DataPersistenceError("Persistence failed: Dict is empty")
+    return data
+
   def __init__(self, data_dir: Optional[Path] = None):
 
     # Path to the data directory
     self.data_dir = data_dir or get_settings().data_dir
     self.master_file = self.data_dir / "Restaurants.json"
+    self.data_dir.mkdir(parents=True, exist_ok=True)
+
+    if self.master_file.exists():
+      try:
+        self.restaurants = self.check_restaurant_json_persistence("app/data/restaurant_data.json")
+      except json.JSONDecordError:
+        self.restaurants = {}
+    else:
+      self.restaurants = {}
+      self.save_to_file()
 
     self.data_dir.mkdir(parents = True, exist_ok = True)
 
@@ -40,10 +59,16 @@ class RestaurantRepository:
 
 
   def save_to_file(self):
+    #write all contents to a temp file in the same filder
+    fd, temp_path = tempfile.mkstemp(dir=self.data_dir, suffix=".temp")
     try:
-      with open(self.master_file, "w", encoding="utf-8") as file:
+      with os.fdopen(fd, "w", encoding="utf-8") as file:
         json.dump(self.restaurants, file, indent = 4)
+        file.flush()
+        os.fsync(file.fileno()) #make sure the bytes exist on disk
+        os.replace(temp_path, self.master_file)
     except Exception as e:
+      os.unlink(temp_path)
       raise DataPersistenceError(f"Error saving to file: {e}")
 
   def get_all_restaurant(self) -> List[Dict[str, Any]]:

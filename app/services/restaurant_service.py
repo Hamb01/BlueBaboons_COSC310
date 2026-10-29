@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from pydantic import model_validator
 from typing import List, Dict, Any, Optional
 
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -40,10 +41,6 @@ class RestaurantService:
     def __init__(self, repository: RestaurantRepository):
         self.repository = repository
 
-    def get_restaurant_status(self) -> RestaurantResponse:
-        information = self.repository.get_restaurant_data();
-
-        return RestaurantResponse.model_validate(information)
 
     def list_restaurants(
         self,
