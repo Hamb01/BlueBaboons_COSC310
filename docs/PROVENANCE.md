@@ -102,7 +102,8 @@ This document records externally assisted content, AI tooling, and design assist
 
 ## M1 fixes and repo cleanup - 2026-10-26 to 2026-10-29
 
-- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5), directed by Turbileg Uurtsaikh.
+- **Student:** Turbileg Uurtsaikh (prompted the AI, reviewed its output and opened the PRs)
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
 - **Scope / Assistance:**
   - **Menu split (PR #58):** moved menu routes, service and repository code out of the
     restaurant files into `menu_routes.py`, `menu_service.py` and `menu_repository.py`.
