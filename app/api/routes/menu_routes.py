@@ -59,7 +59,11 @@ def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, servi
 def add_menu_item(restaurant_id: str, payload: MenuItemRequest, service: MenuService = Depends(get_menu_service)):
     """Add a menu item to the restaurant in the path (payload.restaurant_id is ignored)."""
     try:
+        # Turn the validated request body into a plain dict. restaurant_id is left out because the
+        # restaurant comes from the URL path (the body field is typed int, so it can't hold "r01").
         item_data = payload.model_dump(exclude={"restaurant_id"})
+        # The service checks the restaurant exists, assigns a unique item id, validates the full
+        # MenuItem before writing, saves it, and returns the saved item as a dict.
         saved_item = service.add_new_menu_item(restaurant_id, item_data)
         return {"message": "Menu item added successfully", "item": saved_item}
     except RestaurantNotFoundError as error:
