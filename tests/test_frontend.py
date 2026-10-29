@@ -9,6 +9,7 @@ def test_frontend_and_assets_are_served(client: TestClient):
     assert 'text/html' in response.headers['content-type']
     assert '<form id="filters"' in response.text
     assert '<form id="restaurant-form"' in response.text
+    assert '<form id="menu-item-form"' in response.text
     assert client.get('/ui/app.js').status_code == 200
     assert client.get('/ui/styles.css').status_code == 200
     assert client.get('/health').status_code == 200
@@ -36,3 +37,18 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     assert client.get(f'/restaurants/{restaurant_id}/menu').json() == []
     reloaded = RestaurantRepository(isolated_data_dir)
     assert reloaded.get_restaurant_data(restaurant_id)['name'] == payload['name']
+
+
+def test_frontend_add_menu_item_flow(client: TestClient, isolated_data_dir):
+    """The add-item form's exact payload creates an item that the menu panel then lists."""
+    form_payload = {'restaurant_id': 0, 'name': 'Fish Taco', 'description': 'Battered fish with slaw',
+                    'price': 8.25, 'availability': False}
+    response = client.post('/restaurant/r01/menu', json=form_payload)
+    assert response.status_code == 201
+    item = response.json()['item']
+
+    menu = client.get('/restaurants/r01/menu').json()
+    assert item in menu
+    assert item['availability'] is False
+    reloaded = RestaurantRepository(isolated_data_dir)
+    assert item in reloaded.get_restaurant_data('r01')['menu']

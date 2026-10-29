@@ -41,12 +41,14 @@ button.secondary { background: white; border-color: #bdc9da; color: #233955; }
 .menu-item button { padding: 5px 9px; font-size: 12px; margin-top: 8px; }
 .item-price { float: right; font-weight: 700; }
 #notice { min-height: 24px; margin: 14px 0; }
-.error, #form-error { color: #aa2839; }
+.error, #form-error, #menu-form-error { color: #aa2839; }
 dialog { width: min(480px, calc(100% - 32px)); border: 1px solid #dce3ed; border-radius: 16px; padding: 26px; color: #15253d; }
 dialog::backdrop { background: #15253d77; }
-#restaurant-form { display: grid; gap: 14px; }
-#restaurant-form .section-heading { margin-bottom: 0; }
-#restaurant-form p { margin: 0; }
+#restaurant-form, #menu-item-form { display: grid; gap: 14px; }
+#restaurant-form .section-heading, #menu-item-form .section-heading { margin-bottom: 0; }
+#restaurant-form p, #menu-item-form p { margin: 0; }
+.menu-heading { margin: 0; }
+.menu-heading button { padding: 6px 12px; font-size: 13px; }
 .checkbox { display: flex; align-items: center; gap: 10px; }
 .checkbox input { width: auto; }
 @media (max-width: 1000px) { .filters { grid-template-columns: 1fr 1fr; } }

@@ -4,7 +4,10 @@ const details = document.querySelector('#details');
 const notice = document.querySelector('#notice');
 const editor = document.querySelector('#editor');
 const restaurantForm = document.querySelector('#restaurant-form');
+const menuEditor = document.querySelector('#menu-editor');
+const menuItemForm = document.querySelector('#menu-item-form');
 let editingId = null;
+let menuRestaurantId = null;
 let listRequest = 0;
 let detailRequest = 0;
 
@@ -101,7 +104,12 @@ async function showRestaurant(id) {
     }
     const menu = element('div');
     menu.append(element('p', 'Loading menu…'));
-    details.replaceChildren(heading, statusBadge(restaurant.isOpen), facts, element('h3', 'Menu'), menu);
+    const menuHeading = element('div', undefined, 'section-heading menu-heading');
+    const addItem = element('button', '+ Add item', 'secondary');
+    addItem.type = 'button';
+    addItem.addEventListener('click', () => openMenuEditor(restaurant));
+    menuHeading.append(element('h3', 'Menu'), addItem);
+    details.replaceChildren(heading, statusBadge(restaurant.isOpen), facts, menuHeading, menu);
     try {
       const items = await request(`${path}/menu`);
       if (currentRequest !== detailRequest) return;
@@ -198,6 +206,60 @@ filters.addEventListener('submit', event => { event.preventDefault(); loadRestau
 filters.addEventListener('reset', () => { setTimeout(loadRestaurants, 0); });
 document.querySelector('#create-restaurant').addEventListener('click', () => openEditor());
 document.querySelector('#close-editor').addEventListener('click', () => editor.close());
+function openMenuEditor(restaurant) {
+  menuRestaurantId = restaurant.id;
+  menuItemForm.reset();
+  document.querySelector('#menu-editor-title').textContent = `Add item to ${restaurant.name}`;
+  document.querySelector('#menu-form-error').textContent = '';
+  menuEditor.showModal();
+}
+
+menuItemForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const formError = document.querySelector('#menu-form-error');
+  const name = menuItemForm.elements.name.value.trim();
+  const description = menuItemForm.elements.description.value.trim();
+  const price = Number(menuItemForm.elements.price.value);
+  if (!name || !description) {
+    formError.textContent = 'Please fill in the name and description.';
+    return;
+  }
+  if (menuItemForm.elements.price.value === '' || !Number.isFinite(price) || price < 0) {
+    formError.textContent = 'Price must be a number of 0 or more.';
+    return;
+  }
+  const save = document.querySelector('#save-menu-item');
+  const close = document.querySelector('#close-menu-editor');
+  save.disabled = true;
+  close.disabled = true;
+  formError.textContent = '';
+  try {
+    // restaurant_id in the body is still a required int on the API (issue #60); the backend
+    // ignores it and uses the restaurant in the URL, so 0 is only a placeholder.
+    await request(`/restaurant/${encodeURIComponent(menuRestaurantId)}/menu`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        restaurant_id: 0, name, description, price,
+        availability: menuItemForm.elements.availability.checked,
+      }),
+    });
+    menuEditor.close();
+    await showRestaurant(menuRestaurantId);
+    notice.className = '';
+    notice.textContent = `Added "${name}" to the menu.`;
+  } catch (error) {
+    formError.textContent = error.message;
+  } finally {
+    save.disabled = false;
+    close.disabled = false;
+  }
+});
+
+document.querySelector('#close-menu-editor').addEventListener('click', () => menuEditor.close());
+menuEditor.addEventListener('cancel', event => {
+  if (document.querySelector('#save-menu-item').disabled) event.preventDefault();
+});
 editor.addEventListener('cancel', event => {
   if (document.querySelector('#save-restaurant').disabled) event.preventDefault();
 });
