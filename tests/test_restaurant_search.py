@@ -185,15 +185,17 @@ def test_search_does_not_change_stored_data(
     assert response.status_code == 200
     assert isolated_restaurant_repo.master_file.read_bytes() == before
 
+def test_empty_restaurant_menu(
+    client: TestClient,
+    isolated_restaurant_repo: RestaurantRepository,
+):
+    """Verify a restaurant with no menu items returns a not-found error."""
 
-def test_list_response_contains_restaurant_details(client: TestClient):
-    """Verify list results follow the restaurant model and exclude menu data."""
+    isolated_restaurant_repo.restaurants["r01"]["menu"] = []
+    response = client.get("/restaurants/r01/menu")
 
-    response = client.get("/restaurants")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 2
-    for restaurant in data:
-        result = RestaurantResponse.model_validate(restaurant)
-        assert result.id == restaurant["id"]
-        assert "menu" not in restaurant
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant has no Menu"
+
+

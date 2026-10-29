@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from app.core.exceptions import MenuItemNotFoundError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 
@@ -24,9 +24,13 @@ class MenuService:
         self.repository = repository
 
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
+        menu_data = self.repository.get_menu_data(restaurant_id)
+        if not menu_data:
+            raise EmptyMenuError("Restaurant has no Menu")
+
         return [
             MenuItem.model_validate(item)
-            for item in self.repository.get_menu_data(restaurant_id)
+            for item in menu_data
             if item.get("restaurant_id") == restaurant_id
         ]
 

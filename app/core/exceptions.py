@@ -14,6 +14,10 @@ class MenuItemNotFoundError(DomainError):
     """Raised when an item does not belong to the requested restaurant."""
 
 
+class EmptyMenuError(DomainError):
+    """Raised when a restaurant has no menu items."""
+
+
 class DataPersistenceError(DomainError):
     """Raised when reading or writing data persistence files encounters an error."""
     pass
