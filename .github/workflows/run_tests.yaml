@@ -22,3 +22,23 @@ jobs:
           pip install -r requirements.txt
       - name: Run Tests
         run: pytest
+
+  lint:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      # Thresholds are the current scores so lint can only improve; raise them toward 10 as files are cleaned up.
+      - name: Pylint app
+        run: pylint app --fail-under=5.0
+      - name: Pylint tests
+        run: pylint tests --disable=redefined-outer-name,missing-function-docstring --fail-under=9.0
