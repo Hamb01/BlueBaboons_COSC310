@@ -36,9 +36,9 @@ class RestaurantUpdate(BaseModel):
 class MenuItemRequest(BaseModel):
     restaurant_id: int = Field(..., description="ID of the restaurant to which the menu item will be added")
     name: str = Field(..., description="Name of the menu item")
-    price: float = Field(..., description="Price of the menu item")
+    price: float = Field(..., ge=0, description="Price of the menu item")
     description: str = Field(..., description="Description of the menu item")
-    category: str = Field(..., description="Category of the menu item")
+    availability: bool = Field(True, description="Whether the item can be ordered (default true)")
 
 class RestaurantResponse(Restaurant): #inherit from Restaurant schema
     model_config = {
