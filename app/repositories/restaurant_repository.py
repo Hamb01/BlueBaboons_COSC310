@@ -8,7 +8,7 @@ class RestaurantRepository:
   """Repository layer responsible for reading restaurant data from storage."""
 
 
-  def check_restaurant_json_persistence(path: str)-> dict:
+  def check_restaurant_json_persistence(self, path: str)-> dict:
     """Checks file persistence of json file"""
     with open(path, 'r', encoding="utf-8") as file:
         data = json.load(file)
@@ -25,7 +25,7 @@ class RestaurantRepository:
 
     if self.master_file.exists():
       try:
-        self.restaurants = self.check_restaurant_json_persistence("app/data/restaurant_data.json")
+        self.restaurants = self.check_restaurant_json_persistence("app/data/Restaurants.json")
       except json.JSONDecodeError:
         self.restaurants = {}
     else:

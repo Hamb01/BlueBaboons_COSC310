@@ -32,7 +32,7 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 
 #Constants
 
-LOCAL_FILE_PATH = "app/data/restaurant_data.json"
+LOCAL_FILE_PATH = "app/data/Restaurants.json"
 
 
 class RestaurantService:
