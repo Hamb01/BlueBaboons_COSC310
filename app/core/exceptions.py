@@ -36,6 +36,10 @@ class MenuItemNotFoundError(DomainError):
         self.details = ""
             
 
+class EmptyMenuError(DomainError):
+    """Raised when a restaurant has no menu items."""
+
+
 class DataPersistenceError(DomainError):
     """Raised when reading or writing data persistence files encounters an error."""
 

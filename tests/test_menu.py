@@ -35,8 +35,8 @@ def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     # Construct the repository after updating the file: it loads data at startup.
     client = request.getfixturevalue("client")
     response = client.get("/restaurants/r01/menu")
-    assert response.status_code == 200
-    assert response.json() == []
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant has no Menu"
     assert client.get("/restaurants/r01/menu/m01").status_code == 404
 
 
@@ -73,8 +73,17 @@ def test_service_rejects_item_from_another_restaurant():
         MenuService(repository).get_menu_item("restaurant", "item")
 
 
-def test_service_add_menu_item_converts_price_and_uses_repository():
+def add_repository_mock():
+    """A Mock repository for add tests: r01 exists with an empty menu and the next id is m06."""
     repository = Mock()
+    repository.get_menu_data.return_value = []
+    repository.generate_menu_item_id.return_value = "m06"
+    repository.add_menu_item.side_effect = lambda restaurant_id, item: item
+    return repository
+
+
+def test_service_add_menu_item_converts_price_and_uses_repository():
+    repository = add_repository_mock()
     service = MenuService(repository)
     menu_item = {
         "name": "Soup",
@@ -83,6 +92,8 @@ def test_service_add_menu_item_converts_price_and_uses_repository():
         "availability": True,
     }
     expected_item = {
+        "id": "m06",
+        "restaurant_id": "r01",
         "name": "Soup",
         "description": "Vegetable soup",
         "price": 5.25,
@@ -92,13 +103,11 @@ def test_service_add_menu_item_converts_price_and_uses_repository():
     result = service.add_new_menu_item("r01", menu_item)
 
     assert result == expected_item
-    repository.update_menu_item.assert_called_once_with(
-        "r01", "", expected_item, True
-    )
+    repository.add_menu_item.assert_called_once_with("r01", expected_item)
 
 
 def test_service_add_menu_item_uses_defaults():
-    repository = Mock()
+    repository = add_repository_mock()
     service = MenuService(repository)
 
     result = service.add_new_menu_item(
@@ -106,38 +115,39 @@ def test_service_add_menu_item_uses_defaults():
     )
 
     assert result["price"] == 0.0
-    assert result["availability"] is False
-    repository.update_menu_item.assert_called_once_with(
-        "r01", "", result, True
-    )
+    assert result["availability"] is True
+    repository.add_menu_item.assert_called_once_with("r01", result)
 
 
-def test_service_update_menu_item_returns_repository_result():
-    expected_item = {
-        "id": "m01",
-        "restaurant_id": "r01",
-        "name": "Soup",
-        "description": "Vegetable soup",
-        "price": 5.25,
-        "availability": True,
-    }
+def test_service_add_invalid_menu_item_never_reaches_repository():
+    repository = add_repository_mock()
+
+    with pytest.raises(ValidationError):
+        MenuService(repository).add_new_menu_item(
+            "r01", {"name": "Soup", "description": "Soup", "price": -1})
+
+    repository.add_menu_item.assert_not_called()
+
+
+SOUP = {"id": "m01", "restaurant_id": "r01", "name": "Soup",
+        "description": "Vegetable soup", "price": 5.25, "availability": True}
+
+
+def test_service_update_menu_item_saves_merged_item():
     repository = Mock()
-    repository.update_menu_item.return_value = expected_item
+    repository.get_menu_data.return_value = [SOUP]
+    repository.update_menu_item.side_effect = lambda restaurant_id, item_id, item: item
     service = MenuService(repository)
 
-    result = service.update_menu_item(
-        "r01", "m01", {"name": "Soup", "price": 5.25}
-    )
+    result = service.update_menu_item("r01", "m01", {"price": 6.5})
 
-    assert result == expected_item
-    repository.update_menu_item.assert_called_once_with(
-        "r01", "m01", {"name": "Soup", "price": 5.25}, False
-    )
+    assert result == {**SOUP, "price": 6.5}
+    repository.update_menu_item.assert_called_once_with("r01", "m01", {**SOUP, "price": 6.5})
 
 
-def test_service_update_menu_item_raises_when_repository_returns_empty_result():
+def test_service_update_missing_item_raises_not_found():
     repository = Mock()
-    repository.update_menu_item.return_value = {}
+    repository.get_menu_data.return_value = [SOUP]
     service = MenuService(repository)
 
     with pytest.raises(MenuItemNotFoundError):
@@ -160,7 +170,8 @@ def test_repository_unknown_restaurant(isolated_menu_repo):
 
 
 def test_generate_menu_id_from_menu_item_dictionaries(isolated_menu_repo):
-    assert isolated_menu_repo.generate_menu_item_id("r01") == "m03"
+    # Seed menus use m01-m05 across both restaurants; ids are global, so the next one is m06.
+    assert isolated_menu_repo.generate_menu_item_id() == "m06"
 
 
 def test_menu_item_rejects_negative_price():

@@ -15,7 +15,6 @@ from app.schemas.restaurant_schema import (
 #from top to bottom:
 
 #list restaurants - returns a list of restaurants based on the search criteria
-#check restaurant status - checks the status of the restaurant by delegating through service and repository layers
 #get restaurant details - returns the details of a specific restaurant based on its ID
 #create restaurant - creates a new restaurant based on the provided payload
 #update restaurant - updates an existing restaurant based on the provided payload
@@ -43,15 +42,6 @@ def list_restaurants(
     service: RestaurantService = Depends(get_restaurant_service),
 ) -> list[RestaurantResponse]:
     return service.list_restaurants(search, cuisine, location, is_open)
-
-
-@router.get("/restaurant", response_model=RestaurantResponse)
-def check_restaurant_status(
-    service: RestaurantService = Depends(get_restaurant_service)
-) -> RestaurantResponse:
-    """Check restaurant status by delegating through service and repository layers."""
-    return service.get_restaurant_status()
-
 
 @router.get(
     "/restaurants/{restaurant_id}",

@@ -19,7 +19,7 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description=(
-        "COSC 310 BILLION VFood-Delivery Application REST API by Team Blue Baboons.\n\n"
+        "COSC 310 VFood-Delivery Application REST API by Team Blue Baboons.\n\n"
         "Foundation setup providing service health verification and OpenAPI documentation."
     ),
     docs_url="/docs",
@@ -51,7 +51,7 @@ def root_overview():
         "app": settings.app_name,
         "version": settings.app_version,
         "documentation": "/docs",
-        "restaurants": "/restaurant",
+        "restaurants": "/restaurants",
         "health_check": "/health"
     }
 

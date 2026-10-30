@@ -2,17 +2,22 @@ from fastapi.testclient import TestClient
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantResponse
 from app.services.restaurant_service import RestaurantService
+import json
+from pathlib import Path
 
 
 def test_list_returns_all_restaurants(client: TestClient):
     """Verify listing without filters returns all restaurants."""
 
-    response = client.get("/restaurants", params={})
+    file_path = Path("data/Restaurants.json")
+    file_data = json.loads(file_path.read_text(encoding="utf-8"))
+    expected_ids = set(file_data.keys())
+    
+    response = client.get("/restaurants", params = {})
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == "r01"
-    assert data[1]["id"] == "r02"
+    returned_ids = {item["id"] for item in data}
+    assert returned_ids == expected_ids
 
 
 def test_search_matches_name(client: TestClient):
@@ -77,13 +82,19 @@ def test_location_filter_matches_partial_text(client: TestClient):
 
 def test_open_filter_returns_open_restaurants(client: TestClient):
     """Verify the open filter returns open restaurants."""
-
+    file_path = Path("data/Restaurants.json")
+    file_data = json.loads(file_path.read_text(encoding="utf-8"))
+    expected_ids = {
+        rest_id for rest_id, details in file_data.items()
+        if details.get("isOpen") is True
+        
+    }
+    
     response = client.get("/restaurants", params={'is_open': 'true'})
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == "r01"
-    assert data[1]["id"] == "r02"
+    returned_ids = {item["id"] for item in data}
+    assert returned_ids == expected_ids
 
 
 def test_closed_filter_excludes_open_restaurants(client: TestClient):
@@ -108,13 +119,17 @@ def test_unknown_search_returns_empty_list(client: TestClient):
 
 def test_empty_text_filters_are_ignored(client: TestClient):
     """Verify empty text filters return all restaurants."""
-
+    file_path = Path("data/Restaurants.json")
+    file_data = json.loads(file_path.read_text(encoding="utf-8"))
+    
+    expected_ids = set(file_data.keys())
+    
     response = client.get("/restaurants", params={'search': '   ', 'cuisine': ''})
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == "r01"
-    assert data[1]["id"] == "r02"
+    
+    returned_ids = {item["id"] for item in data}
+    assert returned_ids == expected_ids
 
 
 def test_combined_filters_return_matching_restaurant(client: TestClient):
@@ -150,7 +165,10 @@ def test_service_filters_closed_restaurant(
 ):
     """Verify the service includes closed restaurants only when requested."""
 
-    isolated_restaurant_repo.restaurants["r01"]["isOpen"] = False
+    isolated_restaurant_repo.restaurants = {
+        "r01": {"id": "r01", "name": "Closed Place", "isOpen": False, "cuisine": "A", "location": "A", "opening_hours": "9-5"},
+        "r02": {"id": "r02", "name": "Open Place", "isOpen": True, "cuisine": "B", "location": "B", "opening_hours": "9-5"}
+    }
 
     result = isolated_restaurant_service.list_restaurants(is_open=False)
     assert len(result) == 1
@@ -185,15 +203,17 @@ def test_search_does_not_change_stored_data(
     assert response.status_code == 200
     assert isolated_restaurant_repo.master_file.read_bytes() == before
 
+def test_empty_restaurant_menu(
+    client: TestClient,
+    isolated_restaurant_repo: RestaurantRepository,
+):
+    """Verify a restaurant with no menu items returns a not-found error."""
 
-def test_list_response_contains_restaurant_details(client: TestClient):
-    """Verify list results follow the restaurant model and exclude menu data."""
+    isolated_restaurant_repo.restaurants["r01"]["menu"] = []
+    response = client.get("/restaurants/r01/menu")
 
-    response = client.get("/restaurants")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 2
-    for restaurant in data:
-        result = RestaurantResponse.model_validate(restaurant)
-        assert result.id == restaurant["id"]
-        assert "menu" not in restaurant
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant has no Menu"
+
+

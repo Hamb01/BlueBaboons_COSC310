@@ -1,4 +1,5 @@
 from typing import List, Dict, Any, Optional
+from app.core.exceptions import MenuItemNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.core.exceptions import MenuItemNotFoundError
 
@@ -48,10 +49,25 @@ class MenuRepository:
 
     restaurant["menu"].append(new_menu_item)
     restaurants[restaurant_id]["menu"] = restaurant["menu"]
+    
+    return new_menu_item
 
     self.restaurant_repository.save_to_file()
+    return item_data
 
-    return new_menu_item
+  def update_menu_item(self, restaurant_id: str, item_id: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Replace the fields of one existing item in place and save it. The item's ids never change."""
+    
+    restaurant_data = self.restaurant_repository.get_restaurant_data(restaurant_id)
+    if "menu" not in restaurant_data or not restaurant_data["menu"]:
+          raise MenuItemNotFoundError("Restaurant has no menu items.")
+        
+    item = self._find_item(restaurant_id, item_id)
+    for key, value in item_data.items():
+      if key not in ("id", "restaurant_id"):
+        item[key] = value
+    self.restaurant_repository.save_to_file()
+    return item
 
   def remove_menu_item(self, restaurant_id: str, item_id: str):
     restaurants = self.restaurant_repository.restaurants
@@ -70,12 +86,19 @@ class MenuRepository:
 
     self.restaurant_repository.save_to_file()
 
-  def generate_menu_item_id(self, restaurant_id: str) -> str:
-    menu = self.restaurant_repository.restaurants[restaurant_id].get("menu", [])
+  def generate_menu_item_id(self) -> str:
+    """Return the next menu item id. Ids are unique across every restaurant, not per restaurant."""
     existing_ids = []
-    for item in menu:
-      item_id = item.get("id", "")
-      if isinstance(item_id, str) and item_id.startswith("m") and item_id[1:].isdigit():
-        existing_ids.append(int(item_id[1:]))
+    for restaurant in self.restaurant_repository.get_all_restaurant():
+      for item in restaurant.get("menu", []):
+        item_id = item.get("id", "")
+        if isinstance(item_id, str) and item_id.startswith("m") and item_id[1:].isdigit():
+          existing_ids.append(int(item_id[1:]))
     next_num = max(existing_ids) + 1 if existing_ids else 1
     return f"m{next_num:02d}"
+
+  def _find_item(self, restaurant_id: str, item_id: str) -> Dict[str, Any]:
+    for item in self.get_menu_data(restaurant_id):
+      if item.get("id") == item_id:
+        return item
+    raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
