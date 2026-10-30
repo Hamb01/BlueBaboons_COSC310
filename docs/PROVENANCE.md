@@ -99,3 +99,34 @@ This document records externally assisted content, AI tooling, and design assist
     - I had copilot generate some unit tests, I then reformatted all of them to better fit the coding style present in the other tests in test_menu.py (for continuities sake)
 - **Verification & Ownership:**
   - code was reviewed by team members and all tests passed
+
+## M1 fixes and repo cleanup - 2026-10-26 to 2026-10-29
+
+- **Student:** Turbileg Uurtsaikh (prompted the AI, reviewed its output and opened the PRs)
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
+- **Scope / Assistance:**
+  - **Menu split (PR #58):** moved menu routes, service and repository code out of the
+    restaurant files into `menu_routes.py`, `menu_service.py` and `menu_repository.py`.
+    Injected the service into `add_menu_item`. `RestaurantService` now passes plain
+    dicts to the repository, fixing a Pylance type error.
+  - **Pylint (PR #59):** added `.pylintrc`, pylint in `requirements.txt` and a CI lint job
+    with `--fail-under` set to the scores at the time.
+  - **Menu write fixes (PR #71, issues #61-#63):** rewrote menu update, add and delete in
+    the repository and service, and mapped domain errors to 404 and validation errors to
+    422 in the routes. Made new menu item ids unique across restaurants. Wrote 28
+    regression tests first (`tests/test_menu_writes.py`) and updated the Mock-based tests
+    in `tests/test_menu.py` to match.
+  - **Docker data volume (PR #72):** mounted `./data` into the container and updated the README.
+  - **Frontend add-item dialog (PR #73):** "+ Add item" button, dialog and form handling in
+    `app/frontend/`, plus a frontend test.
+  - **Planning and analysis:** drafted the M2 sprint plan, a status report of `main`
+    (endpoints, data model, tests, 17 bugs probed with real HTTP requests on a copy of the
+    data, and the M2 requirements checklist), the text of issues #60-#69, and code
+    explanations on request.
+- **Verification & Ownership:**
+  - Claude ran pytest after each change: 54 tests before the fixes, 81 after PR #71,
+    82 after PR #73. Bug symptoms were reproduced before fixing and re-checked afterwards
+    with the same HTTP requests.
+  - The student reviewed each change, tried the add-item dialog in the browser, and
+    confirmed Docker writes reach `data/Restaurants.json`.
+  - Each PR goes through review by a teammate who is not the author before merging.
