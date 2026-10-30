@@ -32,17 +32,9 @@ def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepositor
 
     assert(passing)
 
-def test_get_restaurant_returns_200_and_ok(client: TestClient):
-    """Verify that GET /restaurant returns HTTP 200 with status ok."""
 
-    response = client.get("/restaurant")
-    assert response.status_code == 200
-    data = (response.json())
-    assert data["id"] == "r01"
-    assert data["name"] == "Authentic_Tacos"
 
-def test_restaurant_service_layer(isolated_restaurant_service: RestaurantService):
-    """Test restaurant layer coordinates correctly with repository."""
-    
-    result = isolated_restaurant_service.get_restaurant_status()
-    assert result.id == "r01"
+def test_restaurant_lookup_by_name(client: TestClient):
+    """Looking up a restaurant by name instead of ID returns 404."""
+    response = client.get("/restaurants/Authentic_Tacos")
+    assert response.status_code == 404

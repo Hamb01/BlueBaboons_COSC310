@@ -27,15 +27,11 @@ class RestaurantRepository:
 
 
 
-  def get_restaurant_data(self, id: str = "r01") -> Dict[str, Any]:
-    """Method to return restaurant data. can be fed with either the restaurant name or id"""
+  def get_restaurant_data(self, id: str) -> Dict[str, Any]:
+    """Method to return restaurant data. only fed with restaurant id."""
     if id in self.restaurants:
       return self.restaurants[id]
-
-    for restaurant in self.restaurants.values():
-      if restaurant.get("name") == id:
-        return restaurant
-
+    
     raise RestaurantNotFoundError(f"Restaurant doesn't exist: {id}")
 
 

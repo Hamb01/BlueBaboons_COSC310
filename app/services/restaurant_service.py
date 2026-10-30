@@ -1,6 +1,4 @@
-import json
-import os
-import time
+
 from typing import List, Dict, Any, Optional
 
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -31,19 +29,11 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 
 #Constants
 
-LOCAL_FILE_PATH = "app/data/restaurant_data.json"
-
-
 class RestaurantService:
-    """Service layer coordinating application health and storage verification."""
+    """Service layer coordinates our business logic."""
 
     def __init__(self, repository: RestaurantRepository):
         self.repository = repository
-
-    def get_restaurant_status(self) -> RestaurantResponse:
-        information = self.repository.get_restaurant_data();
-
-        return RestaurantResponse.model_validate(information)
 
     def list_restaurants(
         self,
