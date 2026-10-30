@@ -1,6 +1,8 @@
-
+import json
+import os
+import time
+from pydantic import model_validator
 from typing import List, Dict, Any, Optional
-
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
 
@@ -28,6 +30,9 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 #(menu operations live in menu_service.py)
 
 #Constants
+
+LOCAL_FILE_PATH = "app/data/restaurant_data.json"
+
 
 class RestaurantService:
     """Service layer coordinates our business logic."""
