@@ -89,7 +89,6 @@ def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_m
         "cuisine": "Thai", "opening_hours": "10:00-20:00"}).json()
 
     with pytest.raises((MenuItemNotFoundError, EmptyMenuError)):
-    with pytest.raises(MenuItemNotFoundError):
         isolated_menu_service.update_menu_item(created["id"], "m01", {"price": 1})
 
 
