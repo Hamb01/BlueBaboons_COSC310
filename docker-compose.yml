@@ -8,4 +8,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+    # Keep JSON data on the host so it survives rebuilding/recreating the container.
+    volumes:
+      - ./data:/app/data
     restart: unless-stopped
