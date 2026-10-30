@@ -32,7 +32,7 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 
 #Constants
 
-LOCAL_FILE_PATH = "app/data/Restaurants.json"
+LOCAL_FILE_PATH = "data/Restaurants.json"
 
 
 class RestaurantService:
@@ -40,7 +40,6 @@ class RestaurantService:
 
     def __init__(self, repository: RestaurantRepository):
         self.repository = repository
-
 
     def list_restaurants(
         self,

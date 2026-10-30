@@ -25,7 +25,7 @@ class RestaurantRepository:
 
     if self.master_file.exists():
       try:
-        self.restaurants = self.check_restaurant_json_persistence("app/data/Restaurants.json")
+        self.restaurants = self.check_restaurant_json_persistence("data/Restaurants.json")
       except json.JSONDecodeError:
         self.restaurants = {}
     else:
