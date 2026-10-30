@@ -20,6 +20,9 @@
 
 class DomainError(Exception):
     """Base exception for application domain errors."""
+    def __init__(self):
+        self.message = "Unknown error"
+        self.details = "Exception never identified in exception handler"
     
 
 class RestaurantNotFoundError(DomainError):
@@ -38,11 +41,17 @@ class MenuItemNotFoundError(DomainError):
 
 class EmptyMenuError(DomainError):
     """Raised when a restaurant has no menu items."""
+    def __init__(self, restaurant_id: str, exists: bool = True):
+        self.message = f"Restaurant with id {restaurant_id} has no menu"
+
+        if(exists):
+            self.details = "Menu is empty"
+        else:
+            self.details = "Menu does not exist"
 
 
 class DataPersistenceError(DomainError):
     """Raised when reading or writing data persistence files encounters an error."""
-
     def __init__(self, file_name: str, access_type: str = ""):
         """Allows for us to specify how we were trying to access the file (read or write)"""
         self.message = f"Failed to access file {file_name}"

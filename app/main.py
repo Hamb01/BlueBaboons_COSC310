@@ -11,7 +11,13 @@ from pydantic import ValidationError
 from app.api.routes import health_routes, restaurant_routes, menu_routes
 from app.core.config import get_settings
 from app.schemas.exception_schema import System_Error_Message
-from app.core.exceptions import DomainError, RestaurantNotFoundError, MenuItemNotFoundError, DataPersistenceError 
+from app.core.exceptions import (
+    DomainError, 
+    RestaurantNotFoundError, 
+    MenuItemNotFoundError,
+    EmptyMenuError, 
+    DataPersistenceError
+)
 
 settings = get_settings()
 
@@ -69,6 +75,9 @@ def handle_application_domain_exceptions(request: Request, exception: DomainErro
         exception.status_code = status.HTTP_404_NOT_FOUND
     
     elif isinstance(exception, MenuItemNotFoundError):
+        exception.status_code = status.HTTP_404_NOT_FOUND
+
+    elif isinstance(exception, EmptyMenuError):
         exception.status_code = status.HTTP_404_NOT_FOUND
 
     elif isinstance(exception, DataPersistenceError):
