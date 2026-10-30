@@ -7,6 +7,7 @@ from app.schemas.restaurant_schema import (
     RestaurantCreate,
     RestaurantUpdate
 )
+from app.main import handle_exceptions
 
 
 
