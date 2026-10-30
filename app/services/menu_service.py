@@ -71,6 +71,7 @@ class MenuService:
             current = self.get_menu_item(restaurant_id, item_id)
         except(EmptyMenuError, KeyError, IndexError):
             raise MenuItemNotFoundError("Menu item not found")
+        current = self.get_menu_item(restaurant_id, item_id)
         changes = {key: value for key, value in updated_data.items() if key in EDITABLE_FIELDS}
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
         return self.repository.update_menu_item(restaurant_id, item_id, updated.model_dump())
