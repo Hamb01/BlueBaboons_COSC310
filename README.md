@@ -117,7 +117,6 @@ The current frontend management forms cover restaurant creation and editing.
 | PUT | `/restaurants/{restaurant_id}` | Update restaurant information |
 | GET | `/restaurants/{restaurant_id}/menu` | Restaurant menu |
 | GET | `/restaurants/{restaurant_id}/menu/{item_id}` | Individual menu item |
-| GET | `/restaurant` | Legacy default-restaurant endpoint |
 | POST | `/restaurant/{restaurant_id}/menu` | Registered menu-create route |
 | PUT / PATCH | `/restaurant/{restaurant_id}/menu/{item_id}` | Registered menu-update routes |
 | DELETE | `/restaurants/{restaurant_id}/menu/{menu_item}` | Registered menu-delete route |

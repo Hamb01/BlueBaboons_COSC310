@@ -3,7 +3,6 @@ import os
 import time
 from pydantic import model_validator
 from typing import List, Dict, Any, Optional
-
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
 
@@ -32,11 +31,11 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 
 #Constants
 
-LOCAL_FILE_PATH = "data/Restaurants.json"
+LOCAL_FILE_PATH = "app/data/restaurant_data.json"
 
 
 class RestaurantService:
-    """Service layer coordinating application health and storage verification."""
+    """Service layer coordinates our business logic."""
 
     def __init__(self, repository: RestaurantRepository):
         self.repository = repository
