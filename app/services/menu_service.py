@@ -41,7 +41,7 @@ class MenuService:
         for item in self.get_menu(restaurant_id):
             if item.id == item_id:
                 return item
-        raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+        raise MenuItemNotFoundError(restaurant_id, item_id)
 
     def add_new_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new menu item to the specified restaurant.
@@ -67,10 +67,7 @@ class MenuService:
         Only the fields that were sent change. The merged item is validated before it is saved,
         and an item's id and restaurant_id can never be changed.
         """
-        try:
-            current = self.get_menu_item(restaurant_id, item_id)
-        except(EmptyMenuError, KeyError, IndexError):
-            raise MenuItemNotFoundError("Menu item not found")
+        
         current = self.get_menu_item(restaurant_id, item_id)
         changes = {key: value for key, value in updated_data.items() if key in EDITABLE_FIELDS}
         updated = MenuItem.model_validate({**current.model_dump(), **changes})

@@ -151,8 +151,7 @@ def test_service_update_missing_item_raises_not_found():
     service = MenuService(repository)
 
     with pytest.raises(MenuItemNotFoundError):
-        service.update_menu_item("r01", "missing", {"price": 6})
-    repository.update_menu_item.assert_not_called()
+        service.update_menu_item("r01", "missing", {})
 
 
 def test_service_remove_menu_item_delegates_to_repository():
@@ -179,3 +178,24 @@ def test_menu_item_rejects_negative_price():
     with pytest.raises(ValidationError):
         MenuItem(id="item", restaurant_id="r01", name="Soup",
                  description="Soup", price=-1, availability=True)
+
+
+
+def test_service_update_returns_repository_item():
+    """Updating delegates to the repository without running obsolete file code."""
+    repository = Mock()
+    item = {"id": "m01", "restaurant_id": "r01", "name": "Soup",
+            "description": "Soup", "price": 6, "availability": True}
+    repository.update_menu_item.return_value = item
+    service = MenuService(repository)
+
+    assert service.update_menu_item("r01", "m01", {"price": 6}) == item
+    repository.update_menu_item.assert_called_once_with("r01", "m01", {"price": 6}, False)
+
+
+def test_service_update_missing_item_raises():
+    """An unsuccessful repository update raises the existing not-found error."""
+    repository = Mock()
+    repository.update_menu_item.return_value = {}
+    with pytest.raises(MenuItemNotFoundError):
+        MenuService(repository).update_menu_item("r01", "missing", {"price": 6})

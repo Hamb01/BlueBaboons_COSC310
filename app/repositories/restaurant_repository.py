@@ -51,7 +51,7 @@ class RestaurantRepository:
     if id in self.restaurants:
       return self.restaurants[id]
     
-    raise RestaurantNotFoundError(f"Restaurant doesn't exist: {id}")
+    raise RestaurantNotFoundError(id)
 
 
   def save_to_file(self):
@@ -65,7 +65,7 @@ class RestaurantRepository:
         os.replace(temp_path, self.master_file)
     except Exception as e:
       os.unlink(temp_path)
-      raise DataPersistenceError(f"Error saving to file: {e}")
+      raise DataPersistenceError(file, "write")
 
   def get_all_restaurant(self) -> List[Dict[str, Any]]:
     return list(self.restaurants.values())

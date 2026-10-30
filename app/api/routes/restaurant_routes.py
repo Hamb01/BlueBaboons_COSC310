@@ -53,30 +53,21 @@ def get_restaurant_details(
     service: RestaurantService = Depends(get_restaurant_service),
 ) -> RestaurantResponse:
     """Return restaurant details, or 404 for an unknown restaurant."""
-    try:
-        return service.get_restaurant_details(restaurant_id)
-    except RestaurantNotFoundError as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
+    
+    return service.get_restaurant_details(restaurant_id)
+ 
 
 
 @router.post("/restaurants", status_code = status.HTTP_201_CREATED)
 def create_restaurant(payload: RestaurantCreate, service: RestaurantService =
                       Depends(get_restaurant_service)):
-    try:
-        return service.create_restaurant(payload)
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+    
+    return service.create_restaurant(payload)
+    
 
 @router.put("/restaurants/{restaurant_id}", status_code = status.HTTP_200_OK)
 def update_restaurant(restaurant_id: str, payload: RestaurantUpdate, service:
     RestaurantService = Depends(get_restaurant_service)):
 
-    try:
-        return service.update_restaurant(restaurant_id, payload)
-    except RestaurantNotFoundError as e:
-        raise HTTPException(status_code = 404, detail = str(e))
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+    return service.update_restaurant(restaurant_id, payload)
+   
