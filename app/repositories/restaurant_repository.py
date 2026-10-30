@@ -36,7 +36,7 @@ class RestaurantRepository:
       if restaurant.get("name") == id:
         return restaurant
 
-    raise RestaurantNotFoundError(f"Restaurant doesn't exist: {id}")
+    raise RestaurantNotFoundError(id)
 
 
   def save_to_file(self):
@@ -44,7 +44,7 @@ class RestaurantRepository:
       with open(self.master_file, "w", encoding="utf-8") as file:
         json.dump(self.restaurants, file, indent = 4)
     except Exception as e:
-      raise DataPersistenceError(f"Error saving to file: {e}")
+      raise DataPersistenceError(self.master_file, "write")
 
   def get_all_restaurant(self) -> List[Dict[str, Any]]:
     return list(self.restaurants.values())

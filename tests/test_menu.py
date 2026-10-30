@@ -140,7 +140,7 @@ def test_service_update_menu_item_raises_when_repository_returns_empty_result():
     repository.update_menu_item.return_value = {}
     service = MenuService(repository)
 
-    with pytest.raises(ValueError, match="Menu item not found"):
+    with pytest.raises(MenuItemNotFoundError):
         service.update_menu_item("r01", "missing", {})
 
 
@@ -186,5 +186,5 @@ def test_service_update_missing_item_raises():
     """An unsuccessful repository update raises the existing not-found error."""
     repository = Mock()
     repository.update_menu_item.return_value = {}
-    with pytest.raises(ValueError):
+    with pytest.raises(MenuItemNotFoundError):
         MenuService(repository).update_menu_item("r01", "missing", {"price": 6})

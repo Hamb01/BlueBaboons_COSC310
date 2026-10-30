@@ -1,12 +1,18 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
 from app.api.routes import health_routes, restaurant_routes, menu_routes
 from app.core.config import get_settings
+from app.schemas.exception_schema import System_Error_Message
 from app.core.exceptions import DomainError, RestaurantNotFoundError, MenuItemNotFoundError, DataPersistenceError 
-from schemas.exception_schema import System_Error_Message
+
 settings = get_settings()
 
 app = FastAPI(
@@ -30,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Include routers
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
@@ -50,8 +55,16 @@ def root_overview():
         "health_check": "/health"
     }
 
-def handle_exceptions(self, exception: DomainError) -> System_Error_Message:
+# Create A simple logger to keep track of errors that arise while using the system
+log_file = settings.data_dir / "ErrorLog.log"
+log_file.touch(exist_ok=True)
+logging.basicConfig(filename=log_file)
+error_logger = logging.getLogger(__name__)
+
+@app.exception_handler(DomainError)
+def handle_application_domain_exceptions(request: Request, exception: DomainError) -> JSONResponse:
     """Function to map different Exceptions to their respective HTTP status codes"""
+    
     if isinstance(exception, RestaurantNotFoundError):
         exception.status_code = status.HTTP_404_NOT_FOUND
     
@@ -62,12 +75,29 @@ def handle_exceptions(self, exception: DomainError) -> System_Error_Message:
         exception.status_code = status.HTTP_500_NOT_FOUND
 
     else:
-        exception.status_code = status.HTTP_400_NOT_FOUND
+        exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        exception.details += "Exception is not properly caught"
 
-    message = DomainError.model_validate(exception)
 
-    return message
+
+    error_message = System_Error_Message.model_validate({"status_code" : exception.status_code, 
+                                                         "message" : exception.message, 
+                                                         "details" : exception.details})
     
+    error_logger.exception(f"""Status code: {error_message.status_code}, 
+                                Message: {error_message.message}, 
+                                Details: {error_message.details}""")
 
-# Attach the exception handler method to the app
-app.handle_exceptions = handle_exceptions
+    return JSONResponse(
+        status_code=error_message.status_code,
+        content={"message": error_message.message, "details": error_message.details}
+    )
+
+@app.exception_handler(ValidationError)
+def handle_system_exceptions(request: Request, exception: ValidationError):
+    """Function to handle and log errors arising from botched pydantic model validations"""
+
+    return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content={"message": f"{exception.error_count} errors when validating model", "details": str(exception)}
+        )

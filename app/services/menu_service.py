@@ -34,7 +34,7 @@ class MenuService:
         for item in self.get_menu(restaurant_id):
             if item.id == item_id:
                 return item
-        raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+        raise MenuItemNotFoundError(restaurant_id, item_id)
 
     def add_new_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new menu item to the specified restaurant."""
@@ -56,7 +56,7 @@ class MenuService:
         updated_item = self.repository.update_menu_item(restaurant_id, item_id, updated_data, False)
 
         if not updated_item:
-            raise ValueError(f"Error 404: Menu item not found.")
+            raise MenuItemNotFoundError(restaurant_id, item_id)
         return updated_item
 
     def remove_menu_item(self, restaurant_id: str, item_id: str):

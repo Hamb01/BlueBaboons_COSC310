@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.core.exceptions import MenuItemNotFoundError
 
 class MenuRepository:
   """Repository layer responsible for reading and writing menu items.
@@ -34,16 +35,16 @@ class MenuRepository:
     elif make_new:
       # we are creating a new menu item
       new_menu_item = {
-              "id" : self.generate_menu_item_id(restaurant_id),
-              "restaurant_id" : restaurant_id,
-              "name" : updated_data.get("name", "no item"),
-              "description" : updated_data.get("description", "no description"),
-              "price" : updated_data.get("price", 0.0),
-              "availability" : updated_data.get("availability", False)
-              }
+        "id" : self.generate_menu_item_id(restaurant_id),
+        "restaurant_id" : restaurant_id,
+        "name" : updated_data.get("name", "no item"),
+        "description" : updated_data.get("description", "no description"),
+        "price" : updated_data.get("price", 0.0),
+        "availability" : updated_data.get("availability", False)
+        }
     else:
       # error (no such menu item)
-      return {}
+      raise MenuItemNotFoundError(restaurant_id, item_id)
 
     restaurant["menu"].append(new_menu_item)
     restaurants[restaurant_id]["menu"] = restaurant["menu"]
@@ -56,9 +57,14 @@ class MenuRepository:
     restaurants = self.restaurant_repository.restaurants
     menu = restaurants[restaurant_id].get("menu", [])
 
+    itemNotFound = True
     for item in menu:
       if item["id"] == item_id:
         menu.pop(item)
+        itemNotFound = False
+
+    if itemNotFound:
+      raise MenuItemNotFoundError(restaurant_id, item_id)
 
     restaurants[restaurant_id]["menu"] = menu
 
