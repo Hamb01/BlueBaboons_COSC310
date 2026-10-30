@@ -25,12 +25,18 @@ class MenuRepository:
 
   def update_menu_item(self, restaurant_id: str, item_id: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
     """Replace the fields of one existing item in place and save it. The item's ids never change."""
+    
+    restaurant_data = self.restaurant_repository.get_restaurant_data(restaurant_id)
+    if "menu" not in restaurant_data or not restaurant_data["menu"]:
+          raise MenuItemNotFoundError("Restaurant has no menu items.")
+        
     item = self._find_item(restaurant_id, item_id)
     for key, value in item_data.items():
       if key not in ("id", "restaurant_id"):
         item[key] = value
     self.restaurant_repository.save_to_file()
     return item
+    
 
   def remove_menu_item(self, restaurant_id: str, item_id: str) -> None:
     """Delete one item from a restaurant's menu and save it."""

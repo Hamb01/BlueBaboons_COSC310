@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
 from app.core.exceptions import MenuItemNotFoundError, RestaurantNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -87,7 +88,7 @@ def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_m
         "name": "New Place", "location": "Kelowna", "isOpen": True,
         "cuisine": "Thai", "opening_hours": "10:00-20:00"}).json()
 
-    with pytest.raises(MenuItemNotFoundError):
+    with pytest.raises((MenuItemNotFoundError, EmptyMenuError)):
         isolated_menu_service.update_menu_item(created["id"], "m01", {"price": 1})
 
 

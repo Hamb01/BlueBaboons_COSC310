@@ -3,7 +3,11 @@ from pydantic import ValidationError
 from app.api.deps import get_menu_service
 from app.services.menu_service import MenuService
 from app.schemas.menu_item import MenuItem
-from app.core.exceptions import RestaurantNotFoundError, MenuItemNotFoundError
+from app.core.exceptions import (
+    EmptyMenuError,
+    RestaurantNotFoundError,
+    MenuItemNotFoundError,
+)
 from app.schemas.restaurant_schema import MenuItemRequest
 
 
@@ -78,7 +82,7 @@ def add_menu_item(restaurant_id: str, payload: MenuItemRequest, service: MenuSer
 def get_menu(restaurant_id: str, service: MenuService = Depends(get_menu_service)):
     try:
         return service.get_menu(restaurant_id)
-    except RestaurantNotFoundError as error:
+    except (RestaurantNotFoundError, EmptyMenuError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
 
@@ -86,7 +90,7 @@ def get_menu(restaurant_id: str, service: MenuService = Depends(get_menu_service
 def get_menu_item(restaurant_id: str, item_id: str, service: MenuService = Depends(get_menu_service)):
     try:
         return service.get_menu_item(restaurant_id, item_id)
-    except (RestaurantNotFoundError, MenuItemNotFoundError) as error:
+    except (RestaurantNotFoundError, EmptyMenuError, MenuItemNotFoundError) as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
 

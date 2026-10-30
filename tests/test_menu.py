@@ -35,8 +35,8 @@ def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     # Construct the repository after updating the file: it loads data at startup.
     client = request.getfixturevalue("client")
     response = client.get("/restaurants/r01/menu")
-    assert response.status_code == 200
-    assert response.json() == []
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant has no Menu"
     assert client.get("/restaurants/r01/menu/m01").status_code == 404
 
 

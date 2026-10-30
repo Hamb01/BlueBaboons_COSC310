@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from app.core.exceptions import MenuItemNotFoundError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 
@@ -27,9 +27,13 @@ class MenuService:
         self.repository = repository
 
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
+        menu_data = self.repository.get_menu_data(restaurant_id)
+        if not menu_data:
+            raise EmptyMenuError("Restaurant has no Menu")
+
         return [
             MenuItem.model_validate(item)
-            for item in self.repository.get_menu_data(restaurant_id)
+            for item in menu_data
             if item.get("restaurant_id") == restaurant_id
         ]
 
@@ -63,6 +67,10 @@ class MenuService:
         Only the fields that were sent change. The merged item is validated before it is saved,
         and an item's id and restaurant_id can never be changed.
         """
+        try:
+            current = self.get_menu_item(restaurant_id, item_id)
+        except(EmptyMenuError, KeyError, IndexError):
+            raise MenuItemNotFoundError("Menu item not found")
         current = self.get_menu_item(restaurant_id, item_id)
         changes = {key: value for key, value in updated_data.items() if key in EDITABLE_FIELDS}
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
