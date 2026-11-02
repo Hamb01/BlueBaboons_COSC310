@@ -130,3 +130,16 @@ This document records externally assisted content, AI tooling, and design assist
   - The student reviewed each change, tried the add-item dialog in the browser, and
     confirmed Docker writes reach `data/Restaurants.json`.
   - Each PR goes through review by a teammate who is not the author before merging.
+
+## M1 Fixes and Cleanup- 2026-11-02
+- **Tool / Assistant:** Google Gemini
+- **Scope / Assistance:**
+  - Used for ensuring all tests ran succesfully
+  - Reviewed code to detect exactly what was causing errors
+  - Changed save_to_file method in restaurant repo so it works with windows, as it was formatted to mainly work on Linux.
+  - 
+- **Verification & Ownership:**
+  - Pytests ran succesfully, 81 tests passed.
+  - code was reviewed by team members and all tests passed
+
+
