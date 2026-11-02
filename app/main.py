@@ -81,32 +81,48 @@ def handle_application_domain_exceptions(request: Request, exception: DomainErro
         exception.status_code = status.HTTP_404_NOT_FOUND
 
     elif isinstance(exception, DataPersistenceError):
-        exception.status_code = status.HTTP_500_NOT_FOUND
+        exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
     else:
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        if not exception.message:
+            exception.message = "An unknown error occured"
         exception.details += "Exception is not properly caught"
 
 
-
+    # Validate error message format
     error_message = System_Error_Message.model_validate({"status_code" : exception.status_code, 
                                                          "message" : exception.message, 
                                                          "details" : exception.details})
-    
+
+    # log error
     error_logger.exception(f"""Status code: {error_message.status_code}, 
                                 Message: {error_message.message}, 
                                 Details: {error_message.details}""")
 
     return JSONResponse(
         status_code=error_message.status_code,
-        content={"message": error_message.message, "details": error_message.details}
+        content={
+                "status_code" : error_message.status_code, 
+                "message": error_message.message, 
+                "details": error_message.details
+                }
     )
 
 @app.exception_handler(ValidationError)
 def handle_system_exceptions(request: Request, exception: ValidationError):
     """Function to handle and log errors arising from botched pydantic model validations"""
 
+    # log error
+    error_logger.exception(f"""Status code: "422", 
+                                Message: f"{exception.error_count} errors when validating model", 
+                                Details: {str(exception)}""")
+    
     return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            content={"message": f"{exception.error_count} errors when validating model", "details": str(exception)}
+            content={
+                    "status_code" : status.HTTP_422_UNPROCESSABLE_CONTENT, 
+                    "message": f"{exception.error_count} errors when validating model", 
+                    "details": str(exception)
+                    }
         )

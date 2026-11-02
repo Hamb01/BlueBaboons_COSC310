@@ -29,7 +29,7 @@ class MenuService:
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
         menu_data = self.repository.get_menu_data(restaurant_id)
         if not menu_data:
-            raise EmptyMenuError("Restaurant has no Menu")
+            raise EmptyMenuError(restaurant_id)
 
         return [
             MenuItem.model_validate(item)
