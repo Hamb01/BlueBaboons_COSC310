@@ -136,6 +136,7 @@ This document records externally assisted content, AI tooling, and design assist
 - **Scope / Assistance:** 
   - Copilot altered the code in app.js to work with the new exception handler
   - Copilot sumarized some of the reasons why tests related to the frontend were failing (The problem was two-fold. 1: I had to update the test to reflect the changes we made to how we are using/catching exceptions and 2: there was an instance of EmptyMenuError that was incorrectly initialized)
+  - Copilot read through main.py and reformatted the code to improve our pylint score. It did not alter the code's behaviour
 - **Verification:** 
   - All tests relating to the frontend passed
   - I also went thropugh and reviewed the code, I then had copilot make a summary of what it did and why it works. This Summary matched with my understanding of what was written so it is good

@@ -1,23 +1,24 @@
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
+"""FastAPI app configuration and global exception handling for the Blue Baboons API."""
 
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app.api.routes import health_routes, restaurant_routes, menu_routes
+from app.api.routes import health_routes, menu_routes, restaurant_routes
 from app.core.config import get_settings
-from app.schemas.exception_schema import System_Error_Message
 from app.core.exceptions import (
-    DomainError, 
-    RestaurantNotFoundError, 
+    DataPersistenceError,
+    DomainError,
+    EmptyMenuError,
     MenuItemNotFoundError,
-    EmptyMenuError, 
-    DataPersistenceError
+    RestaurantNotFoundError,
 )
+from app.schemas.exception_schema import System_Error_Message
 
 settings = get_settings()
 
@@ -26,7 +27,8 @@ app = FastAPI(
     version=settings.app_version,
     description=(
         "COSC 310 VFood-Delivery Application REST API by Team Blue Baboons.\n\n"
-        "Foundation setup providing service health verification and OpenAPI documentation."
+        "Foundation setup providing service health verification and OpenAPI "
+        "documentation."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -48,81 +50,88 @@ app.include_router(restaurant_routes.router)
 app.include_router(menu_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
-app.mount("/ui", StaticFiles(directory=Path(__file__).resolve().parent / "frontend", html=True), name="frontend")
+app.mount(
+    "/ui",
+    StaticFiles(directory=Path(__file__).resolve().parent / "frontend", html=True),
+    name="frontend",
+)
+
 
 @app.get("/", tags=["Root"], summary="API Root Overview")
 def root_overview():
-    """Welcome endpoint providing links to documentation and health status."""
+    """Return links to the service documentation and core endpoints."""
     return {
         "app": settings.app_name,
         "version": settings.app_version,
         "documentation": "/docs",
         "restaurants": "/restaurants",
-        "health_check": "/health"
+        "health_check": "/health",
     }
 
-# Create A simple logger to keep track of errors that arise while using the system
-log_file = settings.data_dir / ".." / "docs" / "ErrorLog.log"
+
+# Create a simple logger to keep track of errors that arise while using the system
+log_file = settings.base_dir / "docs" / "ErrorLog.log"
+log_file.parent.mkdir(parents=True, exist_ok=True)
 log_file.touch(exist_ok=True)
-logging.basicConfig(filename=log_file)
+logging.basicConfig(filename=str(log_file))
 error_logger = logging.getLogger(__name__)
 
+
 @app.exception_handler(DomainError)
-def handle_application_domain_exceptions(request: Request, exception: DomainError) -> JSONResponse:
-    """Function to map different Exceptions to their respective HTTP status codes"""
-    
-    if isinstance(exception, RestaurantNotFoundError):
+def handle_application_domain_exceptions(
+    _request: Request, exception: DomainError
+) -> JSONResponse:
+    """Map domain exceptions to their corresponding HTTP responses."""
+    if isinstance(exception, (RestaurantNotFoundError, MenuItemNotFoundError, EmptyMenuError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
-    
-    elif isinstance(exception, MenuItemNotFoundError):
-        exception.status_code = status.HTTP_404_NOT_FOUND
-
-    elif isinstance(exception, EmptyMenuError):
-        exception.status_code = status.HTTP_404_NOT_FOUND
-
     elif isinstance(exception, DataPersistenceError):
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-
     else:
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         if not exception.message:
-            exception.message = "An unknown error occured"
-        exception.details += "Exception is not properly caught"
+            exception.message = "An unknown error occurred"
+        exception.details = f"{exception.details} Exception is not properly caught"
 
+    error_message = System_Error_Message.model_validate(
+        {
+            "status_code": exception.status_code,
+            "message": exception.message,
+            "details": exception.details,
+        }
+    )
 
-    # Validate error message format
-    error_message = System_Error_Message.model_validate({"status_code" : exception.status_code, 
-                                                         "message" : exception.message, 
-                                                         "details" : exception.details})
-
-    # log error
-    error_logger.error(f"""Status code: {error_message.status_code}, 
-                                Message: {error_message.message}, 
-                                Details: {error_message.details}""")
+    error_logger.error(
+        "Status code: %s, Message: %s, Details: %s",
+        error_message.status_code,
+        error_message.message,
+        error_message.details,
+    )
 
     return JSONResponse(
         status_code=error_message.status_code,
         content={
-                "status_code" : error_message.status_code, 
-                "message": error_message.message, 
-                "details": error_message.details
-                }
+            "status_code": error_message.status_code,
+            "message": error_message.message,
+            "details": error_message.details,
+        },
     )
 
-@app.exception_handler(ValidationError)
-def handle_system_exceptions(request: Request, exception: ValidationError):
-    """Function to handle and log errors arising from botched pydantic model validations"""
 
-    # log error
-    error_logger.error(f"""Status code: "422", 
-                                Message: f"{exception.error_count} errors when validating model", 
-                                Details: {str(exception)}""")
-    
+@app.exception_handler(ValidationError)
+def handle_system_exceptions(_request: Request, exception: ValidationError) -> JSONResponse:
+    """Handle request-validation failures for Pydantic models."""
+    error_logger.error(
+        "Status code: %s, Message: %s errors when validating model, Details: %s",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        exception.error_count,
+        str(exception),
+    )
+
     return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            content={
-                    "status_code" : status.HTTP_422_UNPROCESSABLE_CONTENT, 
-                    "message": f"{exception.error_count} errors when validating model", 
-                    "details": str(exception)
-                    }
-        )
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={
+            "status_code": status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "message": f"{exception.error_count} errors when validating model",
+            "details": str(exception),
+        },
+    )
