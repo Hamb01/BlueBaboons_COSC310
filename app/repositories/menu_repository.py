@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
-from app.core.exceptions import MenuItemNotFoundError
+from app.core.exceptions import MenuItemNotFoundError, EmptyMenuError, RestaurantNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
-from app.core.exceptions import MenuItemNotFoundError
+
 
 class MenuRepository:
   """Repository layer responsible for reading and writing menu items.
@@ -17,49 +17,35 @@ class MenuRepository:
     """Read a menu only after resolving its restaurant by stable ID."""
     return self.restaurant_repository.get_restaurant_data(restaurant_id).get("menu", [])
 
-  def update_menu_item(self, restaurant_id: str, item_id: str, updated_data: Dict[str, Any], make_new: bool = False) -> Dict[str, Any]:
+
+
+  def add_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]):
+    """Add a new Menu item onto a specific menu"""
 
     restaurants = self.restaurant_repository.restaurants
-    restaurant = restaurants.get(restaurant_id)
-    existing_menu = restaurant.get("menu", [])
+    restaurant_menu = restaurants.get(restaurant_id).get("menu")
 
-    if existing_menu :
-      # we are updating an existing menu item
-      new_menu_item = {
-        "id" : item_id,
-        "restaurant_id" : restaurant_id,
-        "name" : updated_data.get("name", existing_menu["name"]),
-        "description" : updated_data.get("description", existing_menu["description"]),
-        "price" : updated_data.get("price", existing_menu["price"]),
-        "availability" : updated_data.get("availability", existing_menu["availability"])
-        }
-    elif make_new:
-      # we are creating a new menu item
-      new_menu_item = {
-        "id" : self.generate_menu_item_id(restaurant_id),
-        "restaurant_id" : restaurant_id,
-        "name" : updated_data.get("name", "no item"),
-        "description" : updated_data.get("description", "no description"),
-        "price" : updated_data.get("price", 0.0),
-        "availability" : updated_data.get("availability", False)
-        }
-    else:
-      # error (no such menu item)
-      raise MenuItemNotFoundError(restaurant_id, item_id)
-
-    restaurant["menu"].append(new_menu_item)
-    restaurants[restaurant_id]["menu"] = restaurant["menu"]
+    # Create a menu if one does not exist
+    if not restaurant_menu:
+      restaurant_menu = []
+    
+    restaurant_menu.append(menu_item) 
+    restaurants[restaurant_id]["menu"] = restaurant_menu
 
     self.restaurant_repository.save_to_file()
-    return new_menu_item
-    
+    return menu_item
 
+    
   def update_menu_item(self, restaurant_id: str, item_id: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
     """Replace the fields of one existing item in place and save it. The item's ids never change."""
     
     restaurant_data = self.restaurant_repository.get_restaurant_data(restaurant_id)
-    if "menu" not in restaurant_data or not restaurant_data["menu"]:
-          raise MenuItemNotFoundError("Restaurant has no menu items.")
+
+    if not restaurant_data["menu"]:
+      raise EmptyMenuError(restaurant_id)
+    
+    if "menu" not in restaurant_data:
+      raise MenuItemNotFoundError(restaurant_id, item_id)
         
     item = self._find_item(restaurant_id, item_id)
     for key, value in item_data.items():
@@ -70,12 +56,16 @@ class MenuRepository:
 
   def remove_menu_item(self, restaurant_id: str, item_id: str):
     restaurants = self.restaurant_repository.restaurants
-    menu = restaurants[restaurant_id].get("menu", [])
+    
+    try:
+      menu = restaurants[restaurant_id].get("menu", [])
+    except KeyError as e:
+      raise RestaurantNotFoundError(restaurant_id)
 
     itemNotFound = True
     for item in menu:
       if item["id"] == item_id:
-        menu.pop(item)
+        menu.remove(item)
         itemNotFound = False
 
     if itemNotFound:
@@ -100,4 +90,4 @@ class MenuRepository:
     for item in self.get_menu_data(restaurant_id):
       if item.get("id") == item_id:
         return item
-    raise MenuItemNotFoundError(f"Menu item '{item_id}' was not found.")
+    raise MenuItemNotFoundError(restaurant_id, item_id)

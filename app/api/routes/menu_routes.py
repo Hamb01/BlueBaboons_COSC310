@@ -78,7 +78,7 @@ def get_menu_item(restaurant_id: str, item_id: str, service: MenuService = Depen
     
 
 
-@router.delete("/restaurants/{restaurant_id}/menu/{menu_item}", status_code = status.HTTP_204_NO_CONTENT)
+@router.delete("/restaurants/{restaurant_id}/menu/{menu_item_id}", status_code = status.HTTP_204_NO_CONTENT)
 def remove_menu_item(restaurant_id: str, menu_item_id: str, service: MenuService = Depends(get_menu_service)):
    
     service.remove_menu_item(restaurant_id, menu_item_id)
