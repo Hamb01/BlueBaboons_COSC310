@@ -49,11 +49,10 @@ class MenuRepository:
 
     restaurant["menu"].append(new_menu_item)
     restaurants[restaurant_id]["menu"] = restaurant["menu"]
-    
-    return new_menu_item
 
     self.restaurant_repository.save_to_file()
-    return item_data
+    return new_menu_item
+    
 
   def update_menu_item(self, restaurant_id: str, item_id: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
     """Replace the fields of one existing item in place and save it. The item's ids never change."""
