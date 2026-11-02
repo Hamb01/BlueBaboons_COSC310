@@ -62,7 +62,7 @@ def root_overview():
     }
 
 # Create A simple logger to keep track of errors that arise while using the system
-log_file = settings.data_dir / "ErrorLog.log"
+log_file = settings.data_dir / ".." / "docs" / "ErrorLog.log"
 log_file.touch(exist_ok=True)
 logging.basicConfig(filename=log_file)
 error_logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ def handle_application_domain_exceptions(request: Request, exception: DomainErro
                                                          "details" : exception.details})
 
     # log error
-    error_logger.exception(f"""Status code: {error_message.status_code}, 
+    error_logger.error(f"""Status code: {error_message.status_code}, 
                                 Message: {error_message.message}, 
                                 Details: {error_message.details}""")
 
@@ -114,7 +114,7 @@ def handle_system_exceptions(request: Request, exception: ValidationError):
     """Function to handle and log errors arising from botched pydantic model validations"""
 
     # log error
-    error_logger.exception(f"""Status code: "422", 
+    error_logger.error(f"""Status code: "422", 
                                 Message: f"{exception.error_count} errors when validating model", 
                                 Details: {str(exception)}""")
     
