@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from app.core.exceptions import DomainError, RestaurantNotFoundError, DataPersistenceError
 from app.core.config import get_settings
+import time
 
 class RestaurantRepository:
   """Repository layer responsible for reading restaurant data from storage."""
@@ -62,7 +63,16 @@ class RestaurantRepository:
         json.dump(self.restaurants, file, indent = 4)
         file.flush()
         os.fsync(file.fileno()) #make sure the bytes exist on disk
-        os.replace(temp_path, self.master_file)
+      retries = 3
+      delay = 0.05  # 50ms delay between retries
+      for i in range(retries):
+          try:
+              os.replace(temp_path, self.master_file)
+              break
+          except PermissionError:
+              if i == retries - 1:
+                  raise
+              time.sleep(delay)
     except Exception as e:
       os.unlink(temp_path)
       raise DataPersistenceError(f"Error saving to file: {e}")
