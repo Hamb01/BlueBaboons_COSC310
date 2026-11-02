@@ -1,9 +1,14 @@
-from pathlib import Path
+"""Application configuration and environment-based settings overrides."""
+
 import os
+from pathlib import Path
+
 from pydantic import BaseModel
 
 
 class Settings(BaseModel):
+    """Application configuration values used across the API."""
+
     app_name: str = "Blue Baboons Food Delivery API"
     app_version: str = "0.1.0"
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
@@ -11,12 +16,12 @@ class Settings(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # Allow overriding data directory or file via environment variables
+        # Allow overriding data directory or file via environment variables.
         env_data_dir = os.getenv("DATA_DIR")
         if env_data_dir:
             self.data_dir = Path(env_data_dir)
-            
 
 
 def get_settings() -> Settings:
+    """Return the current application settings instance."""
     return Settings()

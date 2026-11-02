@@ -35,6 +35,9 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     assert client.get(f'/restaurants/{restaurant_id}').json()['name'] == payload['name']
     empty_menu_response = client.get(f'/restaurants/{restaurant_id}/menu')
     assert empty_menu_response.status_code == 404
-    assert empty_menu_response.json()['detail'] == 'Restaurant has no Menu'
+    error = empty_menu_response.json()
+    assert error['status_code'] == empty_menu_response.status_code
+    assert error['message'] == f"Restaurant with id {restaurant_id} has no menu"
+    assert error['details'] == 'Menu is empty'
     reloaded = RestaurantRepository(isolated_data_dir)
     assert reloaded.get_restaurant_data(restaurant_id)['name'] == payload['name']

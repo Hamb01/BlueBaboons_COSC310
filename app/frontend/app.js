@@ -27,8 +27,16 @@ async function request(path, options = {}) {
     let message = `Request failed (${response.status}). Please try again.`;
     try {
       const error = await response.json();
-      if (typeof error.detail === 'string') message = error.detail;
-      if (Array.isArray(error.detail)) {
+      if (typeof error.message === 'string') {
+        const statusCode = Number.isInteger(error.status_code) ? error.status_code : response.status;
+        message = `${error.message} (HTTP ${statusCode})`;
+        if (error.details !== undefined && error.details !== null && error.details !== '') {
+          const errorDetails = typeof error.details === 'string' ? error.details : JSON.stringify(error.details);
+          message += `: ${errorDetails}`;
+        }
+      } else if (typeof error.detail === 'string') {
+        message = error.detail;
+      } else if (Array.isArray(error.detail)) {
         message = error.detail.map(item => `${item.loc.slice(1).join('.')}: ${item.msg}`).join('; ');
       }
     } catch { /* Keep the default message for a non-JSON response. */ }

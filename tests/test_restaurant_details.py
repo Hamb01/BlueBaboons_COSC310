@@ -42,4 +42,4 @@ def test_get_restaurant_details_unknown_id_returns_404(client: TestClient):
     response = client.get("/restaurants/r999")
 
     assert response.status_code == 404
-    assert "r999" in response.json()["detail"]
+    assert "r999" in response.json()["message"]
