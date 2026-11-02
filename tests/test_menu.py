@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from app.core.exceptions import MenuItemNotFoundError, RestaurantNotFoundError
 from app.schemas.menu_item import MenuItem
 from app.services.menu_service import MenuService
+from fastapi.testclient import TestClient
 
 
 @pytest.mark.parametrize("restaurant_id", ["r01", "r02"])
@@ -179,3 +180,24 @@ def test_menu_item_rejects_negative_price():
     with pytest.raises(ValidationError):
         MenuItem(id="item", restaurant_id="r01", name="Soup",
                  description="Soup", price=-1, availability=True)
+
+def test_menu_openapi_documents_404(client: TestClient):
+    """Verify that OpenAPI schema explicitly documents 404 responses for menu routes."""
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+    
+    paths = schema.get("paths", {})
+    found_menu_route = False
+    
+    for path, methods in paths.items():
+        if "/menu/" in path and "{" in path:
+            found_menu_route = True
+            for method_name, details in methods.items():
+                if method_name.lower() in ["get", "put", "patch", "delete"]:
+                    responses = details.get("responses", {})
+                    assert "404" in responses, (
+                        f"OpenAPI spec missing 404 response for menu route {method_name.upper()} {path}"
+                    )
+                    
+    assert found_menu_route, "No parameterized menu routes found in openapi.json"

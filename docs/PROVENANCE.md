@@ -134,7 +134,8 @@ This document records externally assisted content, AI tooling, and design assist
 ## M1 Fixes and Cleanup- 2026-11-02
 - **Tool / Assistant:** Google Gemini
 - **Scope / Assistance:**
-  - Used for ensuring all tests ran succesfully
+  - Used for ensuring all tests ran succesfully, and created a test
+  - test_menu_openai_documents_404 verifies that our schema documents 404 as a response to menu routes. It grabs the schema, finds the menu routes, and ensures that each one is capable of returning 404. Test fails if any menu route doesn't have 404 documentation.
   - Reviewed code to detect exactly what was causing errors
   - Changed save_to_file method in restaurant repo so it works with windows, as it was formatted to mainly work on Linux.
   - 
