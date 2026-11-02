@@ -92,19 +92,13 @@ def handle_application_domain_exceptions(
             exception.message = "An unknown error occurred"
         exception.details = f"{exception.details} Exception is not properly caught"
 
-    try:
-        error_message = System_Error_Message.model_validate(
-            {
-                "status_code": exception.status_code,
-                "message": exception.message,
-                "details": exception.details,
-            }
-        )
-    except Exception:
-        error_message.details = f"Originaly reported as '{error_message.message}'"
-        error_message.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        error_message.message = "Error While Generating Error Message"
-
+    error_message = System_Error_Message.model_validate(
+        {
+            "status_code": exception.status_code,
+            "message": exception.message,
+            "details": exception.details,
+        }
+    )
 
     error_logger.error(
         "Status code: %s, Message: %s, Details: %s",
