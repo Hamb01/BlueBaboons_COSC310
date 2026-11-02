@@ -34,7 +34,7 @@ def validation_detail(error: ValidationError) -> list:
 
 @router.put("/restaurant/{restaurant_id}/menu/{item_id}", status_code=status.HTTP_200_OK,)
 
-def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: MenuService = Depends(get_menu_service)):
+def replace_menu_item(restaurant_id: str, item_id: str, updated_data: dict, service: MenuService = Depends(get_menu_service)):
     """Replace an existing menu item for the specified restaurant."""
     try:
         updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
@@ -47,7 +47,7 @@ def replace_menu_item(restaurant_id: int, item_id: str, updated_data: dict, serv
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
-def modify_menu_item(restaurant_id: int, item_id: str, updated_data: dict, service: MenuService = Depends(get_menu_service)):
+def modify_menu_item(restaurant_id: str, item_id: str, updated_data: dict, service: MenuService = Depends(get_menu_service)):
     """Modify an existing menu item for the specified restaurant."""
     try:
         updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
