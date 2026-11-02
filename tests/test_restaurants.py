@@ -1,5 +1,3 @@
-from pathlib import Path
-from fastapi.testclient import TestClient
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.services.restaurant_service import RestaurantService
 from app.schemas.restaurant_schema import RestaurantCreate
@@ -14,7 +12,7 @@ def test_get_restaurants(isolated_restaurant_repo: RestaurantRepository):
     assert data["id"] == "r01"
     assert data["name"] == "Authentic_Tacos"
     assert isolated_restaurant_repo.get_restaurant_data("r02")["name"] == "Coolio_Sushi"
-    
+
 def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepository):
     """Verify that restaurant files contain all the required info"""
 
@@ -30,13 +28,13 @@ def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepositor
             break
         id += 1
 
-    assert(passing)
+    assert passing
 
 
 
 def test_restaurant_service_layer(isolated_restaurant_service: RestaurantService):
     """Test restaurant layer coordinates correctly with repository."""
-    
+
     result = isolated_restaurant_service.get_restaurant_details("r01")
     assert result.id == "r01"
 
@@ -44,21 +42,21 @@ def test_id_generation_without_records(
     isolated_restaurant_repo: RestaurantRepository,
 ):
     """Verify respository assigns base ID when no records exist."""
-    
+
     isolated_restaurant_repo.restaurants = {}
-    
+
     new_restaurant = RestaurantCreate(
         name = "Test_Restaurant",
         location = "Lake Rd",
         isOpen = True,
         cuisine = "Seafood",
         opening_hours = "09:00-21:00"
-        
+
     )
-    
+
     new_restaurant = isolated_restaurant_repo.create_restaurant(
         new_restaurant.model_dump()
     )
-    
+
     assert new_restaurant["id"] == "r01"
     assert "r01" in isolated_restaurant_repo.restaurants

@@ -6,7 +6,7 @@ from app.services.health_service import HealthService
 
 def test_health_check_returns_200_and_ok(client: TestClient):
     """Verify that GET /health returns HTTP 200 with status ok."""
-    
+
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
@@ -37,7 +37,7 @@ def test_health_repository_missing_dir(tmp_path: Path):
 
 def test_health_service_layer(isolated_health_service: HealthService):
     """Test service layer coordinates correctly with repository."""
-    
+
     result = isolated_health_service.get_health_status()
     assert result.status == "ok"
     assert result.persistence == "connected"

@@ -5,7 +5,6 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
-from app.core.exceptions import MenuItemNotFoundError, RestaurantNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
 
@@ -213,4 +212,3 @@ def test_service_remove_then_get_raises(isolated_menu_service):
     isolated_menu_service.remove_menu_item("r01", "m02")
     with pytest.raises(MenuItemNotFoundError):
         isolated_menu_service.get_menu_item("r01", "m02")
-

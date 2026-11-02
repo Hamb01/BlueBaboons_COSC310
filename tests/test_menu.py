@@ -2,12 +2,12 @@ import json
 from unittest.mock import Mock
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.core.exceptions import MenuItemNotFoundError, RestaurantNotFoundError
 from app.schemas.menu_item import MenuItem
 from app.services.menu_service import MenuService
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.parametrize("restaurant_id", ["r01", "r02"])
@@ -186,10 +186,10 @@ def test_menu_openapi_documents_404(client: TestClient):
     response = client.get("/openapi.json")
     assert response.status_code == 200
     schema = response.json()
-    
+
     paths = schema.get("paths", {})
     found_menu_route = False
-    
+
     for path, methods in paths.items():
         if "/menu/" in path and "{" in path:
             found_menu_route = True
@@ -199,5 +199,5 @@ def test_menu_openapi_documents_404(client: TestClient):
                     assert "404" in responses, (
                         f"OpenAPI spec missing 404 response for menu route {method_name.upper()} {path}"
                     )
-                    
+
     assert found_menu_route, "No parameterized menu routes found in openapi.json"

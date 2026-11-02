@@ -1,9 +1,9 @@
+import json
+from pathlib import Path
 from fastapi.testclient import TestClient
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantResponse
 from app.services.restaurant_service import RestaurantService
-import json
-from pathlib import Path
 
 
 def test_list_returns_all_restaurants(client: TestClient):
@@ -12,7 +12,7 @@ def test_list_returns_all_restaurants(client: TestClient):
     file_path = Path("data/Restaurants.json")
     file_data = json.loads(file_path.read_text(encoding="utf-8"))
     expected_ids = set(file_data.keys())
-    
+
     response = client.get("/restaurants", params = {})
     assert response.status_code == 200
     data = response.json()
@@ -87,9 +87,9 @@ def test_open_filter_returns_open_restaurants(client: TestClient):
     expected_ids = {
         rest_id for rest_id, details in file_data.items()
         if details.get("isOpen") is True
-        
+
     }
-    
+
     response = client.get("/restaurants", params={'is_open': 'true'})
     assert response.status_code == 200
     data = response.json()
@@ -121,13 +121,13 @@ def test_empty_text_filters_are_ignored(client: TestClient):
     """Verify empty text filters return all restaurants."""
     file_path = Path("data/Restaurants.json")
     file_data = json.loads(file_path.read_text(encoding="utf-8"))
-    
+
     expected_ids = set(file_data.keys())
-    
+
     response = client.get("/restaurants", params={'search': '   ', 'cuisine': ''})
     assert response.status_code == 200
     data = response.json()
-    
+
     returned_ids = {item["id"] for item in data}
     assert returned_ids == expected_ids
 
@@ -215,5 +215,3 @@ def test_empty_restaurant_menu(
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Restaurant has no Menu"
-
-
