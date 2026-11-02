@@ -22,6 +22,14 @@
                                 "description": "Chicken tacos with sour cream, onions and salsa", 
                                 "price": 7.99,
                                 "availability": true
+                            },
+                            {
+                                "id": "m06",
+                                "restaurant_id": "r01",
+                                "name": "Veggie Taco",
+                                "description": "Veggie tacos with sour cream, onions and salsa", 
+                                "price": 7.99,
+                                "availability": false
                             }
                         ]
             },
