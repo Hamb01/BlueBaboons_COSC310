@@ -35,7 +35,7 @@
                 "opening_hours": "08:00-21:00",
                 "menu": [
                             {
-                                "id": "m03",
+                                "id": "m01",
                                 "restaurant_id": "r02",
                                 "name": "California Rolls",
                                 "description": "8 rolls with crab and avacado", 
@@ -43,7 +43,7 @@
                                 "availability": true
                             },
                             {
-                                "id": "m04",
+                                "id": "m02",
                                 "restaurant_id": "r02",
                                 "name": "Tuna rolls",
                                 "description": "8 rolls with raw tuna", 
@@ -51,7 +51,7 @@
                                 "availability": true
                             },
                             {
-                                "id": "m05",
+                                "id": "m03",
                                 "restaurant_id": "r02",
                                 "name": "Dynamite rolls",
                                 "description": "coming soon", 

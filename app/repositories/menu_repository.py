@@ -19,11 +19,43 @@ class MenuRepository:
         self.restaurant_repository = restaurant_repository or RestaurantRepository()
 
     def get_menu_data(self, restaurant_id: str) -> List[Dict[str, Any]]:
-        """Read a menu only after resolving its restaurant by stable ID."""
+        """
+        get_menu_data
+        -------------------
+
+        Description:
+            checks that the restaurant has a menu and returns the menu if it exists
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+
+        Returns:
+            List[Dict[str, Any]] -> The menu data from the specified restaurant (menu data stored as a list of menu items)
+
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+        """
         return self.restaurant_repository.get_restaurant_data(restaurant_id).get("menu", [])
 
     def add_menu_item(self, restaurant_id: str, menu_item: Dict[str, Any]):
-        """Add a new menu item to a specific menu."""
+        """
+        add_menu_item
+        -------------------
+
+        Description:
+            creates a new menu item and places it inside the menu for the specified restaurant
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+            menu_item : Dict[str, Any] -> details for the menu item (defined in the menu_item schema)
+
+        Returns:
+            void
+
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+            DataPersistenceError -> There was an error when writing to the JSON file
+        """
         restaurants = self.restaurant_repository.restaurants
         restaurant = restaurants.get(restaurant_id)
         if restaurant is None:
@@ -45,7 +77,27 @@ class MenuRepository:
         item_id: str,
         item_data: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Replace the fields of one existing item in place and save it."""
+        """
+        update_menu_item
+        -------------------
+
+        Description:
+            updates some of the information about a specific menu item
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+            item_id : string -> Unique ID belonging to the specific menu item
+            item_data : Dict[str, Any] -> data field(s) to be updated
+
+        Returns:
+            void
+
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+            EmptyMenuError -> The restaurant's menu contained no items
+            MenuItemNotFoundError -> the specified menu item was not on the menu
+            DataPersistenceError -> There was an error when writing to the JSON file
+        """
         restaurant_data = self.restaurant_repository.get_restaurant_data(restaurant_id)
 
         if not restaurant_data.get("menu"):
@@ -59,7 +111,25 @@ class MenuRepository:
         return item
 
     def remove_menu_item(self, restaurant_id: str, item_id: str):
-        """Delete a menu item from a restaurant's menu list."""
+        """
+        remove_menu_item
+        -------------------
+
+        Description:
+            Deletes a menu item from a restaurant's menu list
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+            item_id : string -> Unique ID belonging to the specific menu item
+
+        Returns:
+            void
+
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+            MenuItemNotFoundError -> the specified menu item was not on the menu
+            DataPersistenceError -> There was an error when writing to the JSON file
+        """
         restaurants = self.restaurant_repository.restaurants
         try:
             menu = restaurants[restaurant_id].get("menu", [])
@@ -79,19 +149,51 @@ class MenuRepository:
         restaurants[restaurant_id]["menu"] = menu
         self.restaurant_repository.save_to_file()
 
-    def generate_menu_item_id(self) -> str:
-        """Return the next menu item id across all restaurants."""
+    def generate_menu_item_id(self, restaurant_id: str) -> str:
+        """
+        generate_menu_item_id
+        -------------------
+
+        Description:
+            Generates an ID for a new menu item
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+
+        Returns:
+            string -> the new ID
+
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+        """
+        
         existing_ids = []
-        for restaurant in self.restaurant_repository.get_all_restaurant():
-            for item in restaurant.get("menu", []):
-                item_id = item.get("id", "")
-                if isinstance(item_id, str) and item_id.startswith("m") and item_id[1:].isdigit():
-                    existing_ids.append(int(item_id[1:]))
+        menu = self.get_menu_data(restaurant_id)
+        for item in menu:
+            item_id = item.get("id", "")
+            if isinstance(item_id, str) and item_id.startswith("m") and item_id[1:].isdigit():
+                existing_ids.append(int(item_id[1:]))
         next_num = max(existing_ids) + 1 if existing_ids else 1
         return f"m{next_num:02d}"
 
     def _find_item(self, restaurant_id: str, item_id: str) -> Dict[str, Any]:
-        """Find a menu item by id within the restaurant menu."""
+        """
+        _find_item
+        -------------------
+
+        Description:
+            Find a menu item by id within the restaurant menu
+
+        Args: 
+            restaurant_id : string -> Unique ID belonging to the specific restaurant
+            item_id : string -> Unique ID belonging to the specific restaurant
+
+        Returns:
+            Dict[str, Any] -> The data related to the specified menu_item
+
+        Raises: 
+            MenuItemNotFoundError -> The restaurant sells no such menu item
+        """
         for item in self.get_menu_data(restaurant_id):
             if item.get("id") == item_id:
                 return item
