@@ -19,7 +19,22 @@ class RestaurantRepository:
     # The repository layer acts as the storage abstraction for restaurant data.
 
     def check_restaurant_json_persistence(self, path: str) -> dict:
-        """Check that the JSON persistence file can be opened and contains data."""
+        """
+            check_restaurant_json_persistence
+            -----------------------------------
+
+            Description:
+                Verifies that our JSON persistence file can be opened and contains data
+
+            Args: 
+                path : string -> path to the persistence file
+
+            Returns:
+                data : dict -> Data stored in the JSON file
+
+            Raises: 
+                DataPersistenceError -> The JSON file contained no data
+        """
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
         if not data:
@@ -41,13 +56,43 @@ class RestaurantRepository:
             self.save_to_file()
 
     def get_restaurant_data(self, restaurant_id: str) -> Dict[str, Any]:
-        """Return restaurant data for the given restaurant id."""
+        """
+            get_restaurant_data
+            -------------------
+
+            Description:
+                reads the data for a restaurant from the persistence layer
+
+            Args: 
+                restaurant_id : string -> Unique ID belonging to the specific restaurant
+
+            Returns:
+                data : Dict[str, Any] -> Data related to the restaurant
+
+            Raises: 
+                RestaurantNotFoundError -> Restaurant is not stored in the restaurants.json file
+        """
         if restaurant_id in self.restaurants:
             return self.restaurants[restaurant_id]
         raise RestaurantNotFoundError(restaurant_id)
 
     def save_to_file(self):
-        """Persist all restaurant data to the master JSON file."""
+        """
+            save_to_file
+            -------------------
+
+            Description:
+                saves our restaurant repository object to the restaurants.JSON file
+
+            Args: 
+                void
+
+            Returns:
+                void
+
+            Raises: 
+                DataPersistenceError -> Error while saving to the file
+        """
         fd, temp_path = tempfile.mkstemp(dir=self.data_dir, suffix=".temp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as file:
@@ -63,11 +108,41 @@ class RestaurantRepository:
             raise DataPersistenceError(str(self.master_file), "write") from exc
 
     def get_all_restaurant(self) -> List[Dict[str, Any]]:
-        """Return all restaurants currently stored."""
+        """
+            get_all_restaurant
+            -------------------
+
+            Description:
+                Retrieves the data for all of the restaurants stored in the system
+
+            Args: 
+                void
+
+            Returns:
+                List[Dict[str, Any]] -> all of the data for all restaurants in the system
+
+            Raises: 
+                none
+        """
         return list(self.restaurants.values())
 
     def generate_restaurant_id(self) -> str:
-        """Return the next unique restaurant id."""
+        """
+            generate_restaurant_id
+            -----------------------
+
+            Description:
+                Generates a unique ID for a new restaunt
+
+            Args: 
+                void
+
+            Returns:
+                string -> the ID for the new restaurant
+
+            Raises: 
+                none
+        """
         existing_ids = [
             int(rest_id[1:])
             for rest_id in self.restaurants.keys()
@@ -77,7 +152,22 @@ class RestaurantRepository:
         return f"r{next_num:02d}"
 
     def create_restaurant(self, restaurant_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a restaurant record and persist it to disk."""
+        """
+            create_restaurant
+            -------------------
+
+            Description:
+                creates a new restaurant and saves it to the persistance layer
+
+            Args: 
+                restaurant_data : Dict[str, Any] -> Details about the new restaurant (defined in restaurant_shemas)
+
+            Returns:
+                Dict[str, Any] -> The data for the restaurant you just created
+
+            Raises: 
+                DataPersistenceError -> There was an error when writing to the JSON file
+        """
         restaurant_id = self.generate_restaurant_id()
         restaurant_data["id"] = restaurant_id
         self.restaurants[restaurant_id] = restaurant_data
@@ -89,7 +179,24 @@ class RestaurantRepository:
         restaurant_id: str,
         update_data: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Update an existing restaurant while preserving its id."""
+        """
+            update_restaurant
+            -------------------
+
+            Description:
+                updates some of the information pertaining to a specific restaurant
+
+            Args: 
+                restaurant_id : string -> Unique ID belonging to the specific restaurant
+                update_data : Dict[str, Any] -> the data field(s) to be updated
+
+            Returns:
+                Dict[str, Any] -> The data for the restaurant you just created
+
+            Raises: 
+                RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
+                DataPersistenceError -> There was an error when writing to the JSON file
+        """
         current_data = self.get_restaurant_data(restaurant_id)
 
         for key, value in update_data.items():
