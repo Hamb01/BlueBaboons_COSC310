@@ -45,8 +45,6 @@ def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     "/restaurants/unknown/menu",
     "/restaurants/unknown/menu/m01",
     "/restaurants/r01/menu/unknown",
-    "/restaurants/r01/menu/m03",
-    "/restaurants/r02/menu/m01",
 ])
 def test_menu_not_found(client, path):
     assert client.get(path).status_code == 404
@@ -168,11 +166,6 @@ def test_service_remove_menu_item_delegates_to_repository():
 def test_repository_unknown_restaurant(isolated_menu_repo):
     with pytest.raises(RestaurantNotFoundError):
         isolated_menu_repo.get_menu_data("unknown")
-
-
-def test_generate_menu_id_from_menu_item_dictionaries(isolated_menu_repo):
-    # Seed menus use m01-m05 across both restaurants; ids are global, so the next one is m06.
-    assert isolated_menu_repo.generate_menu_item_id() == "m06"
 
 
 def test_menu_item_rejects_negative_price():

@@ -31,23 +31,23 @@ class RestaurantService:
         is_open: bool | None = None,
     ) -> list[RestaurantResponse]:
         """
-            list_restaurants
-            -----------------
+        list_restaurants
+        -----------------
 
-            Description:
-                Returns data for all restaurants that match the the provided search criteria (or all restaurants if no search criteria is provided)
-            
-            Args:
-                search   : string (optional) -> Restaurant name, cuisine or location of the restaurant[s] you wish to retrieve
-                cuisine  : string (optional) -> Cuisine type for the restaurants you wish to retrieve
-                location : string (optional) -> Location of the restaurants you wish to retrieve
-                is_open  : string (optional) -> Select if you wish to have restaurants that are closed returned
+        Description:
+            Returns data for all restaurants that match the the provided search criteria (or all restaurants if no search criteria is provided)
+        
+        Args:
+            search   : string (optional) -> Restaurant name, cuisine or location of the restaurant[s] you wish to retrieve
+            cuisine  : string (optional) -> Cuisine type for the restaurants you wish to retrieve
+            location : string (optional) -> Location of the restaurants you wish to retrieve
+            is_open  : string (optional) -> Select if you wish to have restaurants that are closed returned
 
-            Returns:
-                matching_restaurants : List -> All restaurants that match your search parameters
+        Returns:
+            matching_restaurants : List -> All restaurants that match your search parameters
 
-            Raises:
-                none ***BUG : This should have some kind of check to verify the data exists***
+        Raises:
+            none ***BUG : This should have some kind of check to verify the data exists***
         
         """
         if search is None:
@@ -93,62 +93,62 @@ class RestaurantService:
 
     def get_restaurant_details(self, restaurant_id: str) -> RestaurantResponse:
         """
-            get_restaurant_details
-            ------------------------
+        get_restaurant_details
+        ------------------------
 
-            Description:
-                Returns the data pertaining to one specific restaurant
-            
-            Args:
-                restaurant_id : string -> unique ID belonging to the restaurant in question
+        Description:
+            Returns the data pertaining to one specific restaurant
+        
+        Args:
+            restaurant_id : string -> unique ID belonging to the restaurant in question
 
-            Returns:
-                RestaurantResponse -> Data related to the restaurant (documented in the restaurant schemas) 
+        Returns:
+            RestaurantResponse -> Data related to the restaurant (documented in the restaurant schemas) 
 
-            Raises:
-                ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
-                RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
+        Raises:
+            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
         """
         information = self.repository.get_restaurant_data(restaurant_id)
         return RestaurantResponse.model_validate(information)
 
     def get_all_restaurants(self) -> list[RestaurantResponse]:
         """
-            get_all_restaurants
-            -------------------
+        get_all_restaurants
+        -------------------
 
-            Description:
-                returns a list of all restaurants currently stored in the system
+        Description:
+            returns a list of all restaurants currently stored in the system
 
-            Args: 
-                none
+        Args: 
+            none
 
-            Returns:
-                Restaurant_data : List -> List of all restaurants currently stored in the system (each restaurant is stored as a dictionary)
+        Returns:
+            Restaurant_data : List -> List of all restaurants currently stored in the system (each restaurant is stored as a dictionary)
 
-            Raises: 
-                ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+        Raises: 
+            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
         """
         restaurants_data = self.repository.get_all_restaurant()
         return [RestaurantResponse.model_validate(item) for item in restaurants_data]
 
     def create_restaurant(self, payload: RestaurantCreate) -> RestaurantResponse:
         """
-            create_restaurant
-            -------------------
+        create_restaurant
+        -------------------
 
-            Description:
-                Creates a new restaurant and returns the stored version
+        Description:
+            Creates a new restaurant and returns the stored version
 
-            Args: 
-                payload : RestaurantCreate -> Dictionary of all the information required to create a restaurant
+        Args: 
+            payload : RestaurantCreate -> Dictionary of all the information required to create a restaurant
 
-            Returns:
-                RestaurantResponse -> all data pertaining to the restaurant (defined in Restaurant_Schemas)
+        Returns:
+            RestaurantResponse -> all data pertaining to the restaurant (defined in Restaurant_Schemas)
 
-            Raises: 
-                ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
-                DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
+        Raises: 
+            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
         """
         information = self.repository.create_restaurant(payload.model_dump())
         return RestaurantResponse.model_validate(information)
@@ -159,24 +159,24 @@ class RestaurantService:
         payload: RestaurantUpdate,
     ) -> RestaurantResponse:
         """
-            update_restaurant
-            -------------------
+        update_restaurant
+        -------------------
 
-            Description:
-                Update some of the information related to a restaurant.
-                This edits the data without completely replacing the restaurant
+        Description:
+            Update some of the information related to a restaurant.
+            This edits the data without completely replacing the restaurant
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
-                payload : RestaurantUpdate -> the data field(s) to be updated
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
+            payload : RestaurantUpdate -> the data field(s) to be updated
 
-            Returns:
-                RestaurantResponse -> All the data of the updated restaurant
+        Returns:
+            RestaurantResponse -> All the data of the updated restaurant
 
-            Raises: 
-                RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
-                DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
-                ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+        Raises: 
+            RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
+            DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
+            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
         """
         information = self.repository.update_restaurant(
             restaurant_id,

@@ -27,21 +27,21 @@ class MenuService:
 
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
         """
-            get_menu
-            -------------------
+        get_menu
+        -------------------
 
-            Description:
-                Retrives menu data from the specified restaurant
+        Description:
+            Retrives menu data from the specified restaurant
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
 
-            Returns:
-                List of Menu Items -> List of all menu items sold by the restaurant (menu items are stored as a dictionary)
+        Returns:
+            List of Menu Items -> List of all menu items sold by the restaurant (menu items are stored as a dictionary)
 
-            Raises: 
-                ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
-                EmptyMenuError -> The restaurant does not have any items on their menu
+        Raises: 
+            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            EmptyMenuError -> The restaurant does not have any items on their menu
         """
         menu_data = self.repository.get_menu_data(restaurant_id)
         if not menu_data:
@@ -55,23 +55,23 @@ class MenuService:
 
     def get_menu_item(self, restaurant_id: str, item_id: str) -> MenuItem:
         """
-            get_menu_item
-            -------------------
+        get_menu_item
+        -------------------
 
-            Description:
-                Retrieves a single menu item from a specific restaurant
+        Description:
+            Retrieves a single menu item from a specific restaurant
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
-                item_id : string -> unique ID belonging to the menu item in question
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
+            item_id : string -> unique ID belonging to the menu item in question
 
-            Returns:
-                MenuItem -> data related to the specific menu_item (stored as a dictionary)
+        Returns:
+            MenuItem -> data related to the specific menu_item (stored as a dictionary)
 
-            Raises: 
-                RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
-                MenuItemNotFoundError -> The restaurant does not have that
-                EmptyMenuError -> The restaurant does not have any items on their menu
+        Raises: 
+            RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
+            MenuItemNotFoundError -> The restaurant does not have that
+            EmptyMenuError -> The restaurant does not have any items on their menu
         """
         for item in self.get_menu(restaurant_id):
             if item.id == item_id:
@@ -84,27 +84,27 @@ class MenuService:
         menu_item: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-            add_new_menu_item
-            -------------------
+        add_new_menu_item
+        -------------------
 
-            Description:
-                creates a new menu item for a specific restaurant
+        Description:
+            creates a new menu item for a specific restaurant
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
-                menu_item : Dict[str, Any] -> the data pertaining to the menu item that you are creating 
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
+            menu_item : Dict[str, Any] -> the data pertaining to the menu item that you are creating 
 
-            Returns:
-                menu_item : Dict[str, Any] -> the Menu item that you've just created
+        Returns:
+            menu_item : Dict[str, Any] -> the Menu item that you've just created
 
-            Raises: 
-                RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
-                DataPersistenceError -> There was an error while saving you changes to the Json file
+        Raises: 
+            RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
+            DataPersistenceError -> There was an error while saving you changes to the Json file
         """
         self.repository.get_menu_data(restaurant_id)
 
         new_menu_item = MenuItem(
-            id=self.repository.generate_menu_item_id(),
+            id=self.repository.generate_menu_item_id(restaurant_id),
             restaurant_id=restaurant_id,
             name=menu_item.get("name"),
             description=menu_item.get("description"),
@@ -119,26 +119,26 @@ class MenuService:
         item_id: str,
         updated_data: Dict[str, Any],
     ) -> Dict[str, Any]:
-         """
-            update_menu_item
-            -------------------
+        """
+        update_menu_item
+        -------------------
 
-            Description:
-                Update some of the data for an existing menu item for a specific restaurant
+        Description:
+            Update some of the data for an existing menu item for a specific restaurant
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
-                item_id : string -> unique ID belonging to the menu_item in question
-                updated_data : Dict[str, Any] -> the data fields that you wish to update
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
+            item_id : string -> unique ID belonging to the menu_item in question
+            updated_data : Dict[str, Any] -> the data fields that you wish to update
 
-            Returns:
-                menu_item : Dict[str, Any] -> the Menu item that you've just updated
+        Returns:
+            menu_item : Dict[str, Any] -> the Menu item that you've just updated
 
-            Raises: 
-                ValidationError -> Your updated menu_item is in the wrong form
-                RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
-                MenuItemNotFoundError -> The restaurant does not have that
-                DataPersistenceError -> There was an error while saving you changes to the Json file
+        Raises: 
+            ValidationError -> Your updated menu_item is in the wrong form
+            RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
+            MenuItemNotFoundError -> The restaurant does not have that
+            DataPersistenceError -> There was an error while saving you changes to the Json file
         """
         current = self.get_menu_item(restaurant_id, item_id)
         changes = {
@@ -149,22 +149,22 @@ class MenuService:
 
     def remove_menu_item(self, restaurant_id: str, item_id: str) -> None:
         """
-            remove_menu_item
-            -------------------
+        remove_menu_item
+        -------------------
 
-            Description:
-                Deletes a menu item from a restaurants menu
+        Description:
+            Deletes a menu item from a restaurants menu
 
-            Args: 
-                restaurant_id : string -> unique ID belonging to the restaurant in question
-                item_id : string -> unique ID belonging to the menu_item in question
+        Args: 
+            restaurant_id : string -> unique ID belonging to the restaurant in question
+            item_id : string -> unique ID belonging to the menu_item in question
 
-            Returns:
-                void
+        Returns:
+            void
 
-            Raises: 
-                RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
-                MenuItemNotFoundError -> The restaurant does not have that
-                DataPersistenceError -> There was an error while saving you changes to the Json file
+        Raises: 
+            RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
+            MenuItemNotFoundError -> The restaurant does not have that
+            DataPersistenceError -> There was an error while saving you changes to the Json file
         """
         self.repository.remove_menu_item(restaurant_id, item_id)
