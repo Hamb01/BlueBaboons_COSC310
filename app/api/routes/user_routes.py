@@ -1,0 +1,1 @@
+"""API routes for user collection and detail operations """
