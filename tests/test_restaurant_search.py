@@ -214,6 +214,6 @@ def test_empty_restaurant_menu(
 
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Restaurant has no Menu"
+    assert response.json()["message"] == "Restaurant with id r01 has no menu"
 
 

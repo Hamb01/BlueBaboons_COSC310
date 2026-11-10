@@ -1,5 +1,8 @@
+"""Repository layer responsible for checking persistence layer availability."""
+
 from pathlib import Path
 from typing import Optional
+
 from app.core.config import get_settings
 
 
@@ -14,5 +17,5 @@ class HealthRepository:
         exists = self.data_dir.exists()
         return {
             "status": "connected" if exists else "uninitialized",
-            "storage_type": "JSON/CSV"
+            "storage_type": "JSON/CSV",
         }
