@@ -1,7 +1,9 @@
 { 
     "customers" : {
 
-        "UserName1" : {
+        "c01" : {
+            "id" : "c01",
+            "user_name" : "UserName1",
             "name" : "John Doe",
             "email" : "johndoe@yahoo.com",
             "password" : "HardPassword1234",
@@ -15,7 +17,9 @@
             "balance" : 500.25
         },
 
-        "UserName2" : {
+        "c02" : {
+            "id" : "c02",
+            "user_name" : "UserName2",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
             "password" : "superHardPassword1234",
@@ -28,6 +32,10 @@
             "account_is_active" : true,
             "balance" : 501.25
         }
+    },
+
+    "restaurant_owners" : {
+
     },
 
     "restaurant_admins" : {

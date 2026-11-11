@@ -26,6 +26,9 @@ class DomainError(Exception):
         self.message = "Unknown error"
         self.details = "Exception never identified in exception handler"
 
+###########################################################################################################################################
+## Restaurant and menu errors
+###########################################################################################################################################
 
 class RestaurantNotFoundError(DomainError):
     """Raised when a requested restaurant does not exist."""
@@ -59,6 +62,9 @@ class EmptyMenuError(DomainError):
         else:
             self.details = "Menu does not exist"
 
+###########################################################################################################################################
+## Persistence Layer Errors
+###########################################################################################################################################
 
 class DataPersistenceError(DomainError):
     """Raised when reading or writing persistence files encounters an error."""
@@ -72,17 +78,25 @@ class DataPersistenceError(DomainError):
         else:
             self.details = ""
 
+class BadDataInPersistenceLayerError(DomainError):
+    """Raised when data that already exists in the persistence layer is found to be in the wrong form"""
+
+    def __init__(self, file_name: str, additional_details: str = ""):
+        super().__init__()
+        self.message = f"File {file_name} contains errors"
+        self.details = additional_details
+
+###########################################################################################################################################
+## Authentification and authorization errors
+###########################################################################################################################################
+
 class UserAuthentificationError(DomainError):
     """Raised when there was an error when authenticating the user"""
 
-    def __init__(self, user_name_exists: bool):
+    def __init__(self):
         super().__init__()
         self.message = "User Authentification Failed"
-
-        if(user_name_exists):
-            self.details = "Incorrect Password"
-        else:
-            self.details = "Incorrect Username"
+        self.details = "Incorrect username or password"
 
 class UserNotAuthorizedError(DomainError):
     """Raised when a User tries to use a feature that they are not allowed to"""
@@ -93,3 +107,25 @@ class UserNotAuthorizedError(DomainError):
 
         if(forbidden_action):
             self.details = f"You do not have permission to use {forbidden_action}"
+
+class UserNotFoundError(DomainError):
+    """Raised when a user cannot be found in the system"""
+
+    def __init__(self, username : str):
+        super().__init__()
+        self.message = f"No user with username {username} exists"
+
+class AccountNotActiveError(DomainError):
+    """Raised when a user cannot be found in the system"""
+
+    def __init__(self, reason_for_deactivation : str):
+        super().__init__()
+        self.message = "Your account has been deactivated"
+        self.details = f"Reason for deactivation: {reason_for_deactivation}"
+
+class TokenBelongsToUnknownUserError(DomainError):
+    """Raised when a JWT belongs to a user that does not exist"""
+
+    def __init__(self):
+        super().__init__()
+        self.message = "Token belongs to an unknown user"

@@ -1,5 +1,6 @@
 """Schemas for all types of users"""
 
+import enum
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -7,10 +8,13 @@ from pydantic import BaseModel, Field
 class User(BaseModel):
     """Base user model with the fields persisted for a user."""
 
+    id: str = Field(..., description="unique Id for the user")
+    username: str = Field(..., description="username for the account")
     name: str = Field(..., description="First and Last name of the user")
     email: str = Field(..., description="Email that the user used while setting up account")
     password: str = Field(..., description="Password used by the user to sign in")
     account_is_active: bool = Field(..., description="boolean to reflect if the account is currently allowed to interact with the system")
+    reason_for_deactivation: Optional[str] = Field(..., description="Brief explanation of why the users access to the system was revoked")
 
 
 class Customer(User):
@@ -25,8 +29,13 @@ class Customer(User):
     order_history: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all previous orders made by this customer")
     cart: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all items currently in the cart")
 
+class RestaurantOwner(User):
+    """Class to hold the account information of people who create, edit and delete restaurants"""
+
+    owned_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they own")
+
 class RestaurantAdmin(User):
-    """Class to hold the account information of people who can create, edit and delete restaurants and their information"""
+    """Class to hold the account information of people who can edit restaurant information"""
 
     managed_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they have permission to edit")
 
@@ -35,3 +44,22 @@ class Developer(User):
 
 class SupportStaff(User):
     """Class to hold the account information for the workers who will actually make and deliver orders"""
+
+class UserLogin(BaseModel):
+    """Pydantic model to define the request body for logging into an account"""
+
+    username: str = Field(..., description="Unique user name associated with the user")
+    password: int | float | str = Field(..., description="Password associated with the user") # allowing many types because we will ensure it matches later
+
+class AccountStatusAndRole(enum):
+    """Enumeration to capture the current status of a persons account as well as their current role"""
+    ACTIVE_CUSTOMER = 1
+    DEACTIVATED_CUSTOMER = 2
+    ACTIVE_RESTAURANT_OWNER = 3
+    DEACTIVATED_RESTAURANT_OWNER = 4
+    ACTIVE_RESTARUTANT_ADMIN = 5
+    DEACTIVATED_RESTAURANT_ADMIN = 6
+    ACTIVE_DEVELOPER = 7
+    DEACTIVATED_DEVELLOPER = 8
+    ACTIVE_SUPPORT_STAFF = 9
+    DEACTIVATED_SUPPORT_STAFF = 10
