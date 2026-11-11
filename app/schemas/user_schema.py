@@ -1,6 +1,6 @@
 """Schemas for all types of users"""
 
-from typing import Dict, List, str, Any, Optional
+from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 
 
