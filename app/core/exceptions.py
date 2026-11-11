@@ -71,3 +71,25 @@ class DataPersistenceError(DomainError):
             self.details = f"{access_type} failed"
         else:
             self.details = ""
+
+class UserAuthentificationError(DomainError):
+    """Raised when there was an error when authenticating the user"""
+
+    def __init__(self, user_name_exists: bool):
+        super().__init__()
+        self.message = "User Authentification Failed"
+
+        if(user_name_exists):
+            self.details = "Incorrect Password"
+        else:
+            self.details = "Incorrect Username"
+
+class UserNotAuthorizedError(DomainError):
+    """Raised when a User tries to use a feature that they are not allowed to"""
+
+    def __init__(self, forbidden_action: str = ""):
+        super().__init__()
+        self.message = "User is not Authorized"
+
+        if(forbidden_action):
+            self.details = f"You do not have permission to use {forbidden_action}"
