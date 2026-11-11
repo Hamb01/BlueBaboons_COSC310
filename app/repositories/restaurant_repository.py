@@ -99,7 +99,7 @@ class RestaurantRepository:
                 json.dump(self.restaurants, file, indent=4)
                 file.flush()
                 os.fsync(file.fileno())
-                os.replace(temp_path, self.master_file)
+            os.replace(temp_path, self.master_file)
         except (OSError, TypeError, ValueError) as exc:
             try:
                 os.unlink(temp_path)
