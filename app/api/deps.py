@@ -5,9 +5,12 @@ from fastapi import Depends
 from app.repositories.health_repository import HealthRepository
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.repositories.user_repository import UserRepository
 from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
 from app.services.restaurant_service import RestaurantService
+from app.services.user_service import UserService
+
 
 
 def get_health_repository() -> HealthRepository:
@@ -46,3 +49,14 @@ def get_menu_service(
 ) -> MenuService:
     """Provide a menu service backed by the repository dependency."""
     return MenuService(repository=repository)
+
+def get_user_repository() -> UserRepository:
+    """Provide a menu repository that shares the request restaurant repository."""
+    return UserRepository
+
+
+def get_user_service(
+    repository: UserRepository = Depends(get_user_repository),
+) -> UserService:
+    """Provide a menu service backed by the repository dependency."""
+    return UserService(repository=repository)

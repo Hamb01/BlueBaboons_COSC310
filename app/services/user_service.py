@@ -1,1 +1,6 @@
-"""Service Layer containing all business logic relating to the users of the system"""
+
+
+class UserService :
+    """Service layer containing business logic relating to the users of the system"""
+
+    
