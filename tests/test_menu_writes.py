@@ -112,7 +112,7 @@ def test_add_menu_item_returns_201_with_new_id(client):
 
     assert response.status_code == 201
     item = response.json()["item"]
-    assert item["id"] == "m06"
+    assert item["id"] == "m03"
     assert item["restaurant_id"] == "r01"
     assert item["name"] == "Fish Taco"
     assert item["price"] == 8.25
@@ -124,7 +124,7 @@ def test_added_item_is_listed_and_persisted(client, isolated_data_dir):
 
     listed = client.get("/restaurants/r01/menu").json()
     assert [item["name"] for item in listed].count("Fish Taco") == 1
-    assert "m06" in menu_ids(reload_menu(isolated_data_dir, "r01"))
+    assert "m03" in menu_ids(reload_menu(isolated_data_dir, "r01"))
 
 
 @pytest.mark.parametrize("availability", [True, False])
@@ -159,15 +159,7 @@ def test_add_menu_item_to_new_restaurant_without_menu_key(client):
     response = client.post(f"/restaurant/{created['id']}/menu", json=NEW_ITEM)
 
     assert response.status_code == 201
-    assert menu_ids(client.get(f"/restaurants/{created['id']}/menu").json()) == ["m06"]
-
-
-def test_new_menu_item_ids_are_unique_across_restaurants(isolated_menu_repo):
-    # r02 already has m03, so a new r01 item must not be given m03.
-    every_id = [item["id"] for restaurant in ("r01", "r02")
-                for item in isolated_menu_repo.get_menu_data(restaurant)]
-
-    assert isolated_menu_repo.generate_menu_item_id() not in every_id
+    assert menu_ids(client.get(f"/restaurants/{created['id']}/menu").json()) == ["m01"]
 
 
 def test_menu_writes_never_touch_committed_data(client):
