@@ -27,16 +27,16 @@ from app.services.menu_service import MenuService
 router = APIRouter(tags=["Menu"])
 
 
+def validation_detail(error: ValidationError) -> list:
+    """Shape a service-level ValidationError like FastAPI's own 422 response."""
+    return error.errors(include_url=False, include_context=False, include_input=False)
+
+
 @router.put(
-    "/restaurant/{restaurant_id}/menu/{item_id}",
-    status_code=status.HTTP_200_OK,
-)
-def replace_menu_item(
-    restaurant_id: int,
-    item_id: str,
-    updated_data: dict,
-    service: MenuService = Depends(get_menu_service),
-):
+    "/restaurant/{restaurant_id}/menu/{item_id}", 
+    status_code=status.HTTP_200_OK,)
+
+def replace_menu_item(restaurant_id: str, item_id: str, updated_data: dict, service: MenuService = Depends(get_menu_service)):
     """Replace an existing menu item for the specified restaurant."""
     updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
     return {"message": "Menu item updated successfully", "item": updated_item}
@@ -44,11 +44,10 @@ def replace_menu_item(
 
 @router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
 def modify_menu_item(
-    restaurant_id: int,
-    item_id: str,
-    updated_data: dict,
-    service: MenuService = Depends(get_menu_service),
-):
+    restaurant_id: str, 
+    item_id: str, 
+    updated_data: dict, 
+    service: MenuService = Depends(get_menu_service)):
     """Modify an existing menu item for the specified restaurant."""
     updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
     return {"message": "Menu item updated successfully", "item": updated_item}

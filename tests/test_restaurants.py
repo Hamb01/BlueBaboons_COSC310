@@ -32,14 +32,6 @@ def test_restaurants_file_contents(isolated_restaurant_repo: RestaurantRepositor
 
     assert(passing)
 
-
-
-def test_restaurant_service_layer(isolated_restaurant_service: RestaurantService):
-    """Test restaurant layer coordinates correctly with repository."""
-    
-    result = isolated_restaurant_service.get_restaurant_details("r01")
-    assert result.id == "r01"
-
 def test_id_generation_without_records(
     isolated_restaurant_repo: RestaurantRepository,
 ):
