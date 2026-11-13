@@ -72,32 +72,26 @@ class UserRepository :
 
         Raises: 
             UserNotFoundError -> No such user exists in our system
+            BadDataInPersistenceLayerError -> the data stored in the persistence layer is incorrect
         """
 
         try:
-            for id, data in self.users["customers"].items():
-                if username == self.users["customers"][id]["user_name"]:
-                    userdata = Customer.model_validate(data)
-                    return userdata
-
-            for id, data in self.users["restaurant_owners"].items():
-                if username == self.users["restaurant_owners"][id]["user_name"]:
-                    userdata = RestaurantOwner.model_validate(data)
-                    return userdata
-
-            for id, data in self.users["restaurant_admins"].items():
-                if username == self.users["restaurant_admins"][id]["user_name"]:
-                    userdata = RestaurantAdmin.model_validate(data)
-                    return userdata
-
-            for id, data in self.users["developers"].items():
-                if username == self.users["developers"][id]["user_name"]:
-                    userdata = Developer.model_validate(data)
-                    return userdata
-
-            for id, data in self.users["support_staff"].items():
-                if username == self.users["support_staff"][id]["user_name"]:
-                    userdata = SupportStaff.model_validate(data)
+            for id, data in self.users.items():
+                if username == self.users[id]["user_name"]:
+                    first_character = id[0]
+                    match first_character:
+                        case 'c':
+                            userdata = Customer.model_validate(data)
+                        case 'a':
+                            userdata = RestaurantAdmin.model_validate(data)
+                        case 'o':
+                            userdata = RestaurantOwner.model_validate(data)
+                        case 'd':
+                            userdata = Developer.model_validate(data)
+                        case 's':
+                            userdata = SupportStaff.model_validate(data)
+                        case _:
+                            raise UserNotFoundError
                     return userdata
                 
             raise UserNotFoundError(username)
@@ -123,16 +117,23 @@ class UserRepository :
         """
 
         try:
-            if id in self.users["customers"]:
-                return Customer.model_validate(self.users["customers"][id])
-            elif id in self.users["restaurant_owners"]:
-                return RestaurantOwner.model_validate(self.users["restaurant_owners"][id])            
-            elif id in self.users["restaurant_admins"]:
-                return RestaurantAdmin.model_validate(self.users["restaurant_admins"][id])            
-            elif id in self.users["developers"]:
-                return Developer.model_validate(self.users["developers"][id])
-            elif id in self.users["support_staff"]:
-                return SupportStaff.model_validate(self.users["support_staff"][id])
+            if id in self.users:
+                data = self.users["id"]
+                first_character = id[0]
+                match first_character:
+                    case 'c':
+                        userdata = Customer.model_validate(data)
+                    case 'a':
+                        userdata = RestaurantAdmin.model_validate(data)
+                    case 'o':
+                        userdata = RestaurantOwner.model_validate(data)
+                    case 'd':
+                        userdata = Developer.model_validate(data)
+                    case 's':
+                        userdata = SupportStaff.model_validate(data)
+                    case _:
+                        raise UserNotFoundError
+                return userdata
         except ValidationError:
             raise BadDataInPersistenceLayerError(str(self.master_file), "Data is in the wrong form")
 
