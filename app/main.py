@@ -19,7 +19,7 @@ from app.core.exceptions import (
     MenuItemNotFoundError,
     RestaurantNotFoundError,
     TokenBelongsToUnknownUserError,
-    UserAuthentificationError,
+    UserAuthenticationError,
     UserNotAuthorizedError
 )
 from app.schemas.exception_schema import System_Error_Message
@@ -87,7 +87,7 @@ def handle_application_domain_exceptions(
     _request: Request, exception: DomainError
 ) -> JSONResponse:
     """Map domain exceptions to their corresponding HTTP responses."""
-    if isinstance(exception, UserAuthentificationError):
+    if isinstance(exception, UserAuthenticationError):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
     elif isinstance(exception, UserNotAuthorizedError):
         exception.status_code = status.HTTP_403_FORBIDDEN

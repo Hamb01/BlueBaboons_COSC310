@@ -1,7 +1,7 @@
 
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import UserLogin, Customer, Developer, SupportStaff
-from app.core.exceptions import UserAuthentificationError, UserNotAuthorizedError, UserNotFoundError, AccountNotActiveError
+from app.schemas.user_schema import UserLogin, Customer, RestaurantAdmin, RestaurantOwner, Developer, SupportStaff
+from app.core.exceptions import UserAuthenticationError, UserNotAuthorizedError, UserNotFoundError, AccountNotActiveError
 
 class UserService :
     """Service layer containing business logic relating to the users of the system"""
@@ -31,15 +31,15 @@ class UserService :
         try:
             actual_user_data = self.repository.get_user_data(login_info.username)
         except UserNotFoundError:
-            raise UserAuthentificationError()
+            raise UserAuthenticationError()
 
-        if login_info.password == actual_user_data.password and actual_user_data.account_is_active:
-            return self.repository.generate_web_token(login_info.id)
-        elif actual_user_data.account_is_active:
-            raise UserAuthentificationError()
-        elif actual_user_data.reason_for_deactivation:
-            raise AccountNotActiveError(actual_user_data.reason_for_deactivation)
-        else:
-            raise AccountNotActiveError("Unspecified")
+        if login_info.password != actual_user_data.password:
+            raise UserAuthenticationError()
+
+        if not actual_user_data.account_is_active:
+            raise AccountNotActiveError(
+                actual_user_data.reason_for_deactivation or "Unspecified"
+            )
+
+        return self.repository.generate_web_token(actual_user_data.id)
         
-

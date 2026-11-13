@@ -90,7 +90,7 @@ class BadDataInPersistenceLayerError(DomainError):
 ## Authentification and authorization errors
 ###########################################################################################################################################
 
-class UserAuthentificationError(DomainError):
+class UserAuthenticationError(DomainError):
     """Raised when there was an error when authenticating the user"""
 
     def __init__(self):

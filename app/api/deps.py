@@ -51,12 +51,12 @@ def get_menu_service(
     return MenuService(repository=repository)
 
 def get_user_repository() -> UserRepository:
-    """Provide a menu repository that shares the request restaurant repository."""
+    """Build a user repository instance for dependency injection."""
     return UserRepository
 
 
 def get_user_service(
     repository: UserRepository = Depends(get_user_repository),
 ) -> UserService:
-    """Provide a menu service backed by the repository dependency."""
+    """Provide a user service backed by the repository dependency."""
     return UserService(repository=repository)

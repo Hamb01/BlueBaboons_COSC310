@@ -77,7 +77,7 @@ class UserRepository :
 
         try:
             for id, data in self.users.items():
-                if username == self.users[id]["user_name"]:
+                if username == self.users[id]["username"]:
                     first_character = id[0]
                     match first_character:
                         case 'c':
@@ -118,7 +118,7 @@ class UserRepository :
 
         try:
             if id in self.users:
-                data = self.users["id"]
+                data = self.users[id]
                 first_character = id[0]
                 match first_character:
                     case 'c':
@@ -132,8 +132,9 @@ class UserRepository :
                     case 's':
                         userdata = SupportStaff.model_validate(data)
                     case _:
-                        raise UserNotFoundError
+                        raise UserNotFoundError(id)
                 return userdata
+            raise UserNotFoundError(id)
         except ValidationError:
             raise BadDataInPersistenceLayerError(str(self.master_file), "Data is in the wrong form")
 
@@ -164,6 +165,26 @@ class UserRepository :
 
         return jwt.encode(payload, self.jwt_encode_key, algorithm="HS512")
 
+    def get_id_from_token(self, token) -> str:
+        """
+        get_id_from_token
+        ---------------------
+
+        Description: 
+            Decodes JWT and gets the id of the user
+
+        Args:
+            token : JWT -> Json Web Token that the user is currently using
+
+        Returns:
+            string -> the ID of the user
+
+        Raises: 
+            none
+        """
+        return jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])["id"]
+        
+
     def verify_user_account(self, token) -> AccountStatusAndRole:
         """
         verify_user_account()
@@ -185,30 +206,33 @@ class UserRepository :
 
         decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])
 
-        user_data = self.get_user_data_from_id(decoded_token["id"])
+        try:
+            user_data = self.get_user_data_from_id(decoded_token["id"])
+        except UserNotFoundError as exc:
+            raise TokenBelongsToUnknownUserError() from exc
 
         if isinstance(user_data, Customer):
-            if user_data["account_is_active"]:
+            if user_data.account_is_active:
                 return AccountStatusAndRole.ACTIVE_CUSTOMER
             else:
                 return AccountStatusAndRole.DEACTIVATED_CUSTOMER
         elif isinstance(user_data, RestaurantOwner):
-            if user_data["account_is_active"]:
+            if user_data.account_is_active:
                 return AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER
             else:
                 return AccountStatusAndRole.DEACTIVATED_RESTAURANT_OWNER
         elif isinstance(user_data, RestaurantAdmin):
-            if user_data["account_is_active"]:
+            if user_data.account_is_active:
                 return AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN
             else:
                 return AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
         elif isinstance(user_data, Developer):
-            if user_data["account_is_active"]:
+            if user_data.account_is_active:
                 return AccountStatusAndRole.ACTIVE_DEVELOPER
             else:
                 return AccountStatusAndRole.DEACTIVATED_DEVELLOPER
         elif isinstance(user_data, SupportStaff):
-                if user_data["account_is_active"]:
+                if user_data.account_is_active:
                     return AccountStatusAndRole.ACTIVE_SUPPORT_STAFF
                 else:
                     return AccountStatusAndRole.DEACTIVATED_SUPPORT_STAFF

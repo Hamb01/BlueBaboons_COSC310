@@ -1,6 +1,6 @@
 """Schemas for all types of users"""
 
-import enum
+from enum import Enum
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class User(BaseModel):
     email: str = Field(..., description="Email that the user used while setting up account")
     password: str = Field(..., description="Password used by the user to sign in")
     account_is_active: bool = Field(..., description="boolean to reflect if the account is currently allowed to interact with the system")
-    reason_for_deactivation: Optional[str] = Field(..., description="Brief explanation of why the users access to the system was revoked")
+    reason_for_deactivation: Optional[str] = Field(default=None, description="Brief explanation of why the users access to the system was revoked")
 
 
 class Customer(User):
@@ -26,8 +26,8 @@ class Customer(User):
     postal_code: str = Field(..., description="Postal conde for the users primary address")
 
     balance: float = Field(..., description="In store credit that the customer may use to pay for orders")
-    order_history: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all previous orders made by this customer")
-    cart: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all items currently in the cart")
+    order_history: Optional[Dict[str, Any]] = Field(default=None, description="Dictionary of all previous orders made by this customer")
+    cart: Optional[Dict[str, Any]] = Field(default=None, description="Dictionary of all items currently in the cart")
 
 class RestaurantOwner(User):
     """Class to hold the account information of people who create, edit and delete restaurants"""
@@ -51,7 +51,7 @@ class UserLogin(BaseModel):
     username: str = Field(..., description="Unique user name associated with the user")
     password: int | float | str = Field(..., description="Password associated with the user") # allowing many types because we will ensure it matches later
 
-class AccountStatusAndRole(enum):
+class AccountStatusAndRole(Enum):
     """Enumeration to capture the current status of a persons account as well as their current role"""
     ACTIVE_CUSTOMER = 1
     DEACTIVATED_CUSTOMER = 2

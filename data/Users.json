@@ -1,7 +1,7 @@
 { 
     "c01" : {
         "id" : "c01",
-        "user_name" : "UserName1",
+        "username" : "UserName1",
         "name" : "John Doe",
         "email" : "johndoe@yahoo.com",
         "password" : "HardPassword1234",
@@ -12,12 +12,13 @@
         "postal_code" : "V1V1V6",
 
         "account_is_active" : true,
+        "reason_for_deactivation" : "",
         "balance" : 500.25
     },
 
     "c02" : {
         "id" : "c02",
-        "user_name" : "UserName2",
+        "username" : "UserName2",
         "name" : "Jane Doe",
         "email" : "janedoe47@gmail.com",
         "password" : "superHardPassword1234",
@@ -28,6 +29,7 @@
         "postal_code" : "V1V1V6",
 
         "account_is_active" : true,
+        "reason_for_deactivation" : "",
         "balance" : 501.25
     }
 }
