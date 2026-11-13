@@ -148,6 +148,7 @@ This document records externally assisted content, AI tooling, and design assist
 - **Scope / Assistance:** 
   - I had it reword error messages so that I would have an easier time fixing the bugs
   - I had it rework the user_login service because the order of the logic was causing errors
+  - I also had it go through and reformat some of the code to improve the pylint score
 - **Verification:** 
   - I carefully read through all of the code that the AI generated and rewrote most of it my self 
   - for any suggestions the AI gave me, I double checked with other online resources like geeksforgeeks.org

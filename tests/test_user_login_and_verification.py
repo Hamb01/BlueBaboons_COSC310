@@ -1,41 +1,31 @@
-import pytest
-from pathlib import Path
-from fastapi.testclient import TestClient
+"""Tests for user persistence, authentication, and account verification."""
 
-from app.repositories.user_repository import UserRepository
-from app.services.user_service import UserService
-from app.schemas.user_schema import (
-    UserLogin, 
-    User, 
-    Customer, 
-    RestaurantOwner, 
-    RestaurantAdmin, 
-    Developer, 
-    SupportStaff, 
-    AccountStatusAndRole
-    )
+import pytest
+
 from app.core.exceptions import (
-    UserNotFoundError, 
-    BadDataInPersistenceLayerError, 
-    TokenBelongsToUnknownUserError, 
-    UserAuthenticationError, 
-    AccountNotActiveError
-    )
+    AccountNotActiveError,
+    BadDataInPersistenceLayerError,
+    TokenBelongsToUnknownUserError,
+    UserAuthenticationError,
+    UserNotFoundError,
+)
+from app.schemas.user_schema import AccountStatusAndRole, Developer, UserLogin
 
 def test_format_of_all_user_data(isolated_user_repo):
-    """Checks through Users.json to verify that all of our data folows the forms in the schemas"""
+    """Verify that persisted users conform to their schemas."""
 
-    for id, data in isolated_user_repo.users.items():
-        assert data == isolated_user_repo.get_user_data_from_id(id).model_dump(exclude_none=True)
-    
+    for user_id, data in isolated_user_repo.users.items():
+        assert data == isolated_user_repo.get_user_data_from_id(
+            user_id
+        ).model_dump(exclude_none=True)
 
 
-#################################################################################################################################################
+################################################################################################
 ## Test User Authentication related functions in Repository Layer
-#################################################################################################################################################
+################################################################################################
 
 def test_get_user_data_by_username(isolated_user_repo):
-    """Tests if we can retrieve the correct user from the persistence layer. Also tests saving data to persistence layer in the process"""
+    """Test username lookup, invalid records, and unknown usernames."""
 
     expected_data = {
         "c01" : {
@@ -70,7 +60,7 @@ def test_get_user_data_by_username(isolated_user_repo):
         retrieved_data = isolated_user_repo.get_user_data("Charles")
 
 def test_get_user_data_by_id(isolated_user_repo):
-    """Tests if we can retrieve the correct user from the persistence layer. Also tests saving data to persistence layer in the process"""
+    """Test ID lookup, invalid records, and unknown IDs."""
 
     expected_data = {
         "c01" : {
@@ -133,7 +123,7 @@ def test_verify_user_account(isolated_user_repo):
     isolated_user_repo.save_to_file()
     active = isolated_user_repo.generate_web_token("d02")
     deactivated = isolated_user_repo.generate_web_token("a03")
-    non_existent= isolated_user_repo.generate_web_token("c03")
+    non_existent = isolated_user_repo.generate_web_token("c03")
     broken = isolated_user_repo.generate_web_token("c01")
     assert isolated_user_repo.verify_user_account(active) == AccountStatusAndRole.ACTIVE_DEVELOPER
     assert isolated_user_repo.verify_user_account(deactivated) == AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
@@ -142,12 +132,12 @@ def test_verify_user_account(isolated_user_repo):
     with pytest.raises(BadDataInPersistenceLayerError):
         isolated_user_repo.verify_user_account(broken)
 
-#################################################################################################################################################
+################################################################################################
 ## Test User Authentication related functions in Service Layer
-#################################################################################################################################################
+################################################################################################
 
 def test_user_login(isolated_user_service):
-    """Test the login service"""
+    """Test login outcomes for missing, invalid, inactive, and active users."""
 
     expected_data = {
         "c01" : {
@@ -197,10 +187,10 @@ def test_user_login(isolated_user_service):
     deactivated_account = UserLogin(username="harambe48", password="superHardPassword1234")
     active_account = UserLogin(username="harambe47", password="superHardPassword1234")
     with pytest.raises(UserAuthenticationError):
-        isolated_user_service.user_login(non_existent_user) 
+        isolated_user_service.user_login(non_existent_user)
     with pytest.raises(UserAuthenticationError):
-            isolated_user_service.user_login(wrong_password) 
+        isolated_user_service.user_login(wrong_password)
     with pytest.raises(AccountNotActiveError):
-        isolated_user_service.user_login(deactivated_account) 
+        isolated_user_service.user_login(deactivated_account)
     retrived_token = isolated_user_service.user_login(active_account)
     assert isolated_user_service.repository.get_id_from_token(retrived_token) == "d02"

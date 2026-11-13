@@ -1,20 +1,35 @@
 """Repository layer for reading and writing to the user.Json file in the persistence layer"""
 
+from datetime import datetime, timedelta, timezone
 import json
 import os
-import tempfile
 import secrets
-import jwt
+import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
+
+import jwt
 from pydantic import ValidationError
-from datetime import datetime, timezone, timedelta
 
 from app.core.config import get_settings
-from app.core.exceptions import DataPersistenceError, BadDataInPersistenceLayerError, UserNotFoundError, TokenBelongsToUnknownUserError
-from app.schemas.user_schema import User, Customer, RestaurantOwner, RestaurantAdmin, Developer, SupportStaff, AccountStatusAndRole
+from app.core.exceptions import (
+    BadDataInPersistenceLayerError,
+    DataPersistenceError,
+    TokenBelongsToUnknownUserError,
+    UserNotFoundError,
+)
+from app.schemas.user_schema import (
+    AccountStatusAndRole,
+    Customer,
+    Developer,
+    RestaurantAdmin,
+    RestaurantOwner,
+    SupportStaff,
+    User,
+)
 
-class UserRepository :
+
+class UserRepository:
     """Repository layer responsible for reading and writing user data"""
 
     def __init__(self, data_dir: Optional[Path] = None):
@@ -56,7 +71,7 @@ class UserRepository :
                 pass
             raise DataPersistenceError(str(self.master_file), "write") from exc
 
-    def get_user_data(self, username : str) -> User:
+    def get_user_data(self, username: str) -> User:
         """
         get_user_data()
         -------------------
@@ -68,7 +83,7 @@ class UserRepository :
             username : string -> Unique username associated with the user's account
 
         Returns:
-            User -> All data related to the user, returned as a pydantic model (either a customer, restaurant_admin, developer or support_staff)
+            User: A Pydantic model containing the user's account data.
 
         Raises: 
             UserNotFoundError -> No such user exists in our system
@@ -76,9 +91,9 @@ class UserRepository :
         """
 
         try:
-            for id, data in self.users.items():
-                if username == self.users[id]["username"]:
-                    first_character = id[0]
+            for user_id, data in self.users.items():
+                if username == data["username"]:
+                    first_character = user_id[0]
                     match first_character:
                         case 'c':
                             userdata = Customer.model_validate(data)
@@ -91,14 +106,16 @@ class UserRepository :
                         case 's':
                             userdata = SupportStaff.model_validate(data)
                         case _:
-                            raise UserNotFoundError
+                            raise UserNotFoundError(username)
                     return userdata
-                
-            raise UserNotFoundError(username)
-        except ValidationError:
-            raise BadDataInPersistenceLayerError(str(self.master_file), "Data is in the wrong form")
 
-    def get_user_data_from_id(self, id : str) -> User:
+            raise UserNotFoundError(username)
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError(
+                str(self.master_file), "Data is in the wrong form"
+            ) from exc
+
+    def get_user_data_from_id(self, user_id: str) -> User:
         """
         get_user_data_from_id()
         -----------------------
@@ -110,16 +127,16 @@ class UserRepository :
             id : string -> Unique id associated with the user's account
 
         Returns:
-            User -> All data related to the user, returned as a pydantic model (either a customer, restaurant_admin, developer or support_staff)
+            User: A Pydantic model containing the user's account data.
 
         Raises: 
             UserNotFoundError -> No such user exists in our system
         """
 
         try:
-            if id in self.users:
-                data = self.users[id]
-                first_character = id[0]
+            if user_id in self.users:
+                data = self.users[user_id]
+                first_character = user_id[0]
                 match first_character:
                     case 'c':
                         userdata = Customer.model_validate(data)
@@ -132,14 +149,15 @@ class UserRepository :
                     case 's':
                         userdata = SupportStaff.model_validate(data)
                     case _:
-                        raise UserNotFoundError(id)
+                        raise UserNotFoundError(user_id)
                 return userdata
-            raise UserNotFoundError(id)
-        except ValidationError:
-            raise BadDataInPersistenceLayerError(str(self.master_file), "Data is in the wrong form")
+            raise UserNotFoundError(user_id)
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError(
+                str(self.master_file), "Data is in the wrong form"
+            ) from exc
 
-
-    def generate_web_token(self, id : str):
+    def generate_web_token(self, user_id: str) -> str:
         """
         generate_web_token()
         -------------------
@@ -160,12 +178,12 @@ class UserRepository :
         """
         payload = {
             "exp" : datetime.now(tz=timezone.utc) + timedelta(minutes = 15),
-            "id" : id
+            "id": user_id
         }
 
         return jwt.encode(payload, self.jwt_encode_key, algorithm="HS512")
 
-    def get_id_from_token(self, token) -> str:
+    def get_id_from_token(self, token: str) -> str:
         """
         get_id_from_token
         ---------------------
@@ -183,7 +201,6 @@ class UserRepository :
             none
         """
         return jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])["id"]
-        
 
     def verify_user_account(self, token) -> AccountStatusAndRole:
         """
@@ -211,33 +228,38 @@ class UserRepository :
         except UserNotFoundError as exc:
             raise TokenBelongsToUnknownUserError() from exc
 
-        if isinstance(user_data, Customer):
-            if user_data.account_is_active:
-                return AccountStatusAndRole.ACTIVE_CUSTOMER
-            else:
-                return AccountStatusAndRole.DEACTIVATED_CUSTOMER
-        elif isinstance(user_data, RestaurantOwner):
-            if user_data.account_is_active:
-                return AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER
-            else:
-                return AccountStatusAndRole.DEACTIVATED_RESTAURANT_OWNER
-        elif isinstance(user_data, RestaurantAdmin):
-            if user_data.account_is_active:
-                return AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN
-            else:
-                return AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
-        elif isinstance(user_data, Developer):
-            if user_data.account_is_active:
-                return AccountStatusAndRole.ACTIVE_DEVELOPER
-            else:
-                return AccountStatusAndRole.DEACTIVATED_DEVELLOPER
-        elif isinstance(user_data, SupportStaff):
-                if user_data.account_is_active:
-                    return AccountStatusAndRole.ACTIVE_SUPPORT_STAFF
-                else:
-                    return AccountStatusAndRole.DEACTIVATED_SUPPORT_STAFF
-        else:
-            raise BadDataInPersistenceLayerError(str(self.master_file), "get_user_data_from_id returned the wrong type")
-    
+        role_statuses = {
+            Customer: (
+                AccountStatusAndRole.ACTIVE_CUSTOMER,
+                AccountStatusAndRole.DEACTIVATED_CUSTOMER,
+            ),
+            RestaurantOwner: (
+                AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER,
+                AccountStatusAndRole.DEACTIVATED_RESTAURANT_OWNER,
+            ),
+            RestaurantAdmin: (
+                AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN,
+                AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN,
+            ),
+            Developer: (
+                AccountStatusAndRole.ACTIVE_DEVELOPER,
+                AccountStatusAndRole.DEACTIVATED_DEVELLOPER,
+            ),
+            SupportStaff: (
+                AccountStatusAndRole.ACTIVE_SUPPORT_STAFF,
+                AccountStatusAndRole.DEACTIVATED_SUPPORT_STAFF,
+            ),
+        }
+        for user_type, statuses in role_statuses.items():
+            if isinstance(user_data, user_type):
+                active_status, deactivated_status = statuses
+                return (
+                    active_status
+                    if user_data.account_is_active
+                    else deactivated_status
+                )
 
-        
+        raise BadDataInPersistenceLayerError(
+            str(self.master_file),
+            "get_user_data_from_id returned the wrong type",
+        )
