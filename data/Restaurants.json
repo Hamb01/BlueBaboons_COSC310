@@ -6,6 +6,7 @@
                 "isOpen": true,
                 "cuisine": "Mexican",
                 "opening_hours": "09:00-21:00",
+                "owner_id": "u01",
                 "menu": [
                             {
                                 "id": "m01",
@@ -33,6 +34,7 @@
                 "isOpen": true,
                 "cuisine": "Japanese",
                 "opening_hours": "08:00-21:00",
+                "owner_id": "u01",
                 "menu": [
                             {
                                 "id": "m01",
