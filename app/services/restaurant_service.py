@@ -15,7 +15,7 @@
 
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
-
+from app.core.exceptions import RestaurantNotFoundError, UserNotAuthorizedError
 
 class RestaurantService:
     """Service layer coordinates restaurant business logic."""
@@ -195,3 +195,4 @@ class RestaurantService:
             payload.model_dump(exclude_unset=True),
         )
         return RestaurantResponse.model_validate(information)
+    

@@ -2,9 +2,10 @@
 
 from typing import Any, Dict
 
-from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAuthorizedError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
+
 
 # Coding Notes:
 # The service layer acts as the business controller for menus.
@@ -82,6 +83,7 @@ class MenuService:
         self,
         restaurant_id: str,
         menu_item: Dict[str, Any],
+        current_user: dict,
     ) -> Dict[str, Any]:
         """
         add_new_menu_item
@@ -101,6 +103,7 @@ class MenuService:
             RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self._verify_user_authorization(restaurant_id, current_user)
         self.repository.get_menu_data(restaurant_id)
 
         new_menu_item = MenuItem(
@@ -168,3 +171,30 @@ class MenuService:
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
         self.repository.remove_menu_item(restaurant_id, item_id)
+    
+    
+    def verify_admin_or_owner(self, restaurant_id: str, current_user: dict):
+        """
+            verify_admin_or_owner
+            -------------------
+        
+            Description:
+                Verifies if the current user is an admin or the owner of a restaurant
+        
+
+            Args: 
+                restaurant_id : string -> unique ID belonging to the restaurant in question
+                current_user : dict -> Information about the currently logged-in user
+
+            Returns:
+                void
+        
+            Raises: 
+                RestaurantNotFoundError -> Restaurant isn't stored in the restaurants.json file
+                UserNotAuthorizedError -> User isn't an admin or the restaurant's owner, raising 403.
+        """
+        restaurant = self.repository.get_restaurant_data(restaurant_id)
+        is_admin = current_user.get("role") == "admin"
+        is_owner = current_user.get("id") == restaurant.get("owner_id")
+        if not is_admin and not is_owner:
+            raise UserNotAuthorizedError(forbidden_action="restaurant management")
