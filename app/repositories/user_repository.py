@@ -15,7 +15,9 @@ from app.core.config import get_settings
 from app.core.exceptions import (
     BadDataInPersistenceLayerError,
     DataPersistenceError,
+    ExpiredTokenError,
     TokenBelongsToUnknownUserError,
+    TokenIsInvalidError,
     UserNotFoundError,
 )
 from app.schemas.user_schema import (
@@ -200,7 +202,37 @@ class UserRepository:
         Raises: 
             none
         """
-        return jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])["id"]
+
+        try:
+            decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])["id"]
+        except jwt.ExpiredSignatureError as exc:
+            raise ExpiredTokenError() from exc
+        except jwt.InvalidTokenError as exc:
+            raise TokenIsInvalidError() from exc
+
+        return decoded_token
+    def get_current_user(self, token: str) -> User:
+        """
+        get_current_user
+        ---------------------
+
+        Description: 
+            Gets the userdata that is related to the id in the jwt
+
+        Args:
+            token : JWT -> Json Web Token that the user is currently using
+
+        Returns:
+            User -> a pydantic model of the user
+
+        Raises: 
+            TokenBelongsToUnknownUserError -> no user matched the Id provided by the token
+            ExpiredTokenError -> Token is expired
+        """
+
+        id = self.get_id_from_token(token)
+        return self.get_user_data_from_id(id)
+
 
     def verify_user_account(self, token) -> AccountStatusAndRole:
         """
@@ -221,12 +253,16 @@ class UserRepository:
             BadDataInPersistenceLayerError -> get_user_data_from_id returned the wrong type
         """
 
-        decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])
-
         try:
+            decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])
             user_data = self.get_user_data_from_id(decoded_token["id"])
         except UserNotFoundError as exc:
             raise TokenBelongsToUnknownUserError() from exc
+        except jwt.ExpiredSignatureError as exc:
+            raise ExpiredTokenError() from exc
+        except jwt.InvalidTokenError as exc:
+            raise TokenIsInvalidError() from exc
+        
 
         role_statuses = {
             Customer: (

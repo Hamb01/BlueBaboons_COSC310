@@ -129,3 +129,17 @@ class TokenBelongsToUnknownUserError(DomainError):
     def __init__(self):
         super().__init__()
         self.message = "Token belongs to an unknown user"
+
+class ExpiredTokenError(DomainError):
+    """Raised when a JWT is expired"""
+
+    def __init__(self):
+        super().__init__()
+        self.message = "Token is Expired"
+
+class TokenIsInvalidError(DomainError):
+    """Raised when a JWT is invalid"""
+    
+    def __init__(self):
+        super().__init__()
+        self.message = "Token is invalid"

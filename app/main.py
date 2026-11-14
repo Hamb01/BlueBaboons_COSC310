@@ -16,9 +16,11 @@ from app.core.exceptions import (
     DataPersistenceError,
     DomainError,
     EmptyMenuError,
+    ExpiredTokenError,
     MenuItemNotFoundError,
     RestaurantNotFoundError,
     TokenBelongsToUnknownUserError,
+    TokenIsInvalidError,
     UserAuthenticationError,
     UserNotAuthorizedError
 )
@@ -87,7 +89,12 @@ def handle_application_domain_exceptions(
     _request: Request, exception: DomainError
 ) -> JSONResponse:
     """Map domain exceptions to their corresponding HTTP responses."""
-    if isinstance(exception, UserAuthenticationError):
+    if isinstance(exception, (
+        ExpiredTokenError,
+        TokenBelongsToUnknownUserError,
+        TokenIsInvalidError,
+        UserAuthenticationError 
+        )):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
     elif isinstance(exception, UserNotAuthorizedError):
         exception.status_code = status.HTTP_403_FORBIDDEN
@@ -99,7 +106,6 @@ def handle_application_domain_exceptions(
     elif isinstance(exception, (
         BadDataInPersistenceLayerError, 
         DataPersistenceError, 
-        TokenBelongsToUnknownUserError
         )):
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
