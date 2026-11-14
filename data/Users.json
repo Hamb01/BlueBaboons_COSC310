@@ -1,44 +1,35 @@
 { 
-    "customers" : {
+    "c01" : {
+        "id" : "c01",
+        "username" : "UserName1",
+        "name" : "John Doe",
+        "email" : "johndoe@yahoo.com",
+        "password" : "HardPassword1234",
 
-        "UserName1" : {
-            "name" : "John Doe",
-            "email" : "johndoe@yahoo.com",
-            "password" : "HardPassword1234",
+        "address" : "213-2532 Shoreline Dr",
+        "city" : "Lake Country",
+        "province" : "BC",
+        "postal_code" : "V1V1V6",
 
-            "address" : "213-2532 Shoreline Dr",
-            "city" : "Lake Country",
-            "province" : "BC",
-            "postal_code" : "V1V1V6",
-
-            "account_is_active" : true,
-            "balance" : 500.25
-        },
-
-        "UserName2" : {
-            "name" : "Jane Doe",
-            "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
-
-            "address" : "213-2532 Shoreline Dr",
-            "city" : "Lake Country",
-            "province" : "BC",
-            "postal_code" : "V1V1V6",
-
-            "account_is_active" : true,
-            "balance" : 501.25
-        }
+        "account_is_active" : true,
+        "reason_for_deactivation" : "",
+        "balance" : 500.25
     },
 
-    "restaurant_admins" : {
+    "c02" : {
+        "id" : "c02",
+        "username" : "UserName2",
+        "name" : "Jane Doe",
+        "email" : "janedoe47@gmail.com",
+        "password" : "superHardPassword1234",
 
-    },
+        "address" : "213-2532 Shoreline Dr",
+        "city" : "Lake Country",
+        "province" : "BC",
+        "postal_code" : "V1V1V6",
 
-    "developers" : {
-
-    },
-
-    "support_staff" : {
-        
+        "account_is_active" : true,
+        "reason_for_deactivation" : "",
+        "balance" : 501.25
     }
 }
