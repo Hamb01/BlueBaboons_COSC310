@@ -103,7 +103,7 @@ class MenuService:
             RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
-        self._verify_user_authorization(restaurant_id, current_user)
+        self.verify_admin_or_owner(restaurant_id, current_user)
         self.repository.get_menu_data(restaurant_id)
 
         new_menu_item = MenuItem(
@@ -121,6 +121,7 @@ class MenuService:
         restaurant_id: str,
         item_id: str,
         updated_data: Dict[str, Any],
+        current_user: dict,
     ) -> Dict[str, Any]:
         """
         update_menu_item
@@ -143,6 +144,7 @@ class MenuService:
             MenuItemNotFoundError -> The restaurant does not have that
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self.verify_admin_or_owner(restaurant_id, current_user)
         current = self.get_menu_item(restaurant_id, item_id)
         changes = {
             key: value for key, value in updated_data.items() if key in EDITABLE_FIELDS
@@ -150,7 +152,7 @@ class MenuService:
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
         return self.repository.update_menu_item(restaurant_id, item_id, updated.model_dump())
 
-    def remove_menu_item(self, restaurant_id: str, item_id: str) -> None:
+    def remove_menu_item(self, restaurant_id: str, item_id: str, current_user: dict) -> None:
         """
         remove_menu_item
         -------------------
@@ -170,6 +172,7 @@ class MenuService:
             MenuItemNotFoundError -> The restaurant does not have that
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self.verify_admin_or_owner(restaurant_id, current_user)
         self.repository.remove_menu_item(restaurant_id, item_id)
     
     
@@ -179,7 +182,7 @@ class MenuService:
             -------------------
         
             Description:
-                Verifies if the current user is an admin or the owner of a restaurant
+                Verifies if the current user is an admin or the owner of a restaurant. Helper method.
         
 
             Args: 
@@ -187,8 +190,8 @@ class MenuService:
                 current_user : dict -> Information about the currently logged-in user
 
             Returns:
-                void
-        
+                Nothing, raises an exception if user isn't authorized.
+    
             Raises: 
                 RestaurantNotFoundError -> Restaurant isn't stored in the restaurants.json file
                 UserNotAuthorizedError -> User isn't an admin or the restaurant's owner, raising 403.
