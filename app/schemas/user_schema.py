@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
+from app.schemas.cart_schema import Cart
 
 
 class User(BaseModel):
@@ -23,7 +24,7 @@ class Customer(User):
 
     balance: float = Field(..., description="In store credit that the customer may use to pay for orders")
     order_history: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all previous orders made by this customer")
-    cart: Optional[Dict[str, Any]] = Field(..., description="Dictionary of all items currently in the cart")
+    cart: Optional[Cart] = Field(..., description="The cart for the customer. This is where they will store items before they make a purchase")
 
 class RestaurantAdmin(User):
     """Class to hold the account information of people who can create, edit and delete restaurants and their information"""

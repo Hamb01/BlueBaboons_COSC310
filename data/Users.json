@@ -12,7 +12,10 @@
             "postal_code" : "V1V1V6",
 
             "account_is_active" : true,
-            "balance" : 500.25
+            "balance" : 500.25,
+            "cart": {
+
+            }
         },
 
         "UserName2" : {
@@ -26,7 +29,10 @@
             "postal_code" : "V1V1V6",
 
             "account_is_active" : true,
-            "balance" : 501.25
+            "balance" : 501.25,
+            "cart": {
+
+            }
         }
     },
 
