@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_cart_service, get_current_active_customer
-from app.schemas.cart import CartResponse
+from app.schemas.cart_schema import CartResponse
 from app.services.cart_service import CartService
 
 router = APIRouter(tags=["Cart"])
