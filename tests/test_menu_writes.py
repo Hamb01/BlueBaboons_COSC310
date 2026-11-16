@@ -86,7 +86,7 @@ def test_update_unknown_item_or_restaurant_raises_domain_errors(isolated_menu_se
 def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_menu_service):
     created = client.post("/restaurants", json={
         "name": "New Place", "location": "Kelowna", "isOpen": True,
-        "cuisine": "Thai", "opening_hours": "10:00-20:00"}).json()
+        "cuisine": "Thai", "address": "123 Main St", "postal_code": "V1W 3Z9", "opening_hours": "10:00-20:00"}).json()
 
     with pytest.raises((MenuItemNotFoundError, EmptyMenuError)):
         isolated_menu_service.update_menu_item(created["id"], "m01", {"price": 1})
@@ -154,7 +154,7 @@ def test_add_menu_item_unknown_restaurant_returns_404(client):
 def test_add_menu_item_to_new_restaurant_without_menu_key(client):
     created = client.post("/restaurants", json={
         "name": "New Place", "location": "Kelowna", "isOpen": True,
-        "cuisine": "Thai", "opening_hours": "10:00-20:00"}).json()
+        "cuisine": "Thai", "address": "123 Main St", "postal_code": "V1W 3Z9", "opening_hours": "10:00-20:00"}).json()
 
     response = client.post(f"/restaurant/{created['id']}/menu", json=NEW_ITEM)
 

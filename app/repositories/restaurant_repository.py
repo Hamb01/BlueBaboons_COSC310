@@ -25,7 +25,7 @@ class RestaurantRepository:
 
     if self.master_file.exists():
       try:
-        self.restaurants = self.check_restaurant_json_persistence("data/Restaurants.json")
+        self.restaurants = self.check_restaurant_json_persistence(self.master_file)
       except json.JSONDecodeError:
         self.restaurants = {}
     else:
@@ -62,7 +62,15 @@ class RestaurantRepository:
         json.dump(self.restaurants, file, indent = 4)
         file.flush()
         os.fsync(file.fileno()) #make sure the bytes exist on disk
-        os.replace(temp_path, self.master_file)
+        file.close()
+        for attempt in range(3):
+          try:
+            os.replace(temp_path, self.master_file)
+            break
+          except PermissionError:
+            if attempt == 2:
+              raise
+            time.sleep(0.05)
     except Exception as e:
       os.unlink(temp_path)
       raise DataPersistenceError(f"Error saving to file: {e}")

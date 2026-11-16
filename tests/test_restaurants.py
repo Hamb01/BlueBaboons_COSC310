@@ -50,6 +50,8 @@ def test_id_generation_without_records(
     new_restaurant = RestaurantCreate(
         name = "Test_Restaurant",
         location = "Lake Rd",
+        address = "123 Lake Road",
+        postal_code = "v1w 2a3",
         isOpen = True,
         cuisine = "Seafood",
         opening_hours = "09:00-21:00"

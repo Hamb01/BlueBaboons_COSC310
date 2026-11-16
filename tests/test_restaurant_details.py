@@ -29,6 +29,8 @@ def test_get_restaurant_details_returns_200(client: TestClient):
 
     assert response.status_code == 200
     assert response.json() == {
+        "address": "6767 Leon Ave, Kelowna, BC",
+        "postal_code": "V1W 3Z9",
         "id": "r01",
         "name": "Authentic_Tacos",
         "location": "Kelowna",

@@ -94,7 +94,7 @@ async function showRestaurant(id) {
     edit.addEventListener('click', () => openEditor(restaurant));
     heading.append(element('h2', restaurant.name), edit);
     const facts = element('dl', undefined, 'facts');
-    for (const [label, value] of [['Cuisine', restaurant.cuisine], ['Location', restaurant.location], ['Opening hours', restaurant.opening_hours]]) {
+    for (const [label, value] of [['Cuisine', restaurant.cuisine], ['Location', restaurant.location], ['Address', restaurant.address], ['Postal code', restaurant.postal_code], ['Opening hours', restaurant.opening_hours]]) {
       const fact = element('div');
       fact.append(element('dt', label), element('dd', value));
       facts.append(fact);
@@ -146,7 +146,7 @@ function openEditor(restaurant = null) {
   document.querySelector('#editor-title').textContent = restaurant ? 'Edit restaurant' : 'Add restaurant';
   document.querySelector('#form-error').textContent = '';
   if (restaurant) {
-    for (const name of ['name', 'cuisine', 'location', 'opening_hours']) {
+    for (const name of ['name', 'cuisine', 'location', 'address', 'postal_code', 'opening_hours']) {
       restaurantForm.elements[name].value = restaurant[name];
     }
     restaurantForm.elements.isOpen.checked = restaurant.isOpen;
@@ -157,13 +157,18 @@ function openEditor(restaurant = null) {
 restaurantForm.addEventListener('submit', async event => {
   event.preventDefault();
   const payload = {};
-  for (const name of ['name', 'cuisine', 'location', 'opening_hours']) {
+  for (const name of ['name', 'cuisine', 'location', 'address', 'postal_code', 'opening_hours']) {
     payload[name] = restaurantForm.elements[name].value.trim();
     if (!payload[name]) {
       document.querySelector('#form-error').textContent = 'Please fill in every text field.';
       return;
     }
   }
+      payload.postal_code = payload.postal_code?.toUpperCase();
+    if (!(/^[A-Z]\d[A-Z] \d[A-Z]\d$/.test(payload.postal_code))) {
+      document.querySelector('#form-error').textContent = 'Postal code must use the format A1A 1A1.';
+      return;
+    }
   payload.isOpen = restaurantForm.elements.isOpen.checked;
   const save = document.querySelector('#save-restaurant');
   const close = document.querySelector('#close-editor');

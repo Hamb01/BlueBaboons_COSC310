@@ -166,8 +166,8 @@ def test_service_filters_closed_restaurant(
     """Verify the service includes closed restaurants only when requested."""
 
     isolated_restaurant_repo.restaurants = {
-        "r01": {"id": "r01", "name": "Closed Place", "isOpen": False, "cuisine": "A", "location": "A", "opening_hours": "9-5"},
-        "r02": {"id": "r02", "name": "Open Place", "isOpen": True, "cuisine": "B", "location": "B", "opening_hours": "9-5"}
+        "r01": {"address": "123 Main St", "postal_code": "V1W 3Z9", "id": "r01", "name": "Closed Place", "isOpen": False, "cuisine": "A", "location": "A", "opening_hours": "9-5"},
+        "r02": {"address": "456 Oak St", "postal_code": "V1W 3Z9", "id": "r02", "name": "Open Place", "isOpen": True, "cuisine": "B", "location": "B", "opening_hours": "9-5"}
     }
 
     result = isolated_restaurant_service.list_restaurants(is_open=False)
