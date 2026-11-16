@@ -38,7 +38,7 @@ class RestaurantRepository:
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
         if not data:
-            raise DataPersistenceError("Persistence failed: Dict is empty")
+            raise DataPersistenceError(str(self.master_file), "read")
         return data
 
     def __init__(self, data_dir: Optional[Path] = None):
