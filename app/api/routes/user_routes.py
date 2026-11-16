@@ -9,7 +9,7 @@ from app.services.user_service import UserService
 router = APIRouter(tags=["Authentication"])
 
 @router.post("/auth/login", status_code=status.HTTP_200_OK)
-def user_login(login_info : UserLogin, service=get_user_service):
+def user_login(login_info : UserLogin, service: UserService = Depends(get_user_service)):
     """
     user_login()
     -------------------
