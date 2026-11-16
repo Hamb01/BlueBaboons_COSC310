@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel
 import secrets
 
-secret_key = secrets.token_urlsafe(64)
+secret_key = secrets.token_urlsafe(64) # random key used in token creation, re-generated everytime the system restarts
 
 class Settings(BaseModel):
     """Application configuration values used across the API."""
@@ -16,6 +16,7 @@ class Settings(BaseModel):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
     data_dir: Path = base_dir / "data"
     jwt_encode_key: str = secret_key
+    jwt_lifetime: int = 20 # how long a token is valid for (in minutes)
 
     def __init__(self, **data):
         super().__init__(**data)

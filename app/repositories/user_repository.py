@@ -43,6 +43,7 @@ class UserRepository:
         self.master_file = self.data_dir / "Users.json"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.jwt_encode_key = get_settings().jwt_encode_key
+        self.jwt_lifetime = get_settings().jwt_lifetime
 
         if self.master_file.exists():
             try:
@@ -253,7 +254,7 @@ class UserRepository:
             none
         """
         payload = {
-            "exp" : datetime.now(tz=timezone.utc) + timedelta(minutes = 15),
+            "exp" : datetime.now(tz=timezone.utc) + timedelta(minutes = self.jwt_lifetime),
             "id": user_id
         }
 
