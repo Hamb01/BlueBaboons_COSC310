@@ -32,6 +32,7 @@ class UserService:
     
         Raises: 
             UserAuthentificationError -> an incorrect username or password was entered
+            BadDataInPersistenceLayerError -> the data stored fo the user is malformed
             DeactivatedAccountError   -> the user cannot login because an admin has deactivated their account
         """
 
@@ -40,7 +41,7 @@ class UserService:
         except UserNotFoundError as exc:
             raise UserAuthenticationError() from exc
 
-        if login_info.password != actual_user_data.password:
+        if not self.repository.check_login_info(login_info, actual_user_data):
             raise UserAuthenticationError()
 
         if not actual_user_data.account_is_active:

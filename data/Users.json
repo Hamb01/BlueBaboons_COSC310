@@ -4,7 +4,9 @@
         "username" : "UserName1",
         "name" : "John Doe",
         "email" : "johndoe@yahoo.com",
-        "password" : "HardPassword1234",
+        "password" : "hRIPvGZQInJ/pipj3bjfXiwXqHA/iKvh0bUtOaRf3mQ=",
+        "hash_salt" : "qbi72iy8qti6IGcU0YOp3A==",
+
 
         "address" : "213-2532 Shoreline Dr",
         "city" : "Lake Country",
@@ -21,7 +23,8 @@
         "username" : "UserName2",
         "name" : "Jane Doe",
         "email" : "janedoe47@gmail.com",
-        "password" : "superHardPassword1234",
+        "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+        "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
         "address" : "213-2532 Shoreline Dr",
         "city" : "Lake Country",

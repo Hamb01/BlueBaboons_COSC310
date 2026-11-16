@@ -38,7 +38,8 @@ def test_get_user_data_by_username(isolated_user_repo):
             "username" : "harambe47",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "address" : "213-2532 Shoreline Dr",
             "city" : "Lake Country",
@@ -73,7 +74,8 @@ def test_get_user_data_by_id(isolated_user_repo):
             "username" : "harambe47",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "account_is_active" : True
         }
@@ -102,7 +104,8 @@ def test_verify_user_account(isolated_user_repo):
             "username" : "harambe47",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "account_is_active" : True
         },
@@ -112,7 +115,8 @@ def test_verify_user_account(isolated_user_repo):
             "username" : "harambe48",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "account_is_active" : False,
 
@@ -150,7 +154,8 @@ def test_user_login(isolated_user_service):
             "username" : "harambe47",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "address" : "213-2532 Shoreline Dr",
             "city" : "Lake Country",
@@ -167,7 +172,8 @@ def test_user_login(isolated_user_service):
             "username" : "harambe48",
             "name" : "Jane Doe",
             "email" : "janedoe47@gmail.com",
-            "password" : "superHardPassword1234",
+            "password" : "u5e2htydiOSUbjOGkdOJsfAL0kniyUC3BnuNWnekB7s=",
+            "hash_salt" : "7OAKfGhKVTqWecOn5H7t4Q==",
 
             "address" : "213-2532 Shoreline Dr",
             "city" : "Lake Country",

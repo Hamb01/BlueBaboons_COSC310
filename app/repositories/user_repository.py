@@ -3,12 +3,14 @@
 from datetime import datetime, timedelta, timezone
 import json
 import os
-import secrets
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
+import base64
 import jwt
+import hashlib
+import hmac
 from pydantic import ValidationError
 
 from app.core.config import get_settings
@@ -18,6 +20,7 @@ from app.core.exceptions import (
     ExpiredTokenError,
     TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
+    UserAuthenticationError,
     UserNotFoundError,
 )
 from app.schemas.user_schema import (
@@ -28,6 +31,7 @@ from app.schemas.user_schema import (
     RestaurantOwner,
     SupportStaff,
     User,
+    UserLogin,
 )
 
 
@@ -38,7 +42,7 @@ class UserRepository:
         self.data_dir = data_dir or get_settings().data_dir
         self.master_file = self.data_dir / "Users.json"
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.jwt_encode_key = secrets.token_urlsafe(64)
+        self.jwt_encode_key = get_settings().jwt_encode_key
 
         if self.master_file.exists():
             try:
@@ -159,6 +163,76 @@ class UserRepository:
                 str(self.master_file), "Data is in the wrong form"
             ) from exc
 
+    def check_login_info(self, login_info: UserLogin, userdata: User) -> bool:
+        """
+        check_login_info()
+        ------------------
+
+        Description:
+            checks if the password that the user entered matches the hashed password stored in the system for their account
+
+        Args:
+            void
+
+        Returns:
+            bool -> true if the password matches
+
+        Raises:
+            UserAuthenticationError
+        """
+
+        # convert password and hash_salt from the userdata back into raw bytes
+        salt = base64.b64decode(userdata.hash_salt.encode('utf-8'))
+        stored_password = base64.b64decode(userdata.password.encode('utf-8'))
+
+        # hash entered password and see if they are the same
+        entered_password = hashlib.pbkdf2_hmac(
+            "sha256", login_info.password.encode("utf-8"), salt, 600_000
+        )
+
+        # Use compare_digest to prevent timing attacks
+        return hmac.compare_digest(stored_password, entered_password)
+
+
+    def hash_new_password(self, password: str) -> Dict[str, str]:
+        """
+        hash_new_password()
+        -------------------
+
+        Description:
+            takes in a password, hashes is and returns the result along with the salt used in the hash
+
+        Args:
+            password : string -> the password to be hashed
+
+        Returns: 
+            dict -> the hashed_password and salt in the following form
+            {
+                "password" : "hashed_password stored as string"
+                "salt" : "salt stored as string"
+            }
+
+        raises:
+            None
+        """
+
+        salt = os.urandom(16)
+
+        hashed_password = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),  # Convert string to bytes
+            salt,
+            600_000,  # High iteration count slows down brute-force attacks
+        )
+
+        salt_as_string = base64.b64encode(salt).decode('utf-8')
+        hashed_password_as_string = base64.b64encode(hashed_password).decode('utf-8')
+
+        return {
+            "password" : hashed_password_as_string,
+            "salt" : salt_as_string
+        }
+
     def generate_web_token(self, user_id: str) -> str:
         """
         generate_web_token()
@@ -211,6 +285,7 @@ class UserRepository:
             raise TokenIsInvalidError() from exc
 
         return decoded_token
+    
     def get_current_user(self, token: str) -> User:
         """
         get_current_user

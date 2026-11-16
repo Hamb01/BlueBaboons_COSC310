@@ -12,7 +12,8 @@ class User(BaseModel):
     username: str = Field(..., description="username for the account")
     name: str = Field(..., description="First and Last name of the user")
     email: str = Field(..., description="Email that the user used while setting up account")
-    password: str = Field(..., description="Password used by the user to sign in")
+    password: str = Field(..., description="Hashed password used by the user to sign in")
+    hash_salt: str = Field(..., description="Random salt used when hashing password")
     account_is_active: bool = Field(..., description="boolean to reflect if the account is currently allowed to interact with the system")
     reason_for_deactivation: Optional[str] = Field(default=None, description="Brief explanation of why the users access to the system was revoked")
 
