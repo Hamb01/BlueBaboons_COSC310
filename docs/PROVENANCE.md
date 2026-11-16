@@ -154,4 +154,12 @@ This document records externally assisted content, AI tooling, and design assist
   - for any suggestions the AI gave me, I double checked with other online resources like geeksforgeeks.org
   - In addition, all the tests passed
 
+## User Login Endpoint — 2026-11-15
+
+- **Tool / Assistant:** Google's Gemini
+- **Scope / Assistance:** 
+  - the code for hashing passwords and extracting the user's JWT from the http header was based off of a gemini generated example. All of the code was modified to fit out project and not directly copied from gemini
+- **Verification:** 
+  - I read through the AIs explanation and double checked that it would work by going through the fastapi documentation
+  - In addition, all the tests passed
 ---
