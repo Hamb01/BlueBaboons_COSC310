@@ -1,10 +1,10 @@
 {
     "r01": {
-        "address": "6767 Leon Ave, Kelowna, BC",
-        "postal_code": "V1W 3Z9",
         "id": "r01",
         "name": "Authentic_Tacos",
         "location": "Kelowna",
+        "address": "6767 Leon Ave, Kelowna, BC",
+        "postal_code": "V1W 3Z9",
         "isOpen": true,
         "cuisine": "Mexican",
         "opening_hours": "09:00-21:00",
@@ -28,17 +28,17 @@
         ]
     },
     "r02": {
-        "address": "10-233 Bottom Wood Lake Rd, Lake Country, BC",
-        "postal_code": "V4V 1W5",
         "id": "r02",
         "name": "Coolio_Sushi",
         "location": "Rutland",
+        "address": "10-233 Bottom Wood Lake Rd, Lake Country, BC",
+        "postal_code": "V4V 1W5",
         "isOpen": true,
         "cuisine": "Japanese",
         "opening_hours": "08:00-21:00",
         "menu": [
             {
-                "id": "m03",
+                "id": "m01",
                 "restaurant_id": "r02",
                 "name": "California Rolls",
                 "description": "8 rolls with crab and avacado",
@@ -46,7 +46,7 @@
                 "availability": true
             },
             {
-                "id": "m04",
+                "id": "m02",
                 "restaurant_id": "r02",
                 "name": "Tuna rolls",
                 "description": "8 rolls with raw tuna",
@@ -54,7 +54,7 @@
                 "availability": true
             },
             {
-                "id": "m05",
+                "id": "m03",
                 "restaurant_id": "r02",
                 "name": "Dynamite rolls",
                 "description": "coming soon",

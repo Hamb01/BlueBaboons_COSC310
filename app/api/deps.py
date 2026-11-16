@@ -1,45 +1,69 @@
+"""Dependency wiring for repositories and services used throughout the API."""
+
 from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+
 from app.repositories.health_repository import HealthRepository
-from app.services.health_service import HealthService
-
-from app.repositories.restaurant_repository import RestaurantRepository
-from app.services.restaurant_service import RestaurantService
-
 from app.repositories.menu_repository import MenuRepository
+from app.repositories.restaurant_repository import RestaurantRepository
+from app.repositories.user_repository import UserRepository
+from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
+from app.services.restaurant_service import RestaurantService
+from app.services.user_service import UserService
 
+# Tell fastapi to expect an Authentication header
+user_token = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_health_repository() -> HealthRepository:
-    """Dependency provider for HealthRepository."""
+    """Build a health repository instance for dependency injection."""
     return HealthRepository()
 
 
 def get_health_service(
-    repository: HealthRepository = Depends(get_health_repository)
+    repository: HealthRepository = Depends(get_health_repository),
 ) -> HealthService:
-    """Dependency provider for HealthService with injected repository."""
-    return HealthService(repository = repository)
+    """Provide a health service backed by the repository dependency."""
+    return HealthService(repository=repository)
 
 
 def get_restaurant_repository() -> RestaurantRepository:
-    """Dependency provider for RestaurantRepository."""
+    """Build a restaurant repository instance for dependency injection."""
     return RestaurantRepository()
 
+
 def get_restaurant_service(
-    repository: RestaurantRepository = Depends(get_restaurant_repository)
+    repository: RestaurantRepository = Depends(get_restaurant_repository),
 ) -> RestaurantService:
-    """Dependency provider for RestaurantService with injected repository."""
+    """Provide a restaurant service backed by the repository dependency."""
     return RestaurantService(repository=repository)
 
 
 def get_menu_repository(
-    restaurant_repository: RestaurantRepository = Depends(get_restaurant_repository)
+    restaurant_repository: RestaurantRepository = Depends(get_restaurant_repository),
 ) -> MenuRepository:
-    """Dependency provider for MenuRepository, sharing the request's RestaurantRepository."""
+    """Provide a menu repository that shares the request restaurant repository."""
     return MenuRepository(restaurant_repository=restaurant_repository)
 
+
 def get_menu_service(
-    repository: MenuRepository = Depends(get_menu_repository)
+    repository: MenuRepository = Depends(get_menu_repository),
 ) -> MenuService:
-    """Dependency provider for MenuService with injected repository."""
+    """Provide a menu service backed by the repository dependency."""
     return MenuService(repository=repository)
+
+def get_user_repository() -> UserRepository:
+    """Build a user repository instance for dependency injection."""
+    return UserRepository()
+
+
+def get_user_service(
+    repository: UserRepository = Depends(get_user_repository),
+) -> UserService:
+    """Provide a user service backed by the repository dependency."""
+    return UserService(repository=repository)
+
+
+def get_current_user(token: str = Depends(user_token), repository: UserRepository = Depends(get_user_repository)):
+    """Gets the current user from the token"""
+    return repository.get_current_user(token)

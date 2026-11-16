@@ -130,3 +130,36 @@ This document records externally assisted content, AI tooling, and design assist
   - The student reviewed each change, tried the add-item dialog in the browser, and
     confirmed Docker writes reach `data/Restaurants.json`.
   - Each PR goes through review by a teammate who is not the author before merging.
+
+- **Student** Isaac Meyer (prompted the AI and revied it's changes)
+- **Tool / Assistant:** GitHub Copilot
+- **Scope / Assistance:** 
+  - Copilot altered the code in app.js to work with the new exception handler
+  - Copilot sumarized some of the reasons why tests related to the frontend were failing (The problem was two-fold. 1: I had to update the test to reflect the changes we made to how we are using/catching exceptions and 2: there was an instance of EmptyMenuError that was incorrectly initialized)
+  - Copilot read through main.py and reformatted the code to improve our pylint score. It did not alter the code's behaviour
+- **Verification:** 
+  - All tests relating to the frontend passed
+  - I also went thropugh and reviewed the code, I then had copilot make a summary of what it did and why it works. This Summary matched with my understanding of what was written so it is good
+
+
+## User Login Endpoint — 2026-11-12
+
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:** 
+  - I had it reword error messages so that I would have an easier time fixing the bugs
+  - I had it rework the user_login service because the order of the logic was causing errors
+  - I also had it go through and reformat some of the code to improve the pylint score
+- **Verification:** 
+  - I carefully read through all of the code that the AI generated and rewrote most of it my self 
+  - for any suggestions the AI gave me, I double checked with other online resources like geeksforgeeks.org
+  - In addition, all the tests passed
+
+## User Login Endpoint — 2026-11-15
+
+- **Tool / Assistant:** Google's Gemini
+- **Scope / Assistance:** 
+  - the code for hashing passwords and extracting the user's JWT from the http header was based off of a gemini generated example. All of the code was modified to fit out project and not directly copied from gemini
+- **Verification:** 
+  - I read through the AIs explanation and double checked that it would work by going through the fastapi documentation
+  - In addition, all the tests passed
+---

@@ -36,7 +36,8 @@ def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     client = request.getfixturevalue("client")
     response = client.get("/restaurants/r01/menu")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Restaurant has no Menu"
+    assert response.json()["message"] == "Restaurant with id r01 has no menu"
+    assert response.json()["details"] == "Menu is empty"
     assert client.get("/restaurants/r01/menu/m01").status_code == 404
 
 
@@ -44,8 +45,6 @@ def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     "/restaurants/unknown/menu",
     "/restaurants/unknown/menu/m01",
     "/restaurants/r01/menu/unknown",
-    "/restaurants/r01/menu/m03",
-    "/restaurants/r02/menu/m01",
 ])
 def test_menu_not_found(client, path):
     assert client.get(path).status_code == 404
@@ -151,8 +150,7 @@ def test_service_update_missing_item_raises_not_found():
     service = MenuService(repository)
 
     with pytest.raises(MenuItemNotFoundError):
-        service.update_menu_item("r01", "missing", {"price": 6})
-    repository.update_menu_item.assert_not_called()
+        service.update_menu_item("r01", "missing", {})
 
 
 def test_service_remove_menu_item_delegates_to_repository():
@@ -170,12 +168,30 @@ def test_repository_unknown_restaurant(isolated_menu_repo):
         isolated_menu_repo.get_menu_data("unknown")
 
 
-def test_generate_menu_id_from_menu_item_dictionaries(isolated_menu_repo):
-    # Seed menus use m01-m05 across both restaurants; ids are global, so the next one is m06.
-    assert isolated_menu_repo.generate_menu_item_id() == "m06"
-
-
 def test_menu_item_rejects_negative_price():
     with pytest.raises(ValidationError):
         MenuItem(id="item", restaurant_id="r01", name="Soup",
                  description="Soup", price=-1, availability=True)
+
+
+
+def test_service_update_returns_repository_item():
+    """Updating delegates to the repository without running obsolete file code."""
+    repository = Mock()
+    repository.get_menu_data.return_value = [SOUP]
+    item = {"id": "m01", "restaurant_id": "r01", "name": "Soup",
+            "description": "Soup", "price": 6, "availability": True}
+    repository.update_menu_item.return_value = item
+    service = MenuService(repository)
+
+    assert service.update_menu_item("r01", "m01", {"price": 6}) == item
+    repository.update_menu_item.assert_called_once_with("r01", "m01", {**SOUP, "price": 6})
+
+
+def test_service_update_missing_item_raises():
+    """An item absent from the menu raises the existing not-found error."""
+    repository = Mock()
+    repository.get_menu_data.return_value = [SOUP]
+    with pytest.raises(MenuItemNotFoundError):
+        MenuService(repository).update_menu_item("r01", "missing", {"price": 6})
+    repository.update_menu_item.assert_not_called()

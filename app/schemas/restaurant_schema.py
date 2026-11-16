@@ -1,21 +1,21 @@
-import re
+"""Schemas for restaurant requests and responses."""
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+import re
 from typing import Optional
 
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 POSTAL_CODE_PATTERN = re.compile(r"^[A-Z]\d[A-Z] \d[A-Z]\d$")
 
+# Coding Notes:
+# Schema is defined using Pydantic to model data for our application.
+# Optional fields are allowed for create/update requests.
+# RestaurantResponse is used to validate data returned by the service layer.
 
-#Coding Notes:
-
-#Schema is defined using Pydantic to model data for our application
-#Optional is data fields that are not explicitly required for the schema to be valid.
-#Restaurant Response is a Pydantic model that inherits from the restaurant schema and is used to validate the data returned from the service layer.
-#The rest is pretty straight forward, the schema defines the data structure for the restaurant and menu item entities, including their fields and types. 
-#The RestaurantResponse model includes an example of a valid restaurant object for documentation purposes.
 
 class Restaurant(BaseModel):
+    """Base restaurant model with the fields persisted for a restaurant."""
+
     address: str = Field(..., alias=AliasChoices("address", "Address"), description="Restaurant address")
     postal_code: str = Field(..., alias=AliasChoices("postal_code", "Postal_Code"), description="Restaurant postal code")
     id: str = Field(..., description="Restaurant ID")
@@ -41,7 +41,10 @@ class Restaurant(BaseModel):
             raise ValueError("Postal code must use the format A1A 1A1")
         return value
 
+
 class RestaurantCreate(BaseModel):
+    """Request schema for creating a restaurant."""
+
     address: str = Field(..., description="Restaurant address")
     postal_code: str = Field(..., description="Restaurant postal code")
     name: str = Field(..., description="Restaurant name")
@@ -68,6 +71,8 @@ class RestaurantCreate(BaseModel):
 
 
 class RestaurantUpdate(BaseModel):
+    """Partial update schema for restaurant fields."""
+
     address: Optional[str] = Field(None, description="Restaurant address")
     postal_code: Optional[str] = Field(None, description="Restaurant postal code")
     name: Optional[str] = Field(None, description="Restaurant name")
@@ -96,23 +101,34 @@ class RestaurantUpdate(BaseModel):
             raise ValueError("Postal code must use the format A1A 1A1")
         return value
 
+
 class MenuItemRequest(BaseModel):
-    restaurant_id: int = Field(..., description="ID of the restaurant to which the menu item will be added")
+    """Request schema for a menu item added to a restaurant."""
+
+    restaurant_id: int = Field(
+        ...,
+        description="ID of the restaurant to which the menu item will be added",
+    )
     name: str = Field(..., description="Name of the menu item")
     price: float = Field(..., ge=0, description="Price of the menu item")
     description: str = Field(..., description="Description of the menu item")
-    availability: bool = Field(True, description="Whether the item can be ordered (default true)")
+    availability: bool = Field(True, description="Whether the item can be ordered")
 
-class RestaurantResponse(Restaurant): #inherit from Restaurant schema
+
+class RestaurantResponse(Restaurant):
+    """Validated restaurant response model used by the API."""
+
     model_config = {
         "json_schema_extra": {
             "example": {
                 "id": "R12345",
                 "name": "The Great Restaurant",
-                "location": "123 Main St, City, Country",
+                "address": "123 Main St",
+                "postal_code": "V1V 1V7",
+                "location": "Kelowna",
                 "isOpen": True,
                 "cuisine": "Italian",
-                "opening_hours": "09:00 - 22:00"
+                "opening_hours": "09:00 - 22:00",
             }
         }
     }
