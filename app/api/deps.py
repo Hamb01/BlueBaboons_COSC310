@@ -54,7 +54,7 @@ def get_menu_service(
 
 def get_user_repository() -> UserRepository:
     """Build a user repository instance for dependency injection."""
-    return UserRepository
+    return UserRepository()
 
 
 def get_user_service(
