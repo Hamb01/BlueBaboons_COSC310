@@ -1,13 +1,10 @@
-from urllib import response
-
 import pytest
 from fastapi.testclient import TestClient
 
 from app.core.exceptions import RestaurantNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
-from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse
+from app.schemas.restaurant_schema import RestaurantResponse
 from app.services.restaurant_service import RestaurantService
-from tests.conftest import isolated_restaurant_repo
 
 
 def test_service_returns_restaurant_details(
@@ -65,4 +62,3 @@ def test_get_restaurant_details_returns_422_for_invalid_postal_code(
     })
     assert response.status_code == 422
     isolated_restaurant_repo.restaurants = {}
-    
