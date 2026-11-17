@@ -140,3 +140,35 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification:** 
   - All tests relating to the frontend passed
   - I also went thropugh and reviewed the code, I then had copilot make a summary of what it did and why it works. This Summary matched with my understanding of what was written so it is good
+
+
+## User Login Endpoint — 2026-11-12
+
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:** 
+  - I had it reword error messages so that I would have an easier time fixing the bugs
+  - I had it rework the user_login service because the order of the logic was causing errors
+  - I also had it go through and reformat some of the code to improve the pylint score
+- **Verification:** 
+  - I carefully read through all of the code that the AI generated and rewrote most of it my self 
+  - for any suggestions the AI gave me, I double checked with other online resources like geeksforgeeks.org
+  - In addition, all the tests passed
+
+## User Login Endpoint — 2026-11-15
+
+- **Tool / Assistant:** Google's Gemini
+- **Scope / Assistance:** 
+  - the code for hashing passwords and extracting the user's JWT from the http header was based off of a gemini generated example. All of the code was modified to fit out project and not directly copied from gemini
+- **Verification:** 
+  - I read through the AIs explanation and double checked that it would work by going through the fastapi documentation
+  - In addition, all the tests passed
+
+## get customer Endpoint — 2026-11-16
+
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:** 
+  - I had it go through and reformat some of the code to improve the pylint score
+- **Verification:** 
+  - I carefully read through all of the code that the AI modified and verified that the AI didn't generate any code, it mearly reformatted existing code to improve the lint score
+  - In addition, all the tests passed
+---
