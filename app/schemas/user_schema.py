@@ -3,7 +3,6 @@
 from enum import Enum
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
-from app.schemas.cart_schema import Cart
 
 #############################################################################################################
 ## Types of users
