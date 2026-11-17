@@ -23,6 +23,7 @@ class DomainError(Exception):
 
     def __init__(self):
         super().__init__()
+        self.status_code: int = 500  # default; the exception handler in main.py sets the real code
         self.message = "Unknown error"
         self.details = "Exception never identified in exception handler"
 
