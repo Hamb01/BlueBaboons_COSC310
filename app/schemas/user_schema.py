@@ -1,8 +1,8 @@
 """Schemas for all types of users"""
 
 from enum import Enum
-from typing import Dict, List, Any, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, List, Any, Optional, Annotated
+from pydantic import BaseModel, Field, StringConstraints, field_validator, ConfigDict
 from app.schemas.cart_schema import Cart
 
 #############################################################################################################
@@ -92,3 +92,24 @@ class CustomerResponse(BaseModel):
     postal_code: str = Field(..., description="Postal conde for the users primary address")
 
     balance: float = Field(..., description="In store credit that the customer may use to pay for orders")
+class CustomerUpdate(BaseModel):
+    """Pydantic model dictating the form of the request body for updating a customer"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: Optional[str] = Field(default=None, description="First and Last name of the user")
+    email: Optional[str] = Field(default=None, description="Email that the user used while setting up account")
+    address: Optional[str] = Field(default=None, description="street address of the user")
+    city: Optional[str] = Field(default=None, description="The city that the user lives in")
+    province: Optional[str] = Field(default=None, description="the Province that the user lives in")
+    postal_code: Optional[str] = Field(default=None, description="Postal conde for the users primary address")
+
+    @field_validator("address", "city", "province", "postal_code")
+    @classmethod
+    def strip_and_require_text(cls, value):
+        if value is None:
+            raise ValueError("must not be null")
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be empty or whitespace")
+        return value
