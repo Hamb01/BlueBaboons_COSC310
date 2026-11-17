@@ -5,9 +5,13 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # Coding Notes:
-# An order is a snapshot: the item names and unit prices are copied from the menu at
-# checkout, so later menu changes never alter an order that was already placed.
-# Orders are created by checkout (#101); this milestone only reads them back.
+# An order is basically a receipt.
+# When someone checks out we copy the item name and price from the menu into the order,
+# so if a restaurant changes its prices later the old order still shows what was actually paid.
+# Checkout (#101) is what makes orders, this file just describes what one looks like.
+# From top to bottom:
+# - OrderItem -> one line of the order (name, price, how many)
+# - Order     -> the whole order, this is what gets saved and what the API sends back
 
 
 class OrderItem(BaseModel):

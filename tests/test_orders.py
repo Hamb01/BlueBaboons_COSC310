@@ -1,7 +1,9 @@
 """Tests for viewing orders (#99 view an order, #100 order history).
 
-Orders are created by checkout (#101). Until that exists, these tests create orders
-directly through OrderRepository.create_order, which is the method checkout will call.
+Checkout (#101) isn't done yet, so these tests make orders straight through
+OrderRepository.create_order. That's the same method checkout is going to call,
+so nothing here needs to change once checkout is in.
+Every test uses the temporary data folder from conftest, so data/Orders.json never gets touched.
 """
 from unittest.mock import patch
 
@@ -63,7 +65,8 @@ def test_new_orders_get_sequential_ids(order_repo):
 def test_orders_survive_a_restart(order_repo, isolated_data_dir):
     created = order_repo.create_order(make_order())
 
-    reloaded = OrderRepository(data_dir=isolated_data_dir)    # a fresh repository = app restart
+    # making a brand new repository is the same as restarting the app, it has to read the file again
+    reloaded = OrderRepository(data_dir=isolated_data_dir)
 
     assert reloaded.get_order(created["id"]) == created
     assert reloaded.create_order(make_order())["id"] == "o02"
@@ -199,6 +202,8 @@ def test_deactivated_customer_cannot_read_orders(order_client, order_repo, isola
 
 def test_order_keeps_its_price_after_the_menu_price_changes(order_client, order_repo, isolated_user_repo,
                                                             isolated_menu_service):
+    # this is the "receipt" idea from order_schema: bump the taco price after the order
+    # was placed and make sure the order still says what the customer actually paid
     created = order_repo.create_order(make_order(customer_id="c01"))
     isolated_menu_service.update_menu_item("r01", "m01", {"price": 99.0})
 

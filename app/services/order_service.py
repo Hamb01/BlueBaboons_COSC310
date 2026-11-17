@@ -6,10 +6,14 @@ from app.schemas.order_schema import Order
 from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner, SupportStaff, User
 
 # Coding Notes:
-# Who may read an order:
+# This is where the order rules live (the repository just saves and loads).
+# Who's allowed to look at an order:
 # - the customer who placed it
-# - developers and support staff (they handle every order)
-# - restaurant owners / admins, but only for orders from their own restaurants
+# - developers and support staff, since they deal with every order
+# - restaurant owners / admins, but only for orders from their own restaurant
+# Everyone else gets a 403.
+# We check the role by the user's type (Customer, Developer, ...), which comes from
+# the first letter of their id in Users.json (c, d, s, o, a).
 
 
 class OrderService:
@@ -61,6 +65,8 @@ class OrderService:
         """
         orders = [Order.model_validate(order)
                   for order in self.repository.list_orders_for_customer(current_user.id)]
+        # newest first. if two orders have the exact same time we fall back to the id
+        # so the list always comes back in the same order
         return sorted(orders, key=lambda order: (order.created_at, order.id), reverse=True)
 
     @staticmethod

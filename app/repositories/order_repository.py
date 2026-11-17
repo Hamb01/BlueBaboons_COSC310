@@ -12,8 +12,14 @@ class OrderRepository:
     """Stores orders in data/Orders.json, keyed by stable order id (o01, o02, ...)."""
 
     # Coding Notes:
-    # The repository only loads and saves; access rules live in OrderService.
-    # Every write goes through JsonStore, so a crash never leaves a half-written file.
+    # This class only loads and saves orders, nothing else.
+    # The rules about who's allowed to see an order are in OrderService, not here.
+    # Everything goes through JsonStore so the file never ends up half written if something crashes.
+    # From top to bottom:
+    # - get_order                -> one order by id (404 if it doesn't exist)
+    # - list_orders_for_customer -> every order one customer placed
+    # - generate_order_id        -> next id (o01, o02, ...)
+    # - create_order             -> saves a new order, checkout (#101) calls this
 
     def __init__(self, data_dir: Optional[Path] = None):
         self.data_dir = data_dir or get_settings().data_dir
@@ -48,6 +54,7 @@ class OrderRepository:
 
     def generate_order_id(self) -> str:
         """Return the next order id: one past the highest existing oNN id."""
+        # same idea as the r01 / m01 ids: find the biggest number we have and add 1
         numbers = [int(key[1:]) for key in self.orders if key.startswith("o") and key[1:].isdigit()]
         return f"o{(max(numbers) + 1) if numbers else 1:02d}"
 
@@ -71,6 +78,8 @@ class OrderRepository:
         order_id = self.generate_order_id()
         order = {**order_data, "id": order_id}
         updated = {**self.orders, order_id: order}
-        self.store.save(updated)          # write first; memory only changes if the save worked
+        # save to the file first. if the save blows up we never touch self.orders,
+        # so a failed checkout doesn't leave a fake order sitting in memory
+        self.store.save(updated)
         self.orders = updated
         return dict(order)

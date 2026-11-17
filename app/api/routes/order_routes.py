@@ -6,6 +6,16 @@ from app.api.deps import get_current_active_customer, get_order_service
 from app.schemas.order_schema import Order
 from app.services.order_service import OrderService
 
+# Coding Notes:
+# From top to bottom:
+# - GET /customers/me/orders -> all of my orders, newest first
+# - GET /orders/{order_id}   -> one order
+# /customers/me/orders lives here and not in customer_routes because it's really about orders.
+# get_current_active_customer already kicks out deactivated accounts (403),
+# so the routes don't need to check that again.
+# There's no try/except here on purpose, the exception handler in main.py turns our
+# errors into the right status code (404 order not found, 403 not your order).
+
 router = APIRouter(tags=["Orders"])
 
 
