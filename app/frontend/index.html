@@ -8,7 +8,16 @@
   <script src="/ui/app.js" defer></script>
 </head>
 <body>
-  <header><a class="brand" href="/ui/">BLUE BABOONS <span>Food discovery</span></a><a href="/docs">API docs ↗</a></header>
+  <header>
+    <a class="brand" href="/ui/">BLUE BABOONS <span>Food discovery</span></a>
+    <div class="header-actions">
+      <span id="account"></span>
+      <button id="sign-in" type="button" class="secondary">Sign in</button>
+      <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
+      <button id="open-cart" type="button">Cart (0)</button>
+      <a href="/docs">API docs ↗</a>
+    </div>
+  </header>
   <main>
     <div class="intro"><div><p class="eyebrow">FIND YOUR NEXT FAVORITE</p><h1>Good food. Close by.</h1><p>Explore local restaurants, see what's on the menu, and find your next meal.</p></div><button id="create-restaurant" type="button">+ Add restaurant</button></div>
     <form id="filters" class="panel filters">
@@ -38,6 +47,20 @@
       <p id="form-error" role="alert"></p>
       <button id="save-restaurant" type="submit">Save restaurant</button>
     </form>
+  </dialog>
+  <dialog id="login-dialog">
+    <form id="login-form">
+      <div class="section-heading"><h2>Sign in</h2><button id="close-login" type="button" class="secondary">Close</button></div>
+      <label>Username<input name="username" required autocomplete="username"></label>
+      <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+      <p id="login-error" class="error" role="alert"></p>
+      <button id="submit-login" type="submit">Sign in</button>
+    </form>
+  </dialog>
+  <dialog id="cart-dialog">
+    <div class="section-heading"><h2>Your cart</h2><button id="close-cart" type="button" class="secondary">Close</button></div>
+    <div id="cart-items" aria-live="polite"></div>
+    <p id="cart-total" class="cart-total"></p>
   </dialog>
 </body>
 </html>
