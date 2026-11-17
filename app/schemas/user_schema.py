@@ -4,6 +4,9 @@ from enum import Enum
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 
+#############################################################################################################
+## Types of users
+#############################################################################################################
 
 class User(BaseModel):
     """Base user model with the fields persisted for a user."""
@@ -46,11 +49,10 @@ class Developer(User):
 class SupportStaff(User):
     """Class to hold the account information for the workers who will actually make and deliver orders"""
 
-class UserLogin(BaseModel):
-    """Pydantic model to define the request body for logging into an account"""
 
-    username: str = Field(..., description="Unique user name associated with the user")
-    password: int | float | str = Field(..., description="Password associated with the user") # allowing many types because we will ensure it matches later
+#############################################################################################################
+## Authentication Enumeration
+#############################################################################################################
 
 class AccountStatusAndRole(Enum):
     """Enumeration to capture the current status of a persons account as well as their current role"""
@@ -64,3 +66,28 @@ class AccountStatusAndRole(Enum):
     DEACTIVATED_DEVELLOPER = 8
     ACTIVE_SUPPORT_STAFF = 9
     DEACTIVATED_SUPPORT_STAFF = 10
+
+#############################################################################################################
+## Schemas for user related requests and responses
+#############################################################################################################
+
+class UserLogin(BaseModel):
+    """Pydantic model to define the request body for logging into an account"""
+
+    username: str = Field(..., description="Unique user name associated with the user")
+    password: int | float | str = Field(..., description="Password associated with the user") # allowing many types because we will ensure it matches later
+
+class CustomerResponse(BaseModel):
+    """Pydantic model dictating the form of the return for the get customer endpoints"""
+
+    username: str = Field(..., description="username for the account")
+    name: str = Field(..., description="First and Last name of the user")
+    email: str = Field(..., description="Email that the user used while setting up account")
+    account_is_active: bool = Field(..., description="boolean to reflect if the account is currently allowed to interact with the system")
+
+    address: str = Field(..., description="street address of the user")
+    city: str = Field(..., description="The city that the user lives in")
+    province: str = Field(..., description="the Province that the user lives in")
+    postal_code: str = Field(..., description="Postal conde for the users primary address")
+
+    balance: float = Field(..., description="In store credit that the customer may use to pay for orders")

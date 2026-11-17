@@ -10,14 +10,16 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app.api.routes import health_routes, menu_routes, restaurant_routes, user_routes
+from app.api.routes import health_routes, menu_routes, restaurant_routes, user_authentication_routes, customer_routes
 from app.core.config import get_settings
 from app.core.exceptions import (
+    AccountNotActiveError,
     BadDataInPersistenceLayerError,
     DataPersistenceError,
     DomainError,
     EmptyMenuError,
     ExpiredTokenError,
+    InvalidRequestError,
     MenuItemNotFoundError,
     RestaurantNotFoundError,
     TokenBelongsToUnknownUserError,
@@ -55,7 +57,8 @@ app.add_middleware(
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
 app.include_router(menu_routes.router)
-app.include_router(user_routes.router)
+app.include_router(user_authentication_routes.router)
+app.include_router(customer_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(
@@ -91,13 +94,20 @@ def handle_application_domain_exceptions(
 ) -> JSONResponse:
     """Map domain exceptions to their corresponding HTTP responses."""
     if isinstance(exception, (
+            InvalidRequestError
+            )):
+            exception.status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(exception, (
         ExpiredTokenError,
         TokenBelongsToUnknownUserError,
         TokenIsInvalidError,
         UserAuthenticationError 
         )):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exception, UserNotAuthorizedError):
+    elif isinstance(exception, (
+        AccountNotActiveError, 
+        UserNotAuthorizedError
+        )):
         exception.status_code = status.HTTP_403_FORBIDDEN
     elif isinstance(exception, (
         RestaurantNotFoundError,
