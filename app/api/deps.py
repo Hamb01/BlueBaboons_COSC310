@@ -1,6 +1,7 @@
 """Dependency wiring for repositories and services used throughout the API."""
 
 from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from app.repositories.health_repository import HealthRepository
 from app.repositories.menu_repository import MenuRepository
@@ -10,8 +11,10 @@ from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
 from app.services.restaurant_service import RestaurantService
 from app.services.user_service import UserService
+from fastapi import HTTPException, status
 
-
+# Tell fastapi to expect an Authentication header
+user_token = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_health_repository() -> HealthRepository:
     """Build a health repository instance for dependency injection."""
@@ -51,12 +54,25 @@ def get_menu_service(
     return MenuService(repository=repository)
 
 def get_user_repository() -> UserRepository:
-    """Provide a menu repository that shares the request restaurant repository."""
+    """Build a user repository instance for dependency injection."""
     return UserRepository
 
 
 def get_user_service(
     repository: UserRepository = Depends(get_user_repository),
 ) -> UserService:
-    """Provide a menu service backed by the repository dependency."""
+    """Provide a user service backed by the repository dependency."""
     return UserService(repository=repository)
+
+
+def get_current_user(token: str = Depends(user_token), repository: UserRepository = Depends(get_user_repository)):
+    """Gets the current user from the token"""
+    try:
+        return repository.get_current_user(token)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        ) from exc
+

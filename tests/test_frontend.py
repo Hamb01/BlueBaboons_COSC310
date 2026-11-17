@@ -18,7 +18,7 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     """The form's create/edit payloads persist and remain discoverable."""
     payload = {
         'name': 'Campus Cafe', 'cuisine': 'Cafe', 'location': 'Kelowna',
-        'opening_hours': '08:00-17:00', 'isOpen': True,
+        'opening_hours': '08:00-17:00', 'isOpen': True, 'owner_id': 'u99'
     }
     response = client.post('/restaurants', json=payload)
     assert response.status_code == 201

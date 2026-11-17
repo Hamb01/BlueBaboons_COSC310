@@ -19,7 +19,7 @@ class Restaurant(BaseModel):
     isOpen: bool = Field(..., description="Restaurant open status")
     cuisine: str = Field(..., description="Restaurant cuisine type")
     opening_hours: str = Field(..., description="Restaurant opening hours")
-    owner_id: str = Field(..., description="Id of the user who owns the restaurant")
+    owner_id: str | None = Field(None, description="Id of the user who owns the restaurant")
 
 
 class RestaurantCreate(BaseModel):

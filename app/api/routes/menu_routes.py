@@ -19,7 +19,7 @@
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.deps import get_menu_service
+from app.api.deps import get_current_user, get_menu_service
 from app.schemas.menu_item import MenuItem
 from app.schemas.restaurant_schema import MenuItemRequest
 from app.services.menu_service import MenuService
@@ -36,9 +36,10 @@ def replace_menu_item(
     item_id: str,
     updated_data: dict,
     service: MenuService = Depends(get_menu_service),
+    current_user: dict = Depends(get_current_user)
 ):
     """Replace an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
+    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
@@ -48,9 +49,10 @@ def modify_menu_item(
     item_id: str,
     updated_data: dict,
     service: MenuService = Depends(get_menu_service),
+    current_user: dict = Depends(get_current_user)
 ):
     """Modify an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data)
+    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
@@ -59,10 +61,11 @@ def add_menu_item(
     restaurant_id: str,
     payload: MenuItemRequest,
     service: MenuService = Depends(get_menu_service),
+    current_user: dict = Depends(get_current_user)
 ):
     """Add a menu item to the restaurant in the path."""
     item_data = payload.model_dump(exclude={"restaurant_id"})
-    saved_item = service.add_new_menu_item(restaurant_id, item_data)
+    saved_item = service.add_new_menu_item(restaurant_id, item_data, current_user=current_user)
     return {"message": "Menu item added successfully", "item": saved_item}
 
 
@@ -93,6 +96,7 @@ def remove_menu_item(
     restaurant_id: str,
     menu_item_id: str,
     service: MenuService = Depends(get_menu_service),
+    current_user: dict = Depends(get_current_user)
 ):
     """Delete the named menu item from the restaurant."""
     service.remove_menu_item(restaurant_id, menu_item_id)

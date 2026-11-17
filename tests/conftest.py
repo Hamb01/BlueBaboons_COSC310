@@ -9,13 +9,17 @@ from app.api.deps import get_health_repository, get_health_service
 from app.repositories.health_repository import HealthRepository
 from app.services.health_service import HealthService
 
-from app.api.deps import get_restaurant_repository, get_restaurant_service
+from app.api.deps import get_restaurant_repository, get_restaurant_service, get_user_repository, get_user_service
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.services.restaurant_service import RestaurantService
 
 from app.repositories.menu_repository import MenuRepository
 from app.services.menu_service import MenuService
 
+from app.repositories.user_repository import UserRepository
+from app.services.user_service import UserService
+
+from app.api.deps import get_current_user
 # this document contains pytest fixtures,
 # fixtures are functions that can be injected into other tests 
 # they are just setup code so we don't need to redefine this stuff for every indivdual test
@@ -46,7 +50,9 @@ def client(
     isolated_health_service: HealthService,
     isolated_health_repo: HealthRepository,
     isolated_restaurant_service: RestaurantService,
-    isolated_restaurant_repo: RestaurantRepository
+    isolated_restaurant_repo: RestaurantRepository,
+    isolated_user_service: UserService,
+    isolated_user_repo: UserRepository,
 ) -> Generator[TestClient, None, None]:
     """FastAPI TestClient fixture with dependency overrides for isolated testing."""
 
@@ -54,7 +60,10 @@ def client(
     app.dependency_overrides[get_health_service]    = lambda: isolated_health_service
     app.dependency_overrides[get_restaurant_repository] = lambda: isolated_restaurant_repo
     app.dependency_overrides[get_restaurant_service]    = lambda: isolated_restaurant_service
-
+    app.dependency_overrides[get_user_repository] = lambda: isolated_user_repo
+    app.dependency_overrides[get_user_service] = lambda: isolated_user_service
+    app.dependency_overrides[get_current_user] = lambda: {"id": "u01", "role": "admin"}
+    
     try:
         with TestClient(app) as test_client:
             yield test_client
@@ -107,3 +116,16 @@ def isolated_menu_repo(isolated_restaurant_repo: RestaurantRepository) -> MenuRe
 @pytest.fixture
 def isolated_menu_service(isolated_menu_repo: MenuRepository) -> MenuService:
     return MenuService(repository = isolated_menu_repo)
+
+############################################################################################
+### Config for test_user_login_and_verification.py
+############################################################################################
+
+@pytest.fixture
+def isolated_user_repo(isolated_data_dir: Path) -> UserRepository:
+    return UserRepository(data_dir = isolated_data_dir)
+
+@pytest.fixture
+def isolated_user_service(isolated_user_repo: UserRepository) -> UserService:
+    return UserService(repository = isolated_user_repo)
+

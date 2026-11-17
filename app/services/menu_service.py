@@ -6,7 +6,6 @@ from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAu
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 
-
 # Coding Notes:
 # The service layer acts as the business controller for menus.
 # The repository layer (MenuRepository) acts as the data access layer.
@@ -83,7 +82,7 @@ class MenuService:
         self,
         restaurant_id: str,
         menu_item: Dict[str, Any],
-        current_user: dict,
+        current_user: dict = None,
     ) -> Dict[str, Any]:
         """
         add_new_menu_item
@@ -121,7 +120,7 @@ class MenuService:
         restaurant_id: str,
         item_id: str,
         updated_data: Dict[str, Any],
-        current_user: dict,
+        current_user: dict = None,
     ) -> Dict[str, Any]:
         """
         update_menu_item
@@ -152,7 +151,7 @@ class MenuService:
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
         return self.repository.update_menu_item(restaurant_id, item_id, updated.model_dump())
 
-    def remove_menu_item(self, restaurant_id: str, item_id: str, current_user: dict) -> None:
+    def remove_menu_item(self, restaurant_id: str, item_id: str, current_user: dict = None) -> None:
         """
         remove_menu_item
         -------------------

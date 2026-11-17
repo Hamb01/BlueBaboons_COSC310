@@ -15,7 +15,7 @@
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import get_restaurant_service
+from app.api.deps import get_current_user, get_restaurant_service
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
 from app.services.restaurant_service import RestaurantService
 
@@ -64,17 +64,19 @@ def get_restaurant_details(
 @router.post("/restaurants", status_code=status.HTTP_201_CREATED)
 def create_restaurant(
     payload: RestaurantCreate,
+    current_user: dict = Depends(get_current_user),
     service: RestaurantService = Depends(get_restaurant_service),
 ):
     """Create a new restaurant from the provided payload."""
-    return service.create_restaurant(payload)
+    return service.create_restaurant(payload, current_user=current_user)
 
 
 @router.put("/restaurants/{restaurant_id}", status_code=status.HTTP_200_OK)
 def update_restaurant(
     restaurant_id: str,
     payload: RestaurantUpdate,
+    current_user: dict = Depends(get_current_user),
     service: RestaurantService = Depends(get_restaurant_service),
 ):
     """Update an existing restaurant with the provided fields."""
-    return service.update_restaurant(restaurant_id, payload)
+    return service.update_restaurant(restaurant_id, payload, current_user=current_user)
