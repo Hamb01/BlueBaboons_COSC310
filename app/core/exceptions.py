@@ -143,3 +143,11 @@ class TokenIsInvalidError(DomainError):
     def __init__(self):
         super().__init__()
         self.message = "Token is invalid"
+
+class InvalidRequestError(DomainError):
+    """Raised when the user makes a bad request"""
+
+    def __init__(self, additional_details: str):
+        super().__init__()
+        self.message = "Invalid Request"
+        self.details = additional_details

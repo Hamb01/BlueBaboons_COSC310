@@ -2,10 +2,18 @@
 """Business logic for user authentication and authorization."""
 
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import UserLogin
+from app.schemas.user_schema import (
+    AccountStatusAndRole,
+    CustomerResponse,
+    Customer,
+    User,
+    UserLogin
+)
 from app.core.exceptions import (
     AccountNotActiveError,
+    InvalidRequestError,
     UserAuthenticationError,
+    UserNotAuthorizedError,
     UserNotFoundError,
 )
 
@@ -50,3 +58,52 @@ class UserService:
             )
 
         return self.repository.generate_web_token(actual_user_data.id)
+
+    def get_customer(self, id_to_get: str, current_user: User) -> CustomerResponse:
+        """
+        get_customer
+        -------------------
+
+        Description:
+            retrives the information for the selected customer if the user is authorized
+
+        Args: 
+            id_to_get : string -> the id for the customer whose information you wish to retrieve
+            current_user : user -> The data relaetd to the user who made the request
+
+        Returns:
+            CustomerResponse -> the information of the customer
+
+        Raises: 
+            DeactivatedAccountError -> The current users account is not active
+            UserNotfoundError -> no such user is currently stored in the system
+            UserNotAuthorizedError -> the current user cannot view the infomation of the customer (only active admins and the customer in question can request this data)
+        """
+        if not current_user.account_is_active:
+            raise AccountNotActiveError(current_user.reason_for_deactivation)
+        elif current_user.id == id_to_get or self.repository.verify_user_account(current_user.id) == AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN:
+            customer_data = self.repository.get_user_data_from_id(id_to_get)
+        else:
+            raise UserNotAuthorizedError
+
+        if not isinstance(customer_data, Customer):
+            raise InvalidRequestError("You cannot request non-customer data through the get-customer endpoint")
+
+        response = CustomerResponse(
+            username = customer_data.username,
+            name = customer_data.name,
+            email = customer_data.email,
+            account_is_active = customer_data.account_is_active,
+            
+            address = customer_data.address,
+            city = customer_data.city,
+            province = customer_data.province,
+            postal_code = customer_data.postal_code,
+            
+            balance = customer_data.balance
+        )
+
+        return response
+
+        
+

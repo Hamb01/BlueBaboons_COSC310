@@ -2,14 +2,14 @@
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import get_user_service
-from app.schemas.user_schema import UserLogin, Customer, Developer, SupportStaff
+from app.api.deps import get_user_service, get_current_user
+from app.schemas.user_schema import UserLogin, CustomerResponse, User
 from app.services.user_service import UserService
 
 router = APIRouter(tags=["Authentication"])
 
 @router.post("/auth/login", status_code=status.HTTP_200_OK)
-def user_login(login_info : UserLogin, service=get_user_service):
+def user_login(login_info: UserLogin, service: UserService = Depends(get_user_service)):
     """
     user_login()
     -------------------
@@ -25,7 +25,7 @@ def user_login(login_info : UserLogin, service=get_user_service):
 
     Raises: 
         UserAuthentificationError      -> an incorrect username or password was entered
-        DeactivatedAccountError        -> the user cannot login because an admin has deactivated their account
+        AccountNotActiveError          -> the user cannot login because an admin has deactivated their account
         BadDataInPersistenceLayerError -> The data retrieved from the persistence layer had an error in it 
         ValidationEror                 -> the information passed was in an incorrect form
     """

@@ -310,7 +310,7 @@ class UserRepository:
         return self.get_user_data_from_id(id)
 
 
-    def verify_user_account(self, token) -> AccountStatusAndRole:
+    def verify_user_account(self, user_id: str) -> AccountStatusAndRole:
         """
         verify_user_account()
         ----------------------
@@ -325,21 +325,11 @@ class UserRepository:
             AccountStatus -> current status of the account (ACTIVE or DEACTIVATED)
 
         Raises: 
-            TokenBelongsToUnknownUserError -> the username specified belongs to a user that does not exist
             BadDataInPersistenceLayerError -> get_user_data_from_id returned the wrong type
         """
 
-        try:
-            decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])
-            user_data = self.get_user_data_from_id(decoded_token["id"])
-        except UserNotFoundError as exc:
-            raise TokenBelongsToUnknownUserError() from exc
-        except jwt.ExpiredSignatureError as exc:
-            raise ExpiredTokenError() from exc
-        except jwt.InvalidTokenError as exc:
-            raise TokenIsInvalidError() from exc
+        userdata = self.get_user_data_from_id(user_id)
         
-
         role_statuses = {
             Customer: (
                 AccountStatusAndRole.ACTIVE_CUSTOMER,
@@ -363,11 +353,11 @@ class UserRepository:
             ),
         }
         for user_type, statuses in role_statuses.items():
-            if isinstance(user_data, user_type):
+            if isinstance(userdata, user_type):
                 active_status, deactivated_status = statuses
                 return (
                     active_status
-                    if user_data.account_is_active
+                    if userdata.account_is_active
                     else deactivated_status
                 )
 

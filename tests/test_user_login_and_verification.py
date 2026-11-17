@@ -125,16 +125,12 @@ def test_verify_user_account(isolated_user_repo):
     }
     isolated_user_repo.users = expected_data
     isolated_user_repo.save_to_file()
-    active = isolated_user_repo.generate_web_token("d02")
-    deactivated = isolated_user_repo.generate_web_token("a03")
-    non_existent = isolated_user_repo.generate_web_token("c03")
-    broken = isolated_user_repo.generate_web_token("c01")
-    assert isolated_user_repo.verify_user_account(active) == AccountStatusAndRole.ACTIVE_DEVELOPER
-    assert isolated_user_repo.verify_user_account(deactivated) == AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
-    with pytest.raises(TokenBelongsToUnknownUserError):
-        isolated_user_repo.verify_user_account(non_existent)
+    assert isolated_user_repo.verify_user_account("d02") == AccountStatusAndRole.ACTIVE_DEVELOPER
+    assert isolated_user_repo.verify_user_account("a03") == AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
+    with pytest.raises(UserNotFoundError):
+        isolated_user_repo.verify_user_account("c03")
     with pytest.raises(BadDataInPersistenceLayerError):
-        isolated_user_repo.verify_user_account(broken)
+        isolated_user_repo.verify_user_account("c01")
 
 ################################################################################################
 ## Test User Authentication related functions in Service Layer
