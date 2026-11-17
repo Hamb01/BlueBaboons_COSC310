@@ -99,4 +99,4 @@ def remove_menu_item(
     current_user: dict = Depends(get_current_user)
 ):
     """Delete the named menu item from the restaurant."""
-    service.remove_menu_item(restaurant_id, menu_item_id)
+    service.remove_menu_item(restaurant_id, menu_item_id, current_user=current_user)

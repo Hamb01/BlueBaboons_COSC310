@@ -15,7 +15,7 @@
 
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
-from app.core.exceptions import RestaurantNotFoundError, UserNotAuthorizedError
+from app.core.exceptions import RestaurantNotFoundError, UserNotAuthorizedError, UserAuthenticationError
 
 class RestaurantService:
     """Service layer coordinates restaurant business logic."""
@@ -151,7 +151,7 @@ class RestaurantService:
             DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
         """
         if current_user is None:
-            current_user = {"id": "u01", "role": "admin"}
+            raise UserAuthenticationError(forbidden_action="restaurant creation")
             
         if current_user.get("role") not in ("admin", "owner"):
             raise UserNotAuthorizedError(forbidden_action="restaurant creation")
@@ -188,8 +188,8 @@ class RestaurantService:
             ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
         """
         if current_user is None:
-            current_user = {"id": "u01", "role": "admin"}
-            
+            raise UserAuthenticationError(forbidden_action="restaurant update")
+
         restaurant = self.repository.get_restaurant_data(restaurant_id)
         
         is_admin = current_user.get("role") == "admin"

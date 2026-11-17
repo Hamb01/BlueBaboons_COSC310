@@ -99,7 +99,7 @@ def test_service_add_menu_item_converts_price_and_uses_repository():
         "availability": True,
     }
 
-    result = service.add_new_menu_item("r01", menu_item)
+    result = service.add_new_menu_item("r01", menu_item, current_user={"id": "u01", "role": "admin"})
 
     assert result == expected_item
     repository.add_menu_item.assert_called_once_with("r01", expected_item)
@@ -110,7 +110,8 @@ def test_service_add_menu_item_uses_defaults():
     service = MenuService(repository)
 
     result = service.add_new_menu_item(
-        "r01", {"name": "Soup", "description": "Vegetable soup"}
+        "r01", {"name": "Soup", "description": "Vegetable soup"},
+        current_user={"id": "u01", "role": "admin"}
     )
 
     assert result["price"] == 0.0
@@ -123,7 +124,8 @@ def test_service_add_invalid_menu_item_never_reaches_repository():
 
     with pytest.raises(ValidationError):
         MenuService(repository).add_new_menu_item(
-            "r01", {"name": "Soup", "description": "Soup", "price": -1})
+            "r01", {"name": "Soup", "description": "Soup", "price": -1},
+            current_user={"id": "u01", "role": "admin"})
 
     repository.add_menu_item.assert_not_called()
 
@@ -138,7 +140,7 @@ def test_service_update_menu_item_saves_merged_item():
     repository.update_menu_item.side_effect = lambda restaurant_id, item_id, item: item
     service = MenuService(repository)
 
-    result = service.update_menu_item("r01", "m01", {"price": 6.5})
+    result = service.update_menu_item("r01", "m01", {"price": 6.5}, current_user={"id": "u01", "role": "admin"})
 
     assert result == {**SOUP, "price": 6.5}
     repository.update_menu_item.assert_called_once_with("r01", "m01", {**SOUP, "price": 6.5})
@@ -150,14 +152,14 @@ def test_service_update_missing_item_raises_not_found():
     service = MenuService(repository)
 
     with pytest.raises(MenuItemNotFoundError):
-        service.update_menu_item("r01", "missing", {})
+        service.update_menu_item("r01", "missing", {}, current_user={"id": "u01", "role": "admin"})
 
 
 def test_service_remove_menu_item_delegates_to_repository():
     repository = Mock()
     service = MenuService(repository)
 
-    result = service.remove_menu_item("r01", "m01")
+    result = service.remove_menu_item("r01", "m01", current_user={"id": "u01", "role": "admin"})
 
     assert result is None
     repository.remove_menu_item.assert_called_once_with("r01", "m01")
@@ -184,7 +186,7 @@ def test_service_update_returns_repository_item():
     repository.update_menu_item.return_value = item
     service = MenuService(repository)
 
-    assert service.update_menu_item("r01", "m01", {"price": 6}) == item
+    assert service.update_menu_item("r01", "m01", {"price": 6}, current_user={"id": "u01", "role": "admin"}) == item
     repository.update_menu_item.assert_called_once_with("r01", "m01", {**SOUP, "price": 6})
 
 
@@ -193,5 +195,5 @@ def test_service_update_missing_item_raises():
     repository = Mock()
     repository.get_menu_data.return_value = [SOUP]
     with pytest.raises(MenuItemNotFoundError):
-        MenuService(repository).update_menu_item("r01", "missing", {"price": 6})
+        MenuService(repository).update_menu_item("r01", "missing", {"price": 6}, current_user={"id": "u01", "role": "admin"})
     repository.update_menu_item.assert_not_called()

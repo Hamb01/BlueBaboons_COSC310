@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAuthorizedError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAuthorizedError, UserAuthenticationError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -198,7 +198,7 @@ class MenuService:
                 UserNotAuthorizedError -> User isn't an admin or the restaurant's owner, raising 403.
         """
         if current_user is None:
-            current_user = {"id": "u01", "role": "admin"}
+            raise UserAuthenticationError(forbidden_action="restaurant management")
             
         is_admin = current_user.get("role") == "admin"
         
