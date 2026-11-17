@@ -92,7 +92,7 @@ class UserService:
         ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
-            raise UserNotAuthorizedError
+            raise UserNotAuthorizedError("view customer information")
 
         if not isinstance(customer_data, Customer):
             raise InvalidRequestError(
@@ -113,3 +113,35 @@ class UserService:
         )
 
         return response
+
+    def deacivate_customer(self, id_to_deactivate: str, current_user: User, reason_for_deactivation: str = ""):
+        """
+        deactivate_customer
+        -------------------
+
+        Description:
+            method to allow for the deactivationg of a customers account
+
+        Args: 
+            id_to_deactivate : string -> the id for the customer who you wish to deactivate
+            current_user : user -> The data relaetd to the user who made the request
+            reason_to_deactivate : string -> optional description of why you wish to delete your account
+
+        Returns:
+            void
+
+        Raises: 
+            AccountNotActiveError -> the current user's account has been deactivated
+            UserNotAuthorizedError -> the current user is not allowed to do this action
+            UserNotFoundError -> no such userr is stored in the system
+            BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+            DataPersistenceError -> an error occured while saving the changes done to the user
+        """
+        if not current_user.account_is_active:
+            raise AccountNotActiveError(current_user.reason_for_deactivation)
+        if current_user.id == id_to_deactivate:
+            self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
+        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER):
+            self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
+        else:
+            raise UserNotAuthorizedError("deactivate customer")

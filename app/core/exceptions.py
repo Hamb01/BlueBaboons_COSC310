@@ -107,7 +107,7 @@ class UserNotAuthorizedError(DomainError):
         self.message = "User is not Authorized"
 
         if(forbidden_action):
-            self.details = f"You do not have permission to use {forbidden_action}"
+            self.details = f"You do not have permission to {forbidden_action}"
 
 class UserNotFoundError(DomainError):
     """Raised when a user cannot be found in the system"""
