@@ -10,7 +10,7 @@ from app.core.exceptions import (
     UserNotAuthorizedError,
     UserNotFoundError,
 )
-from app.schemas.user_schema import AccountStatusAndRole, Developer, UserLogin
+from app.schemas.user_schema import AccountStatusAndRole, Developer, UserLogin, CustomerResponse
 
 def test_get_customer(isolated_user_service):
     """Test the ability to retrive customer data for a specific customer"""
@@ -70,5 +70,16 @@ def test_get_customer(isolated_user_service):
     isolated_user_service.repository.users = expected_data
     isolated_user_service.repository.save_to_file()
 
+    deactivated_customer = isolated_user_service.repository.get_user_data_from_id("c03")
+    active_customer = isolated_user_service.repository.get_user_data_from_id("c02")
+    admin = isolated_user_service.repository.get_user_data_from_id("c02")
+
+    response = isolated_user_service.get_customer("c02", active_customer)
+    assert response.name == active_customer.name
+    assert isinstance(response, CustomerResponse)
+    second_response = isolated_user_service.get_customer("c02", admin)
+    assert response == second_response
     with pytest.raises(UserNotAuthorizedError):
-        isolated_user_service.get_customer()
+        isolated_user_service.get_customer("c03", active_customer)
+    with pytest.raises(AccountNotActiveError):        
+        isolated_user_service.get_customer("c03", deactivated_customer)
