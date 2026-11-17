@@ -1,16 +1,16 @@
 """Repository layer for reading and writing to the user.Json file in the persistence layer"""
 
+import base64
 from datetime import datetime, timedelta, timezone
+import hashlib
+import hmac
 import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict, Optional
 
-import base64
 import jwt
-import hashlib
-import hmac
 from pydantic import ValidationError
 
 from app.core.config import get_settings
@@ -18,9 +18,7 @@ from app.core.exceptions import (
     BadDataInPersistenceLayerError,
     DataPersistenceError,
     ExpiredTokenError,
-    TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
-    UserAuthenticationError,
     UserNotFoundError,
 )
 from app.schemas.user_schema import (
@@ -170,7 +168,8 @@ class UserRepository:
         ------------------
 
         Description:
-            checks if the password that the user entered matches the hashed password stored in the system for their account
+            checks if the password that the user entered matches the hashed
+            password stored in the system for their account
 
         Args:
             void
@@ -230,8 +229,8 @@ class UserRepository:
         hashed_password_as_string = base64.b64encode(hashed_password).decode('utf-8')
 
         return {
-            "password" : hashed_password_as_string,
-            "salt" : salt_as_string
+            "password": hashed_password_as_string,
+            "salt": salt_as_string,
         }
 
     def generate_web_token(self, user_id: str) -> str:
@@ -254,8 +253,9 @@ class UserRepository:
             none
         """
         payload = {
-            "exp" : datetime.now(tz=timezone.utc) + timedelta(minutes = self.jwt_lifetime),
-            "id": user_id
+            "exp": datetime.now(tz=timezone.utc)
+            + timedelta(minutes=self.jwt_lifetime),
+            "id": user_id,
         }
 
         return jwt.encode(payload, self.jwt_encode_key, algorithm="HS512")
@@ -279,14 +279,18 @@ class UserRepository:
         """
 
         try:
-            decoded_token = jwt.decode(token, self.jwt_encode_key, algorithms=["HS512"])["id"]
+            decoded_token = jwt.decode(
+                token,
+                self.jwt_encode_key,
+                algorithms=["HS512"],
+            )["id"]
         except jwt.ExpiredSignatureError as exc:
             raise ExpiredTokenError() from exc
         except jwt.InvalidTokenError as exc:
             raise TokenIsInvalidError() from exc
 
         return decoded_token
-    
+
     def get_current_user(self, token: str) -> User:
         """
         get_current_user
@@ -306,8 +310,8 @@ class UserRepository:
             ExpiredTokenError -> Token is expired
         """
 
-        id = self.get_id_from_token(token)
-        return self.get_user_data_from_id(id)
+        user_id = self.get_id_from_token(token)
+        return self.get_user_data_from_id(user_id)
 
 
     def verify_user_account(self, user_id: str) -> AccountStatusAndRole:
@@ -329,7 +333,7 @@ class UserRepository:
         """
 
         userdata = self.get_user_data_from_id(user_id)
-        
+
         role_statuses = {
             Customer: (
                 AccountStatusAndRole.ACTIVE_CUSTOMER,

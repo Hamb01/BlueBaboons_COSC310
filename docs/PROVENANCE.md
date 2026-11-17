@@ -162,4 +162,13 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification:** 
   - I read through the AIs explanation and double checked that it would work by going through the fastapi documentation
   - In addition, all the tests passed
+
+## get customer Endpoint — 2026-11-16
+
+- **Tool / Assistant:** Github Copilot
+- **Scope / Assistance:** 
+  - I had it go through and reformat some of the code to improve the pylint score
+- **Verification:** 
+  - I carefully read through all of the code that the AI modified and verified that the AI didn't generate any code, it mearly reformatted existing code to improve the lint score
+  - In addition, all the tests passed
 ---

@@ -24,24 +24,26 @@ class UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
-    def user_login(self, login_info : UserLogin):
+    def user_login(self, login_info: UserLogin):
         """
         user_login()
         -------------------
-    
+
         Description:
             service to verify the login information provided by the user
-    
-        Args: 
-            login_info : UserLogin -> username and password for the account (defined in pydantic model)
-    
+
+        Args:
+            login_info : UserLogin -> username and password for the account
+                (defined in pydantic model)
+
         Returns:
             token: A JSON web token for authenticating future requests.
-    
-        Raises: 
+
+        Raises:
             UserAuthentificationError -> an incorrect username or password was entered
             BadDataInPersistenceLayerError -> the data stored fo the user is malformed
-            DeactivatedAccountError   -> the user cannot login because an admin has deactivated their account
+            DeactivatedAccountError   -> the user cannot login because an admin has
+                deactivated their account
         """
 
         try:
@@ -74,36 +76,40 @@ class UserService:
         Returns:
             CustomerResponse -> the information of the customer
 
-        Raises: 
+        Raises:
             DeactivatedAccountError -> The current users account is not active
             UserNotfoundError -> no such user is currently stored in the system
-            UserNotAuthorizedError -> the current user cannot view the infomation of the customer (only active admins and the customer in question can request this data)
+            UserNotAuthorizedError -> the current user cannot view the information
+                of the customer (only active admins and the customer in question
+                can request this data)
         """
         if not current_user.account_is_active:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
-        elif current_user.id == id_to_get or self.repository.verify_user_account(current_user.id) == AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN:
+
+        if current_user.id == id_to_get or (
+            self.repository.verify_user_account(current_user.id)
+            == AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN
+        ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
             raise UserNotAuthorizedError
 
         if not isinstance(customer_data, Customer):
-            raise InvalidRequestError("You cannot request non-customer data through the get-customer endpoint")
+            raise InvalidRequestError(
+                "You cannot request non-customer data through the get-customer "
+                "endpoint"
+            )
 
         response = CustomerResponse(
-            username = customer_data.username,
-            name = customer_data.name,
-            email = customer_data.email,
-            account_is_active = customer_data.account_is_active,
-            
-            address = customer_data.address,
-            city = customer_data.city,
-            province = customer_data.province,
-            postal_code = customer_data.postal_code,
-            
-            balance = customer_data.balance
+            username=customer_data.username,
+            name=customer_data.name,
+            email=customer_data.email,
+            account_is_active=customer_data.account_is_active,
+            address=customer_data.address,
+            city=customer_data.city,
+            province=customer_data.province,
+            postal_code=customer_data.postal_code,
+            balance=customer_data.balance,
         )
 
         return response
-
-        
-
