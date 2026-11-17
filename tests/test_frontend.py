@@ -1,4 +1,7 @@
 from fastapi.testclient import TestClient
+from app.api.deps import get_cart_repository
+from app.main import app
+from app.repositories.cart_repository import CartRepository
 from app.repositories.restaurant_repository import RestaurantRepository
 
 
@@ -43,3 +46,29 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     assert error['details'] == 'Menu is empty'
     reloaded = RestaurantRepository(isolated_data_dir)
     assert reloaded.get_restaurant_data(restaurant_id)['name'] == payload['name']
+
+
+def test_frontend_has_sign_in_and_cart(client: TestClient):
+    page = client.get('/ui/').text
+    assert '<form id="login-form"' in page
+    assert '<dialog id="cart-dialog"' in page
+    assert 'id="open-cart"' in page
+
+
+def test_frontend_sign_in_and_cart_flow(client: TestClient, isolated_data_dir):
+    """The same calls the page makes: log in, who am I, add to cart, open the cart."""
+    app.dependency_overrides[get_cart_repository] = lambda: CartRepository(data_dir=isolated_data_dir)
+
+    token = client.post('/auth/login', json={'username': 'UserName1', 'password': 'HardPassword1234'}).json()
+    headers = {'Authorization': f'Bearer {token}'}
+
+    me = client.get('/customers/me', headers=headers)
+    assert me.status_code == 200
+    assert me.json()['username'] == 'UserName1'
+
+    added = client.post('/cart/items', headers=headers, json={'restaurant_id': 'r01', 'menu_item_id': 'm01', 'quantity': 1})
+    assert added.status_code == 200
+
+    cart = client.get('/cart', headers=headers).json()
+    assert [(line['name'], line['quantity']) for line in cart['items']] == [('Beef Taco', 1)]
+    assert cart['total'] == 7.99
