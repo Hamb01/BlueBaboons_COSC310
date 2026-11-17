@@ -23,6 +23,7 @@ class DomainError(Exception):
 
     def __init__(self):
         super().__init__()
+        self.status_code: int = 500  # default; the exception handler in main.py sets the real code
         self.message = "Unknown error"
         self.details = "Exception never identified in exception handler"
 
@@ -61,6 +62,30 @@ class EmptyMenuError(DomainError):
             self.details = "Menu is empty"
         else:
             self.details = "Menu does not exist"
+
+###########################################################################################################################################
+## Cart errors
+###########################################################################################################################################
+
+class MenuItemUnavailableError(DomainError):
+    """Raised when a menu item exists but cannot be ordered right now."""
+
+    def __init__(self, restaurant_id: str, menu_item_id: str):
+        super().__init__()
+        self.message = f"Menu item {menu_item_id} from restaurant {restaurant_id} is not available."
+        self.details = "Unavailable items cannot be added to a cart."
+
+
+class CartRestaurantConflictError(DomainError):
+    """Raised when an item from a second restaurant is added to a cart."""
+
+    def __init__(self, cart_restaurant_id: str, requested_restaurant_id: str):
+        super().__init__()
+        self.message = "A cart can only contain items from one restaurant."
+        self.details = (
+            f"Cart has items from {cart_restaurant_id}; "
+            f"tried to add an item from {requested_restaurant_id}."
+        )
 
 ###########################################################################################################################################
 ## Persistence Layer Errors
@@ -143,3 +168,11 @@ class TokenIsInvalidError(DomainError):
     def __init__(self):
         super().__init__()
         self.message = "Token is invalid"
+
+class InvalidRequestError(DomainError):
+    """Raised when the user makes a bad request"""
+
+    def __init__(self, additional_details: str):
+        super().__init__()
+        self.message = "Invalid Request"
+        self.details = additional_details
