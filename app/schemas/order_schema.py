@@ -4,14 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-# Coding Notes:
-# An order is basically a receipt.
-# At checkout we copy each item's name and price into the order, so if a restaurant
-# changes its prices later the old order still shows what was actually paid.
-
 
 class OrderItem(BaseModel):
-    """One line of an order, copied from the menu at checkout."""
+    """One item in an order."""
 
     menu_item_id: str
     name: str
@@ -20,7 +15,7 @@ class OrderItem(BaseModel):
 
 
 class Order(BaseModel):
-    """An order as stored in data/Orders.json and returned by the API."""
+    """A placed order."""
 
     id: str = Field(..., description="Order id, e.g. o01")
     customer_id: str

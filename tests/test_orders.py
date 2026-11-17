@@ -1,8 +1,4 @@
-"""Tests for viewing orders (#99, #100).
-
-Checkout (#101) isn't done yet, so these tests make orders with OrderRepository.create_order,
-which is the same method checkout will call.
-"""
+"""Order tests."""
 import pytest
 
 from app.api.deps import get_order_repository
@@ -43,7 +39,6 @@ def test_orders_get_ids_and_survive_a_restart(order_repo, isolated_data_dir):
     assert first["id"] == "o01"
     assert order_repo.create_order(make_order())["id"] == "o02"
 
-    # a brand new repository is the same as restarting the app
     assert OrderRepository(data_dir=isolated_data_dir).get_order("o01") == first
 
 
