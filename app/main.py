@@ -6,18 +6,34 @@ from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app.api.routes import health_routes, menu_routes, restaurant_routes
+from app.api.routes import (
+    cart_routes,
+    customer_routes,
+    health_routes,
+    menu_routes,
+    restaurant_routes,
+    user_authentication_routes,
+)
 from app.core.config import get_settings
 from app.core.exceptions import (
+    AccountNotActiveError,
+    BadDataInPersistenceLayerError,
+    CartRestaurantConflictError,
     DataPersistenceError,
     DomainError,
     EmptyMenuError,
+    ExpiredTokenError,
+    InvalidRequestError,
     MenuItemNotFoundError,
+    MenuItemUnavailableError,
     RestaurantNotFoundError,
-    UserAuthentificationError,
+    TokenBelongsToUnknownUserError,
+    TokenIsInvalidError,
+    UserAuthenticationError,
     UserNotAuthorizedError
 )
 from app.schemas.exception_schema import System_Error_Message
@@ -50,6 +66,9 @@ app.add_middleware(
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
 app.include_router(menu_routes.router)
+app.include_router(user_authentication_routes.router)
+app.include_router(customer_routes.router)
+app.include_router(cart_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(
@@ -84,13 +103,33 @@ def handle_application_domain_exceptions(
     _request: Request, exception: DomainError
 ) -> JSONResponse:
     """Map domain exceptions to their corresponding HTTP responses."""
-    if isinstance(exception, UserAuthentificationError):
+    if isinstance(exception, (
+            InvalidRequestError
+            )):
+            exception.status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(exception, (
+        ExpiredTokenError,
+        TokenBelongsToUnknownUserError,
+        TokenIsInvalidError,
+        UserAuthenticationError 
+        )):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exception, UserNotAuthorizedError):
+    elif isinstance(exception, (
+        AccountNotActiveError, 
+        UserNotAuthorizedError
+        )):
         exception.status_code = status.HTTP_403_FORBIDDEN
-    elif isinstance(exception, (RestaurantNotFoundError, MenuItemNotFoundError, EmptyMenuError)):
+    elif isinstance(exception, (
+        RestaurantNotFoundError,
+        MenuItemNotFoundError,
+        EmptyMenuError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
-    elif isinstance(exception, DataPersistenceError):
+    elif isinstance(exception, (CartRestaurantConflictError, MenuItemUnavailableError)):
+        exception.status_code = status.HTTP_409_CONFLICT
+    elif isinstance(exception, (
+        BadDataInPersistenceLayerError, 
+        DataPersistenceError, 
+        )):
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -138,6 +177,6 @@ def handle_system_exceptions(_request: Request, exception: ValidationError) -> J
         content={
             "status_code": status.HTTP_422_UNPROCESSABLE_CONTENT,
             "message": f"{exception.error_count} errors when validating model",
-            "details": str(exception),
+            "details": "",
         },
     )

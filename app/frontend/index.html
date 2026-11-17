@@ -31,6 +31,8 @@
       <label>Name<input name="name" required maxlength="200"></label>
       <label>Cuisine<input name="cuisine" required maxlength="100"></label>
       <label>Location<input name="location" required maxlength="300"></label>
+      <label>Address<input name="address" required maxlength="300"></label>
+      <label>Postal code<input name="postal_code" required maxlength="7" pattern="[A-Za-z][0-9][A-Za-z] [0-9][A-Za-z][0-9]" placeholder="A1A 1A1" title="Use the format A1A 1A1"></label>
       <label>Opening hours<input name="opening_hours" required placeholder="e.g. 09:00–21:00" maxlength="100"></label>
       <label class="checkbox"><input name="isOpen" type="checkbox" checked> Currently open</label>
       <p id="form-error" role="alert"></p>
