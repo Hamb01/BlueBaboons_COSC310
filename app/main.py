@@ -10,8 +10,14 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app.api.routes import cart_routes, health_routes, menu_routes, restaurant_routes, user_routes
-from app.api.routes import health_routes, menu_routes, restaurant_routes, user_authentication_routes, customer_routes
+from app.api.routes import (
+    cart_routes,
+    customer_routes,
+    health_routes,
+    menu_routes,
+    restaurant_routes,
+    user_authentication_routes,
+)
 from app.core.config import get_settings
 from app.core.exceptions import (
     AccountNotActiveError,
@@ -60,10 +66,9 @@ app.add_middleware(
 app.include_router(health_routes.router)
 app.include_router(restaurant_routes.router)
 app.include_router(menu_routes.router)
-app.include_router(user_routes.router)
-app.include_router(cart_routes.router)
 app.include_router(user_authentication_routes.router)
 app.include_router(customer_routes.router)
+app.include_router(cart_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(
@@ -109,7 +114,6 @@ def handle_application_domain_exceptions(
         UserAuthenticationError 
         )):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exception, (AccountNotActiveError, UserNotAuthorizedError)):
     elif isinstance(exception, (
         AccountNotActiveError, 
         UserNotAuthorizedError
