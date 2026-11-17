@@ -10,17 +10,26 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
-from app.api.routes import health_routes, menu_routes, restaurant_routes, user_authentication_routes, customer_routes
+from app.api.routes import (
+    cart_routes,
+    customer_routes,
+    health_routes,
+    menu_routes,
+    restaurant_routes,
+    user_authentication_routes,
+)
 from app.core.config import get_settings
 from app.core.exceptions import (
     AccountNotActiveError,
     BadDataInPersistenceLayerError,
+    CartRestaurantConflictError,
     DataPersistenceError,
     DomainError,
     EmptyMenuError,
     ExpiredTokenError,
     InvalidRequestError,
     MenuItemNotFoundError,
+    MenuItemUnavailableError,
     RestaurantNotFoundError,
     TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
@@ -59,6 +68,7 @@ app.include_router(restaurant_routes.router)
 app.include_router(menu_routes.router)
 app.include_router(user_authentication_routes.router)
 app.include_router(customer_routes.router)
+app.include_router(cart_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(
@@ -114,6 +124,8 @@ def handle_application_domain_exceptions(
         MenuItemNotFoundError,
         EmptyMenuError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
+    elif isinstance(exception, (CartRestaurantConflictError, MenuItemUnavailableError)):
+        exception.status_code = status.HTTP_409_CONFLICT
     elif isinstance(exception, (
         BadDataInPersistenceLayerError, 
         DataPersistenceError, 
