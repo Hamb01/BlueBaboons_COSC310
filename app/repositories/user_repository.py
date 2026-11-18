@@ -345,7 +345,7 @@ class UserRepository:
                 AccountStatusAndRole.DEACTIVATED_RESTAURANT_OWNER,
             ),
             RestaurantAdmin: (
-                AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN,
+                AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN,
                 AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN,
             ),
             Developer: (

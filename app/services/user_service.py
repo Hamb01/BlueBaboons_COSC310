@@ -87,7 +87,7 @@ class UserService:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
 
         if current_user.id == id_to_get or (
-            self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
+            self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
         ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
@@ -142,8 +142,8 @@ class UserService:
             raise InvalidRequestError("Cannot remove user through cusomer endpoint")
         if current_user.id == id_to_deactivate:
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
-        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_OWNER, 
-                                                                      AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, 
+        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER, 
+                                                                      AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, 
                                                                       AccountStatusAndRole.ACTIVE_DEVELOPER):
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
         else:
