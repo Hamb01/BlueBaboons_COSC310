@@ -40,10 +40,151 @@ async function request(path, options = {}) {
         message = error.detail.map(item => `${item.loc.slice(1).join('.')}: ${item.msg}`).join('; ');
       }
     } catch { /* Keep the default message for a non-JSON response. */ }
-    throw new Error(message);
+    const failure = new Error(message);
+    failure.status = response.status;
+    throw failure;
   }
   return response.json();
 }
+
+// Sign in and cart. The token is kept in localStorage so a refresh keeps you signed in.
+const loginDialog = document.querySelector('#login-dialog');
+const loginForm = document.querySelector('#login-form');
+const cartDialog = document.querySelector('#cart-dialog');
+
+function getToken() {
+  try { return localStorage.getItem('bb_token'); } catch { return null; }
+}
+
+function setToken(token) {
+  try {
+    if (token) localStorage.setItem('bb_token', token);
+    else localStorage.removeItem('bb_token');
+  } catch { /* Private browsing: stay signed in until the page closes. */ }
+}
+
+function authRequest(path, options = {}) {
+  const headers = {...(options.headers || {}), Authorization: `Bearer ${getToken()}`};
+  return request(path, {...options, headers}).catch(error => {
+    if (error.status === 401) {
+      setToken(null);
+      showSignedOut();
+    }
+    throw error;
+  });
+}
+
+function showSignedOut() {
+  document.querySelector('#account').textContent = '';
+  document.querySelector('#sign-in').hidden = false;
+  document.querySelector('#sign-out').hidden = true;
+  document.querySelector('#open-cart').textContent = 'Cart (0)';
+}
+
+async function refreshAccount() {
+  if (!getToken()) return showSignedOut();
+  try {
+    const me = await authRequest('/customers/me');
+    document.querySelector('#account').textContent = `Hi, ${me.name}`;
+    document.querySelector('#sign-in').hidden = true;
+    document.querySelector('#sign-out').hidden = false;
+    await refreshCart();
+  } catch (error) {
+    if (error.status !== 401) showMessage(error.message, true);
+  }
+}
+
+function showMessage(text, isError = false) {
+  notice.className = isError ? 'error' : '';
+  notice.textContent = text;
+}
+
+function renderCart(cart) {
+  const count = cart.items.reduce((total, line) => total + line.quantity, 0);
+  document.querySelector('#open-cart').textContent = `Cart (${count})`;
+  const list = document.querySelector('#cart-items');
+  list.replaceChildren();
+  if (cart.items.length === 0) list.append(element('p', 'Your cart is empty.', 'empty'));
+  for (const line of cart.items) {
+    const row = element('div', undefined, 'cart-line');
+    const name = element('div');
+    name.append(element('strong', `${line.name} × ${line.quantity}`),
+      element('small', line.available ? `$${line.unit_price.toFixed(2)} each` : 'No longer available'));
+    row.append(name, element('span', `$${line.line_total.toFixed(2)}`));
+    list.append(row);
+  }
+  document.querySelector('#cart-total').textContent = `Total: $${cart.total.toFixed(2)}`;
+}
+
+async function refreshCart() {
+  if (!getToken()) return;
+  renderCart(await authRequest('/cart'));
+}
+
+async function addToCart(restaurantId, item) {
+  if (!getToken()) {
+    showMessage('Sign in to add items to your cart.');
+    loginDialog.showModal();
+    return;
+  }
+  try {
+    const cart = await authRequest('/cart/items', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({restaurant_id: restaurantId, menu_item_id: item.id, quantity: 1}),
+    });
+    renderCart(cart);
+    showMessage(`Added ${item.name} to your cart.`);
+  } catch (error) {
+    showMessage(error.message, true);
+  }
+}
+
+loginForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const submit = document.querySelector('#submit-login');
+  submit.disabled = true;
+  document.querySelector('#login-error').textContent = '';
+  try {
+    const token = await request('/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: loginForm.elements.username.value.trim(),
+        password: loginForm.elements.password.value}),
+    });
+    setToken(token);
+    loginDialog.close();
+    loginForm.reset();
+    await refreshAccount();
+    showMessage('Signed in.');
+  } catch (error) {
+    document.querySelector('#login-error').textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.querySelector('#sign-in').addEventListener('click', () => loginDialog.showModal());
+document.querySelector('#close-login').addEventListener('click', () => loginDialog.close());
+document.querySelector('#sign-out').addEventListener('click', () => {
+  setToken(null);
+  showSignedOut();
+  showMessage('Signed out.');
+});
+document.querySelector('#open-cart').addEventListener('click', async () => {
+  if (!getToken()) {
+    showMessage('Sign in to see your cart.');
+    loginDialog.showModal();
+    return;
+  }
+  try {
+    await refreshCart();
+    cartDialog.showModal();
+  } catch (error) {
+    showMessage(error.message, true);
+  }
+});
+document.querySelector('#close-cart').addEventListener('click', () => cartDialog.close());
 
 function statusBadge(isOpen) {
   return element('span', isOpen ? 'Open' : 'Closed', isOpen ? 'badge' : 'badge closed');
@@ -137,7 +278,14 @@ async function showRestaurant(id) {
             button.disabled = false;
           }
         });
-        row.append(element('br'), button, itemDetails);
+        row.append(element('br'), button);
+        if (item.availability) {
+          const add = element('button', 'Add to cart');
+          add.type = 'button';
+          add.addEventListener('click', () => addToCart(restaurant.id, item));
+          row.append(add);
+        }
+        row.append(itemDetails);
         menu.append(row);
       }
     } catch (error) {
@@ -215,3 +363,4 @@ editor.addEventListener('cancel', event => {
   if (document.querySelector('#save-restaurant').disabled) event.preventDefault();
 });
 loadRestaurants();
+refreshAccount();

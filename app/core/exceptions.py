@@ -64,6 +64,42 @@ class EmptyMenuError(DomainError):
             self.details = "Menu does not exist"
 
 ###########################################################################################################################################
+## Cart errors
+###########################################################################################################################################
+
+class MenuItemUnavailableError(DomainError):
+    """Raised when a menu item exists but cannot be ordered right now."""
+
+    def __init__(self, restaurant_id: str, menu_item_id: str):
+        super().__init__()
+        self.message = f"Menu item {menu_item_id} from restaurant {restaurant_id} is not available."
+        self.details = "Unavailable items cannot be added to a cart."
+
+
+class CartRestaurantConflictError(DomainError):
+    """Raised when an item from a second restaurant is added to a cart."""
+
+    def __init__(self, cart_restaurant_id: str, requested_restaurant_id: str):
+        super().__init__()
+        self.message = "A cart can only contain items from one restaurant."
+        self.details = (
+            f"Cart has items from {cart_restaurant_id}; "
+            f"tried to add an item from {requested_restaurant_id}."
+        )
+
+###########################################################################################################################################
+## Order errors
+###########################################################################################################################################
+
+class OrderNotFoundError(DomainError):
+    """Raised when a requested order does not exist."""
+
+    def __init__(self, order_id: str):
+        super().__init__()
+        self.message = f"Order with ID {order_id} was not found."
+        self.details = ""
+
+###########################################################################################################################################
 ## Persistence Layer Errors
 ###########################################################################################################################################
 

@@ -5,6 +5,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import (
     AccountStatusAndRole,
     CustomerResponse,
+    CustomerUpdate,
     Customer,
     User,
     UserLogin
@@ -61,6 +62,97 @@ class UserService:
 
         return self.repository.generate_web_token(actual_user_data.id)
 
+    def update_customer(
+        self, id_to_update: str, updated_data: CustomerUpdate, current_user: User
+    ) -> CustomerResponse:
+        """
+        update_customer
+        -------------------
+
+        Description:
+            updates the information for the selected customer if the user is authorized.
+            Only the fields that were sent in the request are changed.
+
+        Args:
+            id_to_update : string -> the id of the customer to update
+            updated_data : CustomerUpdate -> the fields to change
+            current_user : User -> the user who made the request
+
+        Returns:
+            CustomerResponse -> the customer's information after the update
+
+        Raises:
+            AccountNotActiveError -> the current user's account is not active
+            UserNotAuthorizedError -> a customer can only update their own information
+            InvalidRequestError -> the id does not belong to a customer
+        """
+        # Deactivated accounts cannot change anything.
+        if not current_user.account_is_active:
+            raise AccountNotActiveError(current_user.reason_for_deactivation)
+
+        # A customer may only edit their own information.
+        if current_user.id != id_to_update:
+            raise UserNotAuthorizedError
+
+        # Make sure the id belongs to a customer (ids starting with 'c'),
+        # since only customers have address/city/province/postal_code fields.
+        customer_data = self.repository.get_user_data_from_id(id_to_update)
+        if not isinstance(customer_data, Customer):
+            raise InvalidRequestError(
+                "You cannot update non-customer data through the update-customer endpoint"
+            )
+
+        changes = updated_data.model_dump(exclude_unset=True)
+
+        if changes:
+            self.repository.users[id_to_update].update(changes)
+            self.repository.save_to_file()
+        # An empty body means nothing changed, so we skip the disk write.
+
+        # Re-read the customer so the response reflects what is now stored,
+        # then strip it down to the public fields before returning it.
+        return self._to_customer_response(
+            self.repository.get_user_data_from_id(id_to_update)
+        )
+
+    @staticmethod
+    def _to_customer_response(customer_data: Customer) -> CustomerResponse:
+        """
+        _to_customer_response
+        -------------------
+
+        Description:
+            Converts a stored Customer into the CustomerResponse that is sent
+            back to the client. Shared by get_customer and update_customer so
+            both endpoints return exactly the same shape.
+
+            A Customer holds private fields (password, hash_salt, cart,
+            order_history, ...). Copying across ONLY the public fields below
+            means those private fields can never leak into an API response.
+            If CustomerResponse gains a new field, add it here once and both
+            endpoints pick it up.
+
+            It is a @staticmethod because it doesn't use self; it just turns
+            one model into another.
+
+        Args:
+            customer_data : Customer -> the full customer record from the repository
+
+        Returns:
+            CustomerResponse -> the public view of the customer
+        """
+        return CustomerResponse(
+            username=customer_data.username,
+            name=customer_data.name,
+            email=customer_data.email,
+            account_is_active=customer_data.account_is_active,
+            address=customer_data.address,
+            city=customer_data.city,
+            province=customer_data.province,
+            postal_code=customer_data.postal_code,
+            balance=customer_data.balance,
+        )
+
     def get_customer(self, id_to_get: str, current_user: User) -> CustomerResponse:
         """
         get_customer
@@ -98,20 +190,8 @@ class UserService:
                 "You cannot request non-customer data through the get-customer "
                 "endpoint"
             )
-
-        response = CustomerResponse(
-            username=customer_data.username,
-            name=customer_data.name,
-            email=customer_data.email,
-            account_is_active=customer_data.account_is_active,
-            address=customer_data.address,
-            city=customer_data.city,
-            province=customer_data.province,
-            postal_code=customer_data.postal_code,
-            balance=customer_data.balance,
-        )
-
-        return response
+            
+        return self._to_customer_response(customer_data)        
 
     def deactivate_customer(self, id_to_deactivate: str, current_user: User, reason_for_deactivation: str = ""):
         """
