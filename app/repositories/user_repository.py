@@ -105,7 +105,7 @@ class UserRepository:
                 if username == data["username"]:
                     first_character = user_id[0]
                     match first_character:
-                        case 'c':
+                        case 'c' | 'u':
                             userdata = Customer.model_validate(data)
                         case 'a':
                             userdata = RestaurantAdmin.model_validate(data)
@@ -148,7 +148,7 @@ class UserRepository:
                 data = self.users[user_id]
                 first_character = user_id[0]
                 match first_character:
-                    case 'c':
+                    case 'c' | 'u':
                         userdata = Customer.model_validate(data)
                     case 'a':
                         userdata = RestaurantAdmin.model_validate(data)

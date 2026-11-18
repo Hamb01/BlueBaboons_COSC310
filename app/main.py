@@ -6,7 +6,6 @@ from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
@@ -34,7 +33,8 @@ from app.core.exceptions import (
     TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
     UserAuthenticationError,
-    UserNotAuthorizedError
+    UserNotFoundError,
+    UserNotAuthorizedError,
 )
 from app.schemas.exception_schema import System_Error_Message
 
@@ -122,7 +122,8 @@ def handle_application_domain_exceptions(
     elif isinstance(exception, (
         RestaurantNotFoundError,
         MenuItemNotFoundError,
-        EmptyMenuError)):
+        EmptyMenuError,
+        UserNotFoundError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
     elif isinstance(exception, (CartRestaurantConflictError, MenuItemUnavailableError)):
         exception.status_code = status.HTTP_409_CONFLICT

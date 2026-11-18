@@ -14,6 +14,28 @@ router = APIRouter(tags=["Customers"])
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
 )
+def get_customer_me(
+    current_user: User = Depends(get_current_active_customer),
+    service: UserService = Depends(get_user_service),
+):
+    """
+    get_customer_me
+    -------------------
+
+    Description:
+        returns the information related to the currently authenticated customer
+
+    Returns:
+        CustomerResponse -> Information related to the specified customer
+    """
+    return service.get_customer(current_user.id, current_user)
+
+
+@router.get(
+    "/customers/{customer_id}",
+    response_model=CustomerResponse,
+    status_code=status.HTTP_200_OK,
+)
 def get_customer(
     customer_id: str,
     current_user: User = Depends(get_current_active_customer),
@@ -32,49 +54,5 @@ def get_customer(
 
     Returns:
         CustomerResponse -> Information related to the specified customer
-            (minus anything that is not readable, not user editable or meant to
-            be accessed via another endpoint)
-
-    Raises:
-        UserAuthentificationError -> an incorrect username or password was entered
-        UserNotAuthorizedError -> User does not have permission to fetch the data
-        UserNotFoundError -> No such user could be found in the system
-        AccountNotActiveError -> the user cannot login because an admin has
-            deactivated their account
     """
-    return service.get_customer(current_user.id, current_user)
-
-
-@router.get(
-    "/customers/{customer_id}",
-    response_model=CustomerResponse,
-    status_code=status.HTTP_200_OK,
-)
-def get_customer_me(
-    current_user: User = Depends(get_current_active_customer),
-    service: UserService = Depends(get_user_service),
-):
-    """
-    get_customer
-    -------------------
-
-    Description:
-        returns the information related to the customer with the specified ID
-
-    Args:
-        customer_id : string -> the id belonging to the specific customer you
-            wish to get the data for
-
-    Returns:
-        CustomerResponse -> Information related to the specified customer
-            (minus anything that is not readable, not user editable or meant to
-            be accessed via another endpoint)
-
-    Raises:
-        UserAuthentificationError -> an incorrect username or password was entered
-        UserNotAuthorizedError -> User does not have permission to fetch the data
-        UserNotFoundError -> No such user could be found in the system
-        AccountNotActiveError -> the user cannot login because an admin has
-            deactivated their account
-    """
-    return service.get_customer(current_user.id, current_user)
+    return service.get_customer(customer_id, current_user)
