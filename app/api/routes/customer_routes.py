@@ -10,7 +10,7 @@ router = APIRouter(tags=["Customers"])
 
 
 @router.get(
-    "/customers/{customer_id}",
+    "/customers/me",
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
 )
@@ -42,11 +42,11 @@ def get_customer(
         AccountNotActiveError -> the user cannot login because an admin has
             deactivated their account
     """
-    return service.get_customer(customer_id, current_user)
+    return service.get_customer(current_user.id, current_user)
 
 
 @router.get(
-    "/customers/me",
+    "/customers/{customer_id}",
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
 )
