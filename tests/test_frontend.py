@@ -18,7 +18,7 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     """The form's create/edit payloads persist and remain discoverable."""
     payload = {
         'name': 'Campus Cafe', 'cuisine': 'Cafe', 'location': 'Kelowna',
-        'opening_hours': '08:00-17:00', 'isOpen': True, 'owner_id': 'u99'
+        'opening_hours': '08:00-17:00', 'isOpen': True, 'owner_id': 'u99',
         'address': '123 Main Street', 'postal_code': 'v1y 2b3',
         'opening_hours': '08:00-17:00', 'isOpen': True,
     }
