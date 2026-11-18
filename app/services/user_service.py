@@ -87,8 +87,7 @@ class UserService:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
 
         if current_user.id == id_to_get or (
-            self.repository.verify_user_account(current_user.id)
-            == AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN
+            self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
         ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
@@ -114,7 +113,7 @@ class UserService:
 
         return response
 
-    def deacivate_customer(self, id_to_deactivate: str, current_user: User, reason_for_deactivation: str = ""):
+    def deactivate_customer(self, id_to_deactivate: str, current_user: User, reason_for_deactivation: str = ""):
         """
         deactivate_customer
         -------------------
@@ -139,6 +138,8 @@ class UserService:
         """
         if not current_user.account_is_active:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
+        if not self.repository.verify_user_account(id_to_deactivate) in (AccountStatusAndRole.ACTIVE_CUSTOMER, AccountStatusAndRole.DEACTIVATED_CUSTOMER):
+            raise InvalidRequestError("Cannot remove user through cusomer endpoint")
         if current_user.id == id_to_deactivate:
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
         elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER):

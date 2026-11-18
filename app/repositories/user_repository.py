@@ -330,6 +330,7 @@ class UserRepository:
 
         Raises: 
             BadDataInPersistenceLayerError -> get_user_data_from_id returned the wrong type
+            UserNotFoundError -> No such user exists in our system
         """
 
         userdata = self.get_user_data_from_id(user_id)
