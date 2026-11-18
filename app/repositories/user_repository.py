@@ -393,11 +393,41 @@ class UserRepository:
 
         try:
             if user_id in self.users:
-                self.users["user_id"]["account_if_active"] = False
-                self.users["user_id"]["reason_for_deactivation"] = reason_for_deactivation
+                self.users[user_id]["account_is_active"] = False
+                self.users[user_id]["reason_for_deactivation"] = reason_for_deactivation
             else:
                 raise UserNotFoundError
         except Exception as exc:
-            raise BadDataInPersistenceLayerError() from exc
+            raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
+
+        self.save_to_file()
+
+    def activate_user(self, user_id: str):
+        """
+        activate_user
+        -------------------
+
+        Description:
+            activates the user's account
+
+        Args: 
+            user_id : string -> id of the user to activate
+
+        Returns:
+            void
+
+        Raises: 
+            UserNotFoundError -> no such userr is stored in the system
+            BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+        """
+
+        try:
+            if user_id in self.users:
+                self.users[user_id]["account_is_active"] = True
+                self.users[user_id]["reason_for_deactivation"] = ""
+            else:
+                raise UserNotFoundError
+        except Exception as exc:
+            raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
 
         self.save_to_file()
