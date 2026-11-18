@@ -42,8 +42,7 @@ class UserService:
         Raises:
             UserAuthentificationError -> an incorrect username or password was entered
             BadDataInPersistenceLayerError -> the data stored fo the user is malformed
-            DeactivatedAccountError   -> the user cannot login because an admin has
-                deactivated their account
+            AccountNotActiveError   -> the user cannot login because their account has been deactivated
         """
 
         try:
@@ -77,11 +76,12 @@ class UserService:
             CustomerResponse -> the information of the customer
 
         Raises:
-            DeactivatedAccountError -> The current users account is not active
+            AccountNotActiveError -> The current users account is not active
             UserNotfoundError -> no such user is currently stored in the system
             UserNotAuthorizedError -> the current user cannot view the information
                 of the customer (only active admins and the customer in question
                 can request this data)
+            BadDataInPersistenceLayerError -> the stored data is in the wrong form
         """
         if not current_user.account_is_active:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
@@ -113,3 +113,31 @@ class UserService:
         )
 
         return response
+
+    def require_active(self, user_id: str) -> bool:
+        """
+        require_active
+        -------------------
+
+        Description:
+            checks to see if a particular user's account is active. Meant to be used to limit the abilities of deactivated accounts
+
+        Args: 
+            user_id : string -> the unique id of the user that you need to be active
+
+        Returns:
+            bool -> true if the user is active 
+            (mute point since this function will throw an exception otherwise, but this means that it can be used in a conditioal expression)
+
+        Raises: 
+            UserAuthentificationError -> an incorrect username or password was entered
+            BadDataInPersistenceLayerError -> the data stored fo the user is malformed
+            AccountNotActiveError   -> the user's account has been deactivated
+        """
+
+        userdata = self.repository.get_user_data_from_id(user_id)
+
+        if not userdata.account_is_active:
+            raise AccountNotActiveError(userdata.reason_for_deactivation or "Unspecified")
+
+        return True
