@@ -142,7 +142,9 @@ class UserService:
             raise InvalidRequestError("Cannot remove user through cusomer endpoint")
         if current_user.id == id_to_deactivate:
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
-        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER):
+        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTARUTANT_OWNER, 
+                                                                      AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN, 
+                                                                      AccountStatusAndRole.ACTIVE_DEVELOPER):
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
         else:
             raise UserNotAuthorizedError("deactivate customer")
