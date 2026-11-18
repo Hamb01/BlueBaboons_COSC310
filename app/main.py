@@ -126,6 +126,7 @@ def handle_application_domain_exceptions(
         RestaurantNotFoundError,
         MenuItemNotFoundError,
         EmptyMenuError,
+        OrderNotFoundError,
         UserNotFoundError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
     elif isinstance(exception, (CartRestaurantConflictError, MenuItemUnavailableError)):

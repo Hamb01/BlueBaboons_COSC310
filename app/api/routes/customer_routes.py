@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, responses, status
 
-from app.api.deps import get_current_user, get_user_service
+from app.api.deps import get_current_active_customer, get_current_user, get_user_service
 from app.schemas.user_schema import CustomerResponse, CustomerUpdate, User
 from app.services.user_service import UserService
 
