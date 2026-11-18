@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.deps import get_current_user, get_user_service
+from app.api.deps import get_current_active_customer, get_user_service
 from app.schemas.user_schema import CustomerResponse, User
 from app.services.user_service import UserService
 
@@ -16,7 +16,7 @@ router = APIRouter(tags=["Customers"])
 )
 def get_customer(
     customer_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 ):
     """
@@ -51,7 +51,7 @@ def get_customer(
     status_code=status.HTTP_200_OK,
 )
 def get_customer_me(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 ):
     """
