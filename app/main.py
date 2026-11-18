@@ -14,6 +14,7 @@ from app.api.routes import (
     customer_routes,
     health_routes,
     menu_routes,
+    order_routes,
     restaurant_routes,
     user_authentication_routes,
 )
@@ -29,6 +30,7 @@ from app.core.exceptions import (
     InvalidRequestError,
     MenuItemNotFoundError,
     MenuItemUnavailableError,
+    OrderNotFoundError,
     RestaurantNotFoundError,
     TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
@@ -69,6 +71,7 @@ app.include_router(menu_routes.router)
 app.include_router(user_authentication_routes.router)
 app.include_router(customer_routes.router)
 app.include_router(cart_routes.router)
+app.include_router(order_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(

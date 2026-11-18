@@ -1,7 +1,8 @@
 """Tests for user services."""
 
 import pytest
-
+import json
+import copy
 from app.core.exceptions import (
     AccountNotActiveError,
     BadDataInPersistenceLayerError,
@@ -10,12 +11,11 @@ from app.core.exceptions import (
     UserNotAuthorizedError,
     UserNotFoundError,
 )
-from app.schemas.user_schema import AccountStatusAndRole, Developer, UserLogin, CustomerResponse
-
-def test_get_customer(isolated_user_service):
-    """Test the ability to retrive customer data for a specific customer"""
-
-    expected_data = {
+from app.schemas.user_schema import AccountStatusAndRole, CustomerUpdate, Developer, UserLogin, CustomerResponse
+from pydantic import ValidationError
+ADDRESS_FIELDS = ["address", "city", "province", "postal_code"]
+EDITABLE_FIELDS = ["name", "email", *ADDRESS_FIELDS]
+expected_data = {
         "c01" : {
             "username": "Charles",
             "wrong_data_form": "lol"
@@ -67,6 +67,19 @@ def test_get_customer(isolated_user_service):
         }
 
     }
+@pytest.fixture
+def seeded_service(isolated_user_service):
+    """isolated_user_service pre-loaded with the valid customers from expected_data."""
+    isolated_user_service.repository.users = {
+        user_id: copy.deepcopy(expected_data[user_id]) for user_id in ("c02", "c03")
+    }
+    isolated_user_service.repository.save_to_file()
+    return isolated_user_service
+
+def test_get_customer(isolated_user_service):
+    """Test the ability to retrive customer data for a specific customer"""
+
+
     isolated_user_service.repository.users = expected_data
     isolated_user_service.repository.save_to_file()
 
@@ -81,5 +94,77 @@ def test_get_customer(isolated_user_service):
     assert response == second_response
     with pytest.raises(UserNotAuthorizedError):
         isolated_user_service.get_customer("c03", active_customer)
-    with pytest.raises(AccountNotActiveError):        
+    with pytest.raises(AccountNotActiveError):
         isolated_user_service.get_customer("c03", deactivated_customer)
+
+
+@pytest.mark.parametrize("field", ADDRESS_FIELDS)
+@pytest.mark.parametrize("value", ["", "   ", "\t\n", None])
+def test_update_rejects_empty_address_parts(field, value):
+    """Empty, whitespace-only and explicit null address parts are rejected."""
+    with pytest.raises(ValidationError):
+        CustomerUpdate(**{field: value})
+
+
+def test_update_trims_whitespace():
+    assert CustomerUpdate(address="  1 New Rd  ").address == "1 New Rd"
+
+
+def test_update_only_contains_fields_that_were_sent():
+    """Fields left out of the request are not set, so they won't overwrite anything."""
+    assert CustomerUpdate(city="Kelowna").model_dump(exclude_unset=True) == {"city": "Kelowna"}
+
+
+def test_update_customer_returns_updated_customer(seeded_service):
+    current_user = seeded_service.repository.get_user_data_from_id("c02")
+
+    response = seeded_service.update_customer(
+        "c02", CustomerUpdate(address="1 New Rd", city="Kelowna"), current_user
+    )
+
+    assert isinstance(response, CustomerResponse)
+    assert response.address == "1 New Rd"
+    assert response.city == "Kelowna"
+    assert response.name == "Jane Doe"            # untouched
+    assert response.postal_code == "V1V1V6"       # untouched
+
+
+def test_update_customer_is_written_to_file(seeded_service):
+    current_user = seeded_service.repository.get_user_data_from_id("c02")
+
+    seeded_service.update_customer("c02", CustomerUpdate(address="1 New Rd"), current_user)
+
+    # Read the JSON file directly (repository.master_file is the path to
+    # Users.json) to prove the change was really saved, not just held in memory.
+    on_disk = json.loads(seeded_service.repository.master_file.read_text(encoding="utf-8"))["c02"]
+    assert on_disk["address"] == "1 New Rd"
+    # Partial update: every other stored field is exactly as before.
+    for key, original in expected_data["c02"].items():
+        if key != "address":
+            assert on_disk[key] == original, f"{key} was changed"
+
+
+def test_update_customer_survives_restart(seeded_service):
+    current_user = seeded_service.repository.get_user_data_from_id("c02")
+    seeded_service.update_customer("c02", CustomerUpdate(address="1 New Rd"), current_user)
+
+    restarted_repo = restart(seeded_service)
+
+    assert restarted_repo.get_user_data_from_id("c02").address == "1 New Rd"
+
+
+def test_update_customer_with_empty_body_changes_nothing(seeded_service):
+    current_user = seeded_service.repository.get_user_data_from_id("c02")
+
+    seeded_service.update_customer("c02", CustomerUpdate(), current_user)
+
+    # Read Users.json directly: an empty body must leave the record untouched.
+    on_disk = json.loads(seeded_service.repository.master_file.read_text(encoding="utf-8"))["c02"]
+    assert on_disk == expected_data["c02"]
+
+def restart(service):
+    """Simulate a server restart: build a brand-new repository pointed at the
+    same data folder, so it has to load everything back from Users.json.
+    UserRepository's constructor only takes data_dir."""
+    repo_class = type(service.repository)
+    return repo_class(service.repository.data_dir)

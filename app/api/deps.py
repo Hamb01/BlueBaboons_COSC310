@@ -8,12 +8,14 @@ from fastapi.security import OAuth2PasswordBearer
 from app.core.exceptions import AccountNotActiveError
 from app.repositories.health_repository import HealthRepository
 from app.repositories.menu_repository import MenuRepository
+from app.repositories.order_repository import OrderRepository
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import User
 from app.services.cart_service import CartRepositoryInterface, CartService
 from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
+from app.services.order_service import OrderService
 from app.services.restaurant_service import RestaurantService
 from app.services.user_service import UserService
 
@@ -138,3 +140,15 @@ def get_cart_service(
 ) -> CartService:
     """Provide a cart service backed by the cart repository and the menu service."""
     return CartService(repository=repository, menu_service=menu_service)
+
+
+def get_order_repository() -> OrderRepository:
+    """Build an order repository instance for dependency injection."""
+    return OrderRepository()
+
+
+def get_order_service(
+    repository: OrderRepository = Depends(get_order_repository),
+) -> OrderService:
+    """Provide an order service backed by the order repository."""
+    return OrderService(repository=repository)
