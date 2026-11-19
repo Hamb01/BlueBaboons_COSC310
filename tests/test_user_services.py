@@ -15,6 +15,14 @@ from app.schemas.user_schema import AccountStatusAndRole, CustomerUpdate, Develo
 from pydantic import ValidationError
 ADDRESS_FIELDS = ["address", "city", "province", "postal_code"]
 EDITABLE_FIELDS = ["name", "email", *ADDRESS_FIELDS]
+# A complete, valid address. CustomerUpdate requires all four address parts,
+# so every update in these tests starts from this and overrides what it needs.
+NEW_ADDRESS = {
+    "address": "1 New Rd",
+    "city": "Kelowna",
+    "province": "BC",
+    "postal_code": "V1Y1A1",
+}
 expected_data = {
         "c01" : {
             "username": "Charles",
@@ -101,66 +109,90 @@ def test_get_customer(isolated_user_service):
 @pytest.mark.parametrize("field", ADDRESS_FIELDS)
 @pytest.mark.parametrize("value", ["", "   ", "\t\n", None])
 def test_update_rejects_empty_address_parts(field, value):
-    """Empty, whitespace-only and explicit null address parts are rejected."""
+    """Empty, whitespace-only and explicit null address parts are rejected,
+    even when the other three address parts are valid."""
     with pytest.raises(ValidationError):
-        CustomerUpdate(**{field: value})
+        CustomerUpdate(**{**NEW_ADDRESS, field: value})
+
+
+@pytest.mark.parametrize("field", ADDRESS_FIELDS)
+def test_update_requires_every_address_part(field):
+    """Leaving out any one address part is rejected (a 422 at the endpoint)."""
+    missing_one = {key: value for key, value in NEW_ADDRESS.items() if key != field}
+    with pytest.raises(ValidationError):
+        CustomerUpdate(**missing_one)
+
+
+def test_update_rejects_empty_body():
+    """An update must always include the address."""
+    with pytest.raises(ValidationError):
+        CustomerUpdate()
+
+
+def test_update_rejects_name_or_email_without_address():
+    """Changing name/email alone is not allowed; the address must come with it."""
+    with pytest.raises(ValidationError):
+        CustomerUpdate(name="New Name", email="new@example.com")
 
 
 def test_update_trims_whitespace():
-    assert CustomerUpdate(address="  1 New Rd  ").address == "1 New Rd"
+    update = CustomerUpdate(**{**NEW_ADDRESS, "address": "  1 New Rd  "})
+    assert update.address == "1 New Rd"
 
 
-def test_update_only_contains_fields_that_were_sent():
-    """Fields left out of the request are not set, so they won't overwrite anything."""
-    assert CustomerUpdate(city="Kelowna").model_dump(exclude_unset=True) == {"city": "Kelowna"}
+def test_update_leaves_unsent_optional_fields_unset():
+    """name and email are optional: if they aren't sent, they won't overwrite anything."""
+    assert CustomerUpdate(**NEW_ADDRESS).model_dump(exclude_unset=True) == NEW_ADDRESS
 
 
 def test_update_customer_returns_updated_customer(seeded_service):
     current_user = seeded_service.repository.get_user_data_from_id("c02")
 
-    response = seeded_service.update_customer(
-        "c02", CustomerUpdate(address="1 New Rd", city="Kelowna"), current_user
-    )
+    response = seeded_service.update_customer("c02", CustomerUpdate(**NEW_ADDRESS), current_user)
 
     assert isinstance(response, CustomerResponse)
-    assert response.address == "1 New Rd"
-    assert response.city == "Kelowna"
-    assert response.name == "Jane Doe"            # untouched
-    assert response.postal_code == "V1V1V6"       # untouched
+    for field in ADDRESS_FIELDS:
+        assert getattr(response, field) == NEW_ADDRESS[field]
+    assert response.name == "Jane Doe"                  # untouched
+    assert response.email == "janedoe47@gmail.com"      # untouched
 
 
 def test_update_customer_is_written_to_file(seeded_service):
     current_user = seeded_service.repository.get_user_data_from_id("c02")
 
-    seeded_service.update_customer("c02", CustomerUpdate(address="1 New Rd"), current_user)
+    seeded_service.update_customer("c02", CustomerUpdate(**NEW_ADDRESS), current_user)
 
     # Read the JSON file directly (repository.master_file is the path to
     # Users.json) to prove the change was really saved, not just held in memory.
     on_disk = json.loads(seeded_service.repository.master_file.read_text(encoding="utf-8"))["c02"]
-    assert on_disk["address"] == "1 New Rd"
-    # Partial update: every other stored field is exactly as before.
+    for field in ADDRESS_FIELDS:
+        assert on_disk[field] == NEW_ADDRESS[field]
+    # Every non-address field is exactly as before.
     for key, original in expected_data["c02"].items():
-        if key != "address":
+        if key not in ADDRESS_FIELDS:
             assert on_disk[key] == original, f"{key} was changed"
 
 
 def test_update_customer_survives_restart(seeded_service):
     current_user = seeded_service.repository.get_user_data_from_id("c02")
-    seeded_service.update_customer("c02", CustomerUpdate(address="1 New Rd"), current_user)
+    seeded_service.update_customer("c02", CustomerUpdate(**NEW_ADDRESS), current_user)
 
     restarted_repo = restart(seeded_service)
 
-    assert restarted_repo.get_user_data_from_id("c02").address == "1 New Rd"
+    assert restarted_repo.get_user_data_from_id("c02").address == NEW_ADDRESS["address"]
 
 
-def test_update_customer_with_empty_body_changes_nothing(seeded_service):
+def test_update_email_with_unchanged_address(seeded_service):
+    """The frontend resends the preloaded address; only the email should change."""
     current_user = seeded_service.repository.get_user_data_from_id("c02")
+    current_address = {field: expected_data["c02"][field] for field in ADDRESS_FIELDS}
 
-    seeded_service.update_customer("c02", CustomerUpdate(), current_user)
+    seeded_service.update_customer(
+        "c02", CustomerUpdate(**current_address, email="new@example.com"), current_user
+    )
 
-    # Read Users.json directly: an empty body must leave the record untouched.
     on_disk = json.loads(seeded_service.repository.master_file.read_text(encoding="utf-8"))["c02"]
-    assert on_disk == expected_data["c02"]
+    assert on_disk == {**expected_data["c02"], "email": "new@example.com"}
 
 def restart(service):
     """Simulate a server restart: build a brand-new repository pointed at the

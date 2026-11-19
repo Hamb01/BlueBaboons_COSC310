@@ -99,10 +99,10 @@ class CustomerUpdate(BaseModel):
 
     name: Optional[str] = Field(default=None, description="First and Last name of the user")
     email: Optional[str] = Field(default=None, description="Email that the user used while setting up account")
-    address: Optional[str] = Field(default=None, description="street address of the user")
-    city: Optional[str] = Field(default=None, description="The city that the user lives in")
-    province: Optional[str] = Field(default=None, description="the Province that the user lives in")
-    postal_code: Optional[str] = Field(default=None, description="Postal conde for the users primary address")
+    address: str = Field(..., description="street address of the user")
+    city: str = Field(..., description="The city that the user lives in")
+    province: str = Field(..., description="the Province that the user lives in")
+    postal_code: str = Field(..., description="Postal code for the users primary address")
 
     @field_validator("address", "city", "province", "postal_code")
     @classmethod
