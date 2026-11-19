@@ -44,7 +44,13 @@ button.secondary { background: white; border-color: #bdc9da; color: #233955; }
 .error, #form-error { color: #aa2839; }
 dialog { width: min(480px, calc(100% - 32px)); border: 1px solid #dce3ed; border-radius: 16px; padding: 26px; color: #15253d; }
 dialog::backdrop { background: #15253d77; }
-#restaurant-form { display: grid; gap: 14px; }
+#restaurant-form, #login-form { display: grid; gap: 14px; }
+.header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.header-actions button { padding: 7px 12px; }
+#account { color: #475569; font-size: 14px; }
+.cart-line { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #e2e7ef; padding: 12px 0; }
+.cart-line small { display: block; color: #64748b; }
+.cart-total { font-weight: 750; color: #15253d; text-align: right; }
 #restaurant-form .section-heading { margin-bottom: 0; }
 #restaurant-form p { margin: 0; }
 .checkbox { display: flex; align-items: center; gap: 10px; }
