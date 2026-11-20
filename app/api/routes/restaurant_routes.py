@@ -20,6 +20,13 @@ from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, 
 from app.schemas.user_schema import User
 from app.services.restaurant_service import RestaurantService
 
+NOT_FOUND = {status.HTTP_404_NOT_FOUND: {"description": "Restaurant not found"}}
+AUTH_ERRORS = {
+    status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+    status.HTTP_403_FORBIDDEN: {"description": "Not allowed: owners edit only their own restaurant"},
+    status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Invalid body"},
+}
+
 router = APIRouter(tags=["Restaurant"])
 
 
@@ -53,6 +60,8 @@ def list_restaurants(
     "/restaurants/{restaurant_id}",
     response_model=RestaurantResponse,
     status_code=status.HTTP_200_OK,
+    summary="Get Restaurant Details",
+    responses=NOT_FOUND,
 )
 def get_restaurant_details(
     restaurant_id: str,
@@ -62,7 +71,14 @@ def get_restaurant_details(
     return service.get_restaurant_details(restaurant_id)
 
 
-@router.post("/restaurants", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/restaurants",
+    status_code=status.HTTP_201_CREATED,
+    response_model=RestaurantResponse,
+    summary="Create Restaurant",
+    description="Creates a restaurant owned by the signed-in owner. Owners and admins only.",
+    responses=AUTH_ERRORS,
+)
 def create_restaurant(
     payload: RestaurantCreate,
     current_user: User = Depends(get_current_user),
@@ -72,7 +88,14 @@ def create_restaurant(
     return service.create_restaurant(payload, current_user=current_user)
 
 
-@router.put("/restaurants/{restaurant_id}", status_code=status.HTTP_200_OK)
+@router.put(
+    "/restaurants/{restaurant_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=RestaurantResponse,
+    summary="Update Restaurant",
+    description="Updates the fields sent. Only the restaurant's owner or an admin may do this.",
+    responses={**AUTH_ERRORS, **NOT_FOUND},
+)
 def update_restaurant(
     restaurant_id: str,
     payload: RestaurantUpdate,
