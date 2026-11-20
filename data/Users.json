@@ -34,5 +34,54 @@
         "account_is_active" : true,
         "reason_for_deactivation" : "",
         "balance" : 501.25
+    },
+
+    "o01": {
+        "id": "o01",
+        "username": "owner1",
+        "name": "Olivia Owner",
+        "email": "owner1@example.com",
+        "password": "LY5tFPqiL3w7PYZFfuwZtHHQBNaTCPP/Srw11pr8skI=",
+        "hash_salt": "h+Py0Ib8NyiksBDYy2GBLg==",
+        "account_is_active": true,
+        "reason_for_deactivation": "",
+        "managed_restaurants": [
+            "r01"
+        ],
+        "owned_restaurants": [
+            "r01"
+        ]
+    },
+
+    "o02": {
+        "id": "o02",
+        "username": "owner2",
+        "name": "Oscar Owner",
+        "email": "owner2@example.com",
+        "password": "zNpjXPn46AEvl52h6+cGz97NdVCUa6Lmphi2kiXS+oQ=",
+        "hash_salt": "k3d32Klty79URk0HfdAE+w==",
+        "account_is_active": true,
+        "reason_for_deactivation": "",
+        "managed_restaurants": [
+            "r02"
+        ],
+        "owned_restaurants": [
+            "r02"
+        ]
+    },
+
+    "a01": {
+        "id": "a01",
+        "username": "admin1",
+        "name": "Ada Admin",
+        "email": "admin1@example.com",
+        "password": "m53FVcp4n7YFFQHB3NFS4cnMu6Htic6B+/la0DS9c4E=",
+        "hash_salt": "OWftx/WRMOuuCEThkfw0bg==",
+        "account_is_active": true,
+        "reason_for_deactivation": "",
+        "managed_restaurants": [
+            "r01",
+            "r02"
+        ]
     }
 }
