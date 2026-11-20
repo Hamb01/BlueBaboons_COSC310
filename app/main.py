@@ -22,6 +22,7 @@ from app.core.config import get_settings
 from app.core.exceptions import (
     AccountNotActiveError,
     BadDataInPersistenceLayerError,
+    CartItemNotFoundError,
     CartRestaurantConflictError,
     DataPersistenceError,
     DomainError,
@@ -125,6 +126,7 @@ def handle_application_domain_exceptions(
     elif isinstance(exception, (
         RestaurantNotFoundError,
         MenuItemNotFoundError,
+        CartItemNotFoundError,
         EmptyMenuError,
         OrderNotFoundError,
         UserNotFoundError)):
