@@ -1,13 +1,15 @@
 """Repository layer responsible for reading and writing menu data."""
 
 from typing import Any, Dict, List, Optional
-
+from app.repositories.generate_id_method import make_id_generator
 from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
 from app.repositories.restaurant_repository import RestaurantRepository
 
 
 class MenuRepository:
     """Repository layer for menu items stored inside restaurant records."""
+
+    _new_id = staticmethod(make_id_generator("m"))  # m01, m02, ... (per restaurant)
 
     # Coding Notes:
     # The repository layer handles storage and retrieval for menu data.
@@ -166,15 +168,8 @@ class MenuRepository:
         Raises: 
             RestaurantNotFoundError -> The restaurant is not stored in our persistence layer
         """
-        
-        existing_ids = []
         menu = self.get_menu_data(restaurant_id)
-        for item in menu:
-            item_id = item.get("id", "")
-            if isinstance(item_id, str) and item_id.startswith("m") and item_id[1:].isdigit():
-                existing_ids.append(int(item_id[1:]))
-        next_num = max(existing_ids) + 1 if existing_ids else 1
-        return f"m{next_num:02d}"
+        return self._new_id(item.get("id") for item in menu)
 
     def _find_item(self, restaurant_id: str, item_id: str) -> Dict[str, Any]:
         """
