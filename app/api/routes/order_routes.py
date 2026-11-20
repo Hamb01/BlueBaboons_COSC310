@@ -14,6 +14,7 @@ router = APIRouter(tags=["Orders"])
     "/customers/me/orders",
     response_model=list[Order],
     summary="List My Orders",
+    description="Returns a list of all orders that the current user has ever placed",
     responses={status.HTTP_401_UNAUTHORIZED: {"description": "Not signed in"}},
 )
 def list_my_orders(user=Depends(get_current_active_customer),
@@ -26,6 +27,7 @@ def list_my_orders(user=Depends(get_current_active_customer),
     "/orders/{order_id}",
     response_model=Order,
     summary="Get Order",
+    description="Returns a specific order (keyed by unique order ID)",
     responses={
         status.HTTP_401_UNAUTHORIZED: {"description": "Not signed in"},
         status.HTTP_403_FORBIDDEN: {"description": "This is another customer's order"},
