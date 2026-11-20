@@ -18,7 +18,7 @@ from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner,
 # - update menu item
 # - remove menu item
 
-EDITABLE_FIELDS = ("name", "description", "price", "availability")
+EDITABLE_FIELDS = ("name", "description", "price", "availability", "is_active")
 
 
 class MenuService:
@@ -115,6 +115,7 @@ class MenuService:
             description=menu_item.get("description"),
             price=menu_item.get("price", 0.0),
             availability=menu_item.get("availability", True),
+            is_active=menu_item.get("is_active", True),
         )
         return self.repository.add_menu_item(restaurant_id, new_menu_item.model_dump())
 

@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.menu_item import MenuItem
 from app.schemas.user_schema import RestaurantAdmin
 
 
@@ -32,6 +33,19 @@ def reload_menu(data_dir: Path, restaurant_id: str) -> list:
 
 def menu_ids(menu: list) -> list:
     return [item["id"] for item in menu]
+
+
+def test_legacy_menu_item_defaults_to_active():
+    item = MenuItem.model_validate({
+        "id": "m01",
+        "restaurant_id": "r01",
+        "name": "Soup",
+        "description": "Daily soup",
+        "price": 6.0,
+        "availability": True,
+    })
+
+    assert item.is_active is True
 
 
 ############################################################################################
@@ -130,6 +144,7 @@ def test_add_menu_item_returns_201_with_new_id(client):
     assert item["name"] == "Fish Taco"
     assert item["price"] == 8.25
     assert item["availability"] is True
+    assert item["is_active"] is True
 
 
 def test_added_item_is_listed_and_persisted(client, isolated_data_dir):

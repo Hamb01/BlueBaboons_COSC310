@@ -57,6 +57,25 @@ def modify_menu_item(
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
+@router.patch(
+    "/restaurants/{restaurant_id}/menu/{item_id}",
+    response_model=MenuItem,
+    status_code=status.HTTP_200_OK,
+)
+def patch_menu_item(
+    restaurant_id: str,
+    item_id: str,
+    updated_data: dict,
+    service: MenuService = Depends(get_menu_service),
+    current_user: User = Depends(get_current_user),
+) -> MenuItem:
+    """Partially update a menu item and return the updated item."""
+    updated_item = service.update_menu_item(
+        restaurant_id, item_id, updated_data, current_user=current_user
+    )
+    return MenuItem.model_validate(updated_item)
+
+
 @router.post("/restaurant/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
 def add_menu_item(
     restaurant_id: str,

@@ -43,6 +43,29 @@ def test_owner_can_edit_own_restaurant_and_menu(role_client):
     assert role_client.patch("/restaurant/r01/menu/m01", headers=auth, json={"price": 9.99}).status_code == 200
 
 
+@pytest.mark.parametrize(
+    ("changes", "availability", "is_active"),
+    [
+        ({"availability": False}, False, True),
+        ({"is_active": False}, True, False),
+    ],
+)
+def test_owner_can_set_menu_item_order_state(
+    role_client, changes, availability, is_active
+):
+    auth = sign_in(role_client, "o01")
+
+    response = role_client.patch(
+        "/restaurants/r01/menu/m01", headers=auth, json=changes
+    )
+
+    assert response.status_code == 200
+    item = response.json()
+    assert item["id"] == "m01"
+    assert item["availability"] is availability
+    assert item["is_active"] is is_active
+
+
 def test_owner_cannot_edit_another_owners_restaurant_or_menu(role_client):
     auth = sign_in(role_client, "o01")
     before = role_client.get("/restaurants/r02").json()
