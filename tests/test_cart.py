@@ -12,13 +12,14 @@ from fastapi.testclient import TestClient
 
 from app.api.deps import get_cart_repository, get_current_user, get_user_repository
 from app.core.exceptions import (
+    CartItemNotFoundError,
     CartRestaurantConflictError,
     MenuItemNotFoundError,
     MenuItemUnavailableError,
 )
 from app.main import app
 from app.repositories.user_repository import UserRepository
-from app.schemas.cart_schema import CartItemAdd
+from app.schemas.cart_schema import CartItemAdd, CartItemQuantityUpdate
 from app.schemas.menu_item import MenuItem
 from app.services.cart_service import CartService
 from app.services.menu_service import MenuService
@@ -168,6 +169,63 @@ def test_item_removed_from_the_menu_stays_visible_but_is_not_charged(service, me
 
 
 ############################################################################################
+### Service: update, remove and clear cart items
+############################################################################################
+
+def test_update_item_quantity_replaces_quantity_and_saves(service, cart_repo):
+    service.add_item("c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01", quantity=2))
+
+    cart = service.update_item_quantity(
+        "c01", "m01", CartItemQuantityUpdate(quantity=4)
+    )
+
+    assert cart.items[0].quantity == 4
+    assert cart.total == 31.96
+    assert cart_repo.get_active_cart("c01")["items"][0]["quantity"] == 4
+
+
+def test_update_item_quantity_for_missing_line_raises_without_creating_cart(service, cart_repo):
+    with pytest.raises(CartItemNotFoundError):
+        service.update_item_quantity(
+            "c01", "m01", CartItemQuantityUpdate(quantity=2)
+        )
+
+    assert cart_repo.carts == {}
+    assert cart_repo.saves == 0
+
+
+def test_remove_last_item_clears_restaurant_and_saves(service, cart_repo):
+    service.add_item("c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01"))
+
+    cart = service.remove_item("c01", "m01")
+
+    assert cart.items == []
+    assert cart.restaurant_id is None
+    assert cart_repo.get_active_cart("c01")["restaurant_id"] is None
+
+
+def test_remove_missing_item_raises_without_saving(service, cart_repo):
+    service.get_active_cart("c01")
+
+    with pytest.raises(CartItemNotFoundError):
+        service.remove_item("c01", "m01")
+
+    assert cart_repo.saves == 0
+
+
+def test_clear_cart_empties_items_and_releases_restaurant(service, cart_repo):
+    service.add_item("c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01"))
+
+    cart = service.clear_cart("c01")
+
+    assert cart.items == []
+    assert cart.restaurant_id is None
+    saved = cart_repo.get_active_cart("c01")
+    assert saved["items"] == []
+    assert saved["restaurant_id"] is None
+
+
+############################################################################################
 ### API: authentication and HTTP status codes (real menu data, real JWT)
 ############################################################################################
 
@@ -193,6 +251,9 @@ def auth(isolated_user_repo: UserRepository):
 def test_cart_requires_a_token(cart_client):
     assert cart_client.get("/cart").status_code == 401
     assert cart_client.post("/cart/items", json={"restaurant_id": "r01", "menu_item_id": "m01"}).status_code == 401
+    assert cart_client.patch("/cart/items/m01", json={"quantity": 2}).status_code == 401
+    assert cart_client.delete("/cart/items/m01").status_code == 401
+    assert cart_client.delete("/cart").status_code == 401
 
 
 def test_get_cart_returns_the_same_empty_cart_twice(cart_client, auth):
@@ -219,6 +280,79 @@ def test_quantity_below_one_returns_422(cart_client, auth, quantity):
     response = cart_client.post("/cart/items", headers=auth,
                                 json={"restaurant_id": "r01", "menu_item_id": "m01", "quantity": quantity})
     assert response.status_code == 422
+
+
+def test_patch_cart_item_updates_quantity(cart_client, auth):
+    cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01", "quantity": 2},
+    )
+
+    response = cart_client.patch(
+        "/cart/items/m01", headers=auth, json={"quantity": 3}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["quantity"] == 3
+    assert response.json()["total"] == 23.97
+
+
+@pytest.mark.parametrize("quantity", [0, -1])
+def test_patch_cart_item_quantity_below_one_returns_422(cart_client, auth, quantity):
+    cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+
+    response = cart_client.patch(
+        "/cart/items/m01", headers=auth, json={"quantity": quantity}
+    )
+
+    assert response.status_code == 422
+
+
+def test_patch_cart_item_not_in_cart_returns_404(cart_client, auth):
+    response = cart_client.patch(
+        "/cart/items/m01", headers=auth, json={"quantity": 2}
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_cart_item_returns_updated_cart_and_clears_restaurant(cart_client, auth):
+    cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+
+    response = cart_client.delete("/cart/items/m01", headers=auth)
+
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["restaurant_id"] is None
+
+
+def test_delete_cart_item_not_in_cart_returns_404(cart_client, auth):
+    response = cart_client.delete("/cart/items/m01", headers=auth)
+
+    assert response.status_code == 404
+
+
+def test_delete_cart_returns_empty_cart(cart_client, auth):
+    cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+
+    response = cart_client.delete("/cart", headers=auth)
+
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["restaurant_id"] is None
 
 
 def test_unknown_item_returns_404(cart_client, auth):

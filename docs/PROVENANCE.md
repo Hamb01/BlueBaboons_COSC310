@@ -178,5 +178,15 @@ This document records externally assisted content, AI tooling, and design assist
 - Changed test_orders.py and main.py to avoid 5 tests from failing
 
 - **Verificaton**
-- I read trough the changed it made to both files, ensuring no major reformating was done and that only lines necessary for bug fixign were altered.
+- I read trough the changes it made to both files, ensuring no major reformating was done and that only lines necessary for bug fixign were altered.
 - All tests passed.
+
+## Writing Tests 2026-11-20
+- **Tool / Assistant:** Copilot
+- **Scope / Assistance:**
+- Asked Copilot to write tests for the implementation of updating item quantity in a cart, deleting an item, and clearing the cart.
+
+- **Verificaton**
+- Asked copilot to explain what each of the tests do, how they work, and why it chose to implement them.
+- Ensured tests made sense for the scope of our project.
+- Verified all tests passed.
