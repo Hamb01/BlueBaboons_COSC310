@@ -20,44 +20,72 @@
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_current_user, get_menu_service
-from app.schemas.menu_item import MenuItem
+from app.schemas.menu_item import MenuItem, MenuItemUpdate, MenuItemWriteResponse
 from app.schemas.restaurant_schema import MenuItemRequest
 from app.schemas.user_schema import User
 from app.services.menu_service import MenuService
 
 router = APIRouter(tags=["Menu"])
 
+NOT_FOUND = {status.HTTP_404_NOT_FOUND: {"description": "Restaurant or menu item not found"}}
+WRITE_ERRORS = {
+    status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+    status.HTTP_403_FORBIDDEN: {"description": "Not the restaurant's owner or an admin, or account deactivated"},
+    **NOT_FOUND,
+    status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Invalid body, e.g. negative price or unknown field"},
+}
+
 
 @router.put(
     "/restaurant/{restaurant_id}/menu/{item_id}",
     status_code=status.HTTP_200_OK,
+    response_model=MenuItemWriteResponse,
+    summary="Replace Menu Item",
+    description="Updates the fields sent in the body. Only the restaurant's owner or an admin may do this.",
+    responses=WRITE_ERRORS,
 )
 def replace_menu_item(
     restaurant_id: str,
     item_id: str,
-    updated_data: dict,
+    updated_data: MenuItemUpdate,
     service: MenuService = Depends(get_menu_service),
     current_user: User = Depends(get_current_user)
 ):
     """Replace an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
+    updated_item = service.update_menu_item(
+        restaurant_id, item_id, updated_data.model_dump(exclude_unset=True), current_user=current_user)
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
-@router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
+@router.patch(
+    "/restaurant/{restaurant_id}/menu/{item_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=MenuItemWriteResponse,
+    summary="Modify Menu Item",
+    description="Changes only the fields sent, e.g. price or availability. Owner of the restaurant or admin only.",
+    responses=WRITE_ERRORS,
+)
 def modify_menu_item(
     restaurant_id: str,
     item_id: str,
-    updated_data: dict,
+    updated_data: MenuItemUpdate,
     service: MenuService = Depends(get_menu_service),
     current_user: User = Depends(get_current_user)
 ):
     """Modify an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
+    updated_item = service.update_menu_item(
+        restaurant_id, item_id, updated_data.model_dump(exclude_unset=True), current_user=current_user)
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
-@router.post("/restaurant/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/restaurant/{restaurant_id}/menu",
+    status_code=status.HTTP_201_CREATED,
+    response_model=MenuItemWriteResponse,
+    summary="Add Menu Item",
+    description="Adds an item to the restaurant's menu. Owner of the restaurant or admin only.",
+    responses=WRITE_ERRORS,
+)
 def add_menu_item(
     restaurant_id: str,
     payload: MenuItemRequest,
@@ -70,7 +98,8 @@ def add_menu_item(
     return {"message": "Menu item added successfully", "item": saved_item}
 
 
-@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem])
+@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem], summary="Get Menu",
+            responses=NOT_FOUND)
 def get_menu(
     restaurant_id: str,
     service: MenuService = Depends(get_menu_service),
@@ -79,7 +108,8 @@ def get_menu(
     return service.get_menu(restaurant_id)
 
 
-@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem, summary="Get Menu Item",
+            responses=NOT_FOUND)
 def get_menu_item(
     restaurant_id: str,
     item_id: str,
@@ -92,6 +122,8 @@ def get_menu_item(
 @router.delete(
     "/restaurants/{restaurant_id}/menu/{menu_item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete Menu Item",
+    responses={k: v for k, v in WRITE_ERRORS.items() if k != status.HTTP_422_UNPROCESSABLE_CONTENT},
 )
 def remove_menu_item(
     restaurant_id: str,
