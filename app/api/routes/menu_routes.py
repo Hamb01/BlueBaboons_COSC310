@@ -107,7 +107,7 @@ def add_menu_item(
     response_model=list[MenuItem],
     status_code=status.HTTP_200_OK,
         description=(
-            "Creates a new menu item for the specified restaurant"
+            "Return all menu items for a restaurant."
         ),
         responses={
             status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"},
@@ -122,7 +122,16 @@ def get_menu(
     return service.get_menu(restaurant_id)
 
 
-@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+@router.get("/restaurants/{restaurant_id}/menu/{item_id}", 
+    response_model=MenuItem,
+    status_code=status.HTTP_200_OK,
+        description=(
+            "Return a specific menu item from one restaurant's menu."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"}
+        },  
+)
 def get_menu_item(
     restaurant_id: str,
     item_id: str,
@@ -134,7 +143,14 @@ def get_menu_item(
 
 @router.delete(
     "/restaurants/{restaurant_id}/menu/{menu_item_id}",
+    response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
+        description=(
+            "Delete a specific menu item from one restaurant's menu."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"}
+        },  
 )
 def remove_menu_item(
     restaurant_id: str,
