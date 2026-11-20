@@ -43,8 +43,7 @@ class UserService:
         Raises:
             UserAuthentificationError -> an incorrect username or password was entered
             BadDataInPersistenceLayerError -> the data stored fo the user is malformed
-            DeactivatedAccountError   -> the user cannot login because an admin has
-                deactivated their account
+            AccountNotActiveError   -> the user cannot login because their account has been deactivated
         """
 
         try:
@@ -169,27 +168,91 @@ class UserService:
             CustomerResponse -> the information of the customer
 
         Raises:
-            DeactivatedAccountError -> The current users account is not active
+            AccountNotActiveError -> The current users account is not active
             UserNotfoundError -> no such user is currently stored in the system
             UserNotAuthorizedError -> the current user cannot view the information
                 of the customer (only active admins and the customer in question
                 can request this data)
+            BadDataInPersistenceLayerError -> the stored data is in the wrong form
         """
         if not current_user.account_is_active:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
 
         if current_user.id == id_to_get or (
-            self.repository.verify_user_account(current_user.id)
-            == AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN
+            self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
         ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
-            raise UserNotAuthorizedError
+            raise UserNotAuthorizedError("view customer information")
 
         if not isinstance(customer_data, Customer):
             raise InvalidRequestError(
                 "You cannot request non-customer data through the get-customer "
                 "endpoint"
             )
-
+            
         return self._to_customer_response(customer_data)
+
+    def deactivate_customer(self, id_to_deactivate: str, current_user: User, reason_for_deactivation: str = ""):
+        """
+        deactivate_customer
+        -------------------
+
+        Description:
+            method to allow for the deactivationg of a customers account
+
+        Args: 
+            id_to_deactivate : string -> the id for the customer who you wish to deactivate
+            current_user : user -> The data relaetd to the user who made the request
+            reason_to_deactivate : string -> optional description of why you wish to delete your account
+
+        Returns:
+            void
+
+        Raises: 
+            AccountNotActiveError -> the current user's account has been deactivated
+            UserNotAuthorizedError -> the current user is not allowed to do this action
+            UserNotFoundError -> no such userr is stored in the system
+            BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+            DataPersistenceError -> an error occured while saving the changes done to the user
+        """
+        if not current_user.account_is_active:
+            raise AccountNotActiveError(current_user.reason_for_deactivation)
+        if not self.repository.verify_user_account(id_to_deactivate) in (AccountStatusAndRole.ACTIVE_CUSTOMER, AccountStatusAndRole.DEACTIVATED_CUSTOMER):
+            raise InvalidRequestError("Cannot remove user through cusomer endpoint")
+        if current_user.id == id_to_deactivate:
+            self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
+        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER, 
+                                                                      AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, 
+                                                                      AccountStatusAndRole.ACTIVE_DEVELOPER):
+            self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
+        else:
+            raise UserNotAuthorizedError("deactivate customer")
+
+    def require_active(self, user_id: str) -> bool:
+        """
+        require_active
+        -------------------
+
+        Description:
+            checks to see if a particular user's account is active. Meant to be used to limit the abilities of deactivated accounts
+
+        Args: 
+            user_id : string -> the unique id of the user that you need to be active
+
+        Returns:
+            bool -> true if the user is active 
+            (mute point since this function will throw an exception otherwise, but this means that it can be used in a conditioal expression)
+
+        Raises: 
+            UserAuthentificationError -> an incorrect username or password was entered
+            BadDataInPersistenceLayerError -> the data stored fo the user is malformed
+            AccountNotActiveError   -> the user's account has been deactivated
+        """
+
+        userdata = self.repository.get_user_data_from_id(user_id)
+
+        if not userdata.account_is_active:
+            raise AccountNotActiveError(userdata.reason_for_deactivation or "Unspecified")
+
+        return True

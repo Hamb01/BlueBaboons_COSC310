@@ -108,6 +108,62 @@ def get_customer_me(
     """
     return service.get_customer(current_user.id, current_user)
 
+@router.post(
+    "/customers/me/deactivate",
+    status_code=status.HTTP_200_OK,
+)
+def deactivate_my_customer_account(current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
+    """
+    deactivate_my_customer_account
+    ------------------------------
+
+    Description:
+        endpoint to allow for the deactivationg of a customers own account
+
+    Args: 
+        current_user : user -> The data relaetd to the user who made the request
+        reason_for_activation : string -> optional description for why you wish to deactivate your account
+
+    Returns:
+        void
+
+    Raises: 
+        AccountNotActiveError -> the current user's account has been deactivated
+        UserNotAuthorizedError -> the current user is not allowed to do this action
+        UserNotFoundError -> no such userr is stored in the system
+        BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+        DataPersistenceError -> an error occured while saving the changes done to the user
+    """
+    service.deactivate_customer(current_user.id, current_user, reason_for_deactivation)
+
+@router.post(
+    "/customers/{customer_id}/deactivate",
+    status_code=status.HTTP_200_OK,
+)
+def deactivate_customer_account(customer_id: str, current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
+    """
+    deactivate_customer_account
+    ------------------------------
+
+    Description:
+        endpoint to allow for the deactivationg of a specific customer's account
+
+    Args: 
+        customer_id : string -> the id for the customer who you wish to deactivate
+        current_user : user -> The data relaetd to the user who made the request
+        reason_for_activation : string -> optional description for why you wish to deactivate your account
+
+    Returns:
+        void
+
+    Raises: 
+        AccountNotActiveError -> the current user's account has been deactivated
+        UserNotAuthorizedError -> the current user is not allowed to do this action
+        UserNotFoundError -> no such userr is stored in the system
+        BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+        DataPersistenceError -> an error occured while saving the changes done to the user
+    """
+    service.deactivate_customer(customer_id, current_user, reason_for_deactivation)
 
 @router.get(
     "/customers/{customer_id}",

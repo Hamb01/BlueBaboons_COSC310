@@ -330,6 +330,7 @@ class UserRepository:
 
         Raises: 
             BadDataInPersistenceLayerError -> get_user_data_from_id returned the wrong type
+            UserNotFoundError -> No such user exists in our system
         """
 
         userdata = self.get_user_data_from_id(user_id)
@@ -344,7 +345,7 @@ class UserRepository:
                 AccountStatusAndRole.DEACTIVATED_RESTAURANT_OWNER,
             ),
             RestaurantAdmin: (
-                AccountStatusAndRole.ACTIVE_RESTARUTANT_ADMIN,
+                AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN,
                 AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN,
             ),
             Developer: (
@@ -369,3 +370,64 @@ class UserRepository:
             str(self.master_file),
             "get_user_data_from_id returned the wrong type",
         )
+
+    def deactivate_user(self, user_id: str, reason_for_deactivation: str = ""):
+        """
+        deactivate_user
+        -------------------
+
+        Description:
+            deactivates the user's account
+
+        Args: 
+            user_id : string -> id of the user to deactivate
+            reason_for_deactivation : string -> optional message explaining why the user's account is being deactivated
+
+        Returns:
+            void
+
+        Raises: 
+            UserNotFoundError -> no such userr is stored in the system
+            BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+        """
+
+        try:
+            if user_id in self.users:
+                self.users[user_id]["account_is_active"] = False
+                self.users[user_id]["reason_for_deactivation"] = reason_for_deactivation
+            else:
+                raise UserNotFoundError
+        except Exception as exc:
+            raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
+
+        self.save_to_file()
+
+    def activate_user(self, user_id: str):
+        """
+        activate_user
+        -------------------
+
+        Description:
+            activates the user's account
+
+        Args: 
+            user_id : string -> id of the user to activate
+
+        Returns:
+            void
+
+        Raises: 
+            UserNotFoundError -> no such userr is stored in the system
+            BadDataInPersistenceLayerError -> something went wrong while accessing the data related to the user
+        """
+
+        try:
+            if user_id in self.users:
+                self.users[user_id]["account_is_active"] = True
+                self.users[user_id]["reason_for_deactivation"] = ""
+            else:
+                raise UserNotFoundError
+        except Exception as exc:
+            raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
+
+        self.save_to_file()

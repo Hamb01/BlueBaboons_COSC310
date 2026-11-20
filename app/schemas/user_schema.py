@@ -34,15 +34,15 @@ class Customer(User):
     order_history: Optional[Dict[str, Any]] = Field(default=None, description="Dictionary of all previous orders made by this customer")
     cart: Optional[Dict[str, Any]] = Field(default=None, description="Dictionary of all items currently in the cart")
 
-class RestaurantOwner(User):
-    """Class to hold the account information of people who create, edit and delete restaurants"""
-
-    owned_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they own")
-
 class RestaurantAdmin(User):
     """Class to hold the account information of people who can edit restaurant information"""
 
     managed_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they have permission to edit")
+
+class RestaurantOwner(RestaurantAdmin):
+    """Class to hold the account information of people who create, edit and delete restaurants"""
+
+    owned_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they own")
 
 class Developer(User):
     """Class to hold the account information for code developers. They are at the top of the hierarchy and can edit anything in the system"""
@@ -61,7 +61,7 @@ class AccountStatusAndRole(Enum):
     DEACTIVATED_CUSTOMER = 2
     ACTIVE_RESTAURANT_OWNER = 3
     DEACTIVATED_RESTAURANT_OWNER = 4
-    ACTIVE_RESTARUTANT_ADMIN = 5
+    ACTIVE_RESTAURANT_ADMIN = 5
     DEACTIVATED_RESTAURANT_ADMIN = 6
     ACTIVE_DEVELOPER = 7
     DEACTIVATED_DEVELLOPER = 8
