@@ -5,13 +5,13 @@ from typing import Dict, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from app.core.exceptions import AccountNotActiveError
+from app.core.exceptions import AccountNotActiveError, UserNotAuthorizedError
 from app.repositories.health_repository import HealthRepository
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import User
+from app.schemas.user_schema import Customer, User
 from app.services.cart_service import CartRepositoryInterface, CartService
 from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
@@ -103,29 +103,30 @@ def get_current_user(
         ) from exc
 
 
-def get_current_active_customer(current_user = Depends(get_current_user)) -> User:
-    """Return the signed-in user, or raise AccountNotActiveError (403) if their account is deactivated."""
-    if isinstance(current_user, dict):
-        # Fallback dictionary safety: provide defaults if fields are missing
-        safe_data = {
-            "id": current_user.get("id", "u01"),
-            "username": current_user.get("username", "admin_user"),
-            "name": current_user.get("name", "Admin User"),
-            "email": current_user.get("email", "admin@example.com"),
-            "password": current_user.get("password", "hashed_password_placeholder"),
-            "hash_salt": current_user.get("hash_salt", "salt_placeholder"),
-            "role": current_user.get("role", "admin"),
-            "account_is_active": current_user.get("account_is_active", True),
-        }
-        user = User.model_validate(safe_data)
-    elif isinstance(current_user, User):
-        user = current_user
-    else:
-        user = User.model_validate(dict(current_user))
+def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Return the authenticated active user; reject malformed principals."""
+    if not isinstance(current_user, User):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authenticated user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not current_user.account_is_active:
+        raise AccountNotActiveError(
+            current_user.reason_for_deactivation or "Unspecified"
+        )
+    return current_user
 
-    if not user.account_is_active:
-        raise AccountNotActiveError(user.reason_for_deactivation or "Unspecified")
-    return user
+
+def get_current_active_customer(
+    current_user: User = Depends(get_current_active_user),
+) -> Customer:
+    """Return the authenticated active customer, rejecting other user types."""
+    if not isinstance(current_user, Customer):
+        raise UserNotAuthorizedError(forbidden_action="customer features")
+    return current_user
 
 
 def get_cart_repository() -> CartRepositoryInterface:

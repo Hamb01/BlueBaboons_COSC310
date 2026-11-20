@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, Depends, responses, status
 
-from app.api.deps import get_current_active_customer, get_current_user, get_user_service
-from app.schemas.user_schema import CustomerResponse, CustomerUpdate, User
+from app.api.deps import (get_current_active_customer, get_current_active_user,get_user_service)
+from app.schemas.user_schema import Customer, CustomerResponse, CustomerUpdate, User
 from app.services.user_service import UserService
 
 router = APIRouter(tags=["Customers"])
@@ -28,7 +28,7 @@ router = APIRouter(tags=["Customers"])
 )
 def update_customer_me(
     updated_data: CustomerUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: Customer = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 )-> CustomerResponse:
     """
@@ -45,7 +45,7 @@ def update_customer_me(
     status_code=status.HTTP_200_OK,
 )
 def get_customer_me(
-    current_user: User = Depends(get_current_user),
+    current_user: Customer = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 ):
     """
@@ -75,35 +75,13 @@ def get_customer_me(
 
 
 @router.get(
-    "/customers/me",
-    response_model=CustomerResponse,
-    status_code=status.HTTP_200_OK,
-)
-def get_customer_me(
-    current_user: User = Depends(get_current_active_customer),
-    service: UserService = Depends(get_user_service),
-):
-    """
-    get_customer_me
-    -------------------
-
-    Description:
-        returns the information related to the currently authenticated customer
-
-    Returns:
-        CustomerResponse -> Information related to the specified customer
-    """
-    return service.get_customer(current_user.id, current_user)
-
-
-@router.get(
     "/customers/{customer_id}",
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
 )
 def get_customer(
     customer_id: str,
-    current_user: User = Depends(get_current_active_customer),
+    current_user: User = Depends(get_current_active_user),
     service: UserService = Depends(get_user_service),
 ):
     """
