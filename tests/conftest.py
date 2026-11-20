@@ -19,6 +19,11 @@ from app.services.menu_service import MenuService
 from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 
+from app.repositories.cart_repository import CartRepository
+from app.api.deps import get_cart_repository
+
+from app.api.deps import get_current_user
+from app.schemas.user_schema import RestaurantAdmin
 # this document contains pytest fixtures,
 # fixtures are functions that can be injected into other tests 
 # they are just setup code so we don't need to redefine this stuff for every indivdual test
@@ -52,6 +57,7 @@ def client(
     isolated_restaurant_repo: RestaurantRepository,
     isolated_user_service: UserService,
     isolated_user_repo: UserRepository,
+    isolated_cart_repo: CartRepository,
 ) -> Generator[TestClient, None, None]:
     """FastAPI TestClient fixture with dependency overrides for isolated testing."""
 
@@ -61,7 +67,18 @@ def client(
     app.dependency_overrides[get_restaurant_service]    = lambda: isolated_restaurant_service
     app.dependency_overrides[get_user_repository] = lambda: isolated_user_repo
     app.dependency_overrides[get_user_service] = lambda: isolated_user_service
-
+    app.dependency_overrides[get_cart_repository] = lambda: isolated_cart_repo
+    app.dependency_overrides[get_current_user] = lambda: RestaurantAdmin(
+        id="a01",
+        username="admin",
+        name="Test Admin",
+        email="admin@example.com",
+        password="hashed",
+        hash_salt="salt",
+        account_is_active=True,
+        managed_restaurants=["r01", "r02"],
+    )
+    
     try:
         with TestClient(app) as test_client:
             yield test_client
@@ -127,3 +144,10 @@ def isolated_user_repo(isolated_data_dir: Path) -> UserRepository:
 def isolated_user_service(isolated_user_repo: UserRepository) -> UserService:
     return UserService(repository = isolated_user_repo)
 
+############################################################################################
+### Config for cart repository
+############################################################################################
+
+@pytest.fixture
+def isolated_cart_repo(isolated_data_dir: Path) -> CartRepository:
+    return CartRepository(data_dir = isolated_data_dir)

@@ -10,7 +10,7 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_cart_repository
+from app.api.deps import get_cart_repository, get_current_user, get_user_repository
 from app.core.exceptions import (
     CartRestaurantConflictError,
     MenuItemNotFoundError,
@@ -172,11 +172,17 @@ def test_item_removed_from_the_menu_stays_visible_but_is_not_charged(service, me
 ############################################################################################
 
 @pytest.fixture
-def cart_client(client: TestClient, cart_repo):
-    """The app client with the cart repository replaced by the in-memory one."""
+def cart_client(client: TestClient, cart_repo, isolated_user_repo):
+    """The app client with the cart and user repositories replaced by test-isolated instances."""
     app.dependency_overrides[get_cart_repository] = lambda: cart_repo
-    return client
-
+    app.dependency_overrides[get_user_repository] = lambda: isolated_user_repo
+    
+    # Remove the global conftest override for get_current_user so real token auth works here
+    if get_current_user in app.dependency_overrides:
+        del app.dependency_overrides[get_current_user]
+        
+    yield client
+    app.dependency_overrides.clear()
 
 @pytest.fixture
 def auth(isolated_user_repo: UserRepository):

@@ -7,6 +7,20 @@ from pydantic import ValidationError
 from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.user_schema import RestaurantAdmin
+
+
+def admin_user() -> RestaurantAdmin:
+    return RestaurantAdmin(
+        id="a01",
+        username="admin",
+        name="Test Admin",
+        email="admin@example.com",
+        password="hashed",
+        hash_salt="salt",
+        account_is_active=True,
+        managed_restaurants=["r01", "r02"],
+    )
 
 COMMITTED_DATA = Path(__file__).resolve().parents[1] / "data" / "Restaurants.json"
 
@@ -39,8 +53,8 @@ def test_repository_update_changes_only_that_item(isolated_menu_repo, isolated_d
 
 
 def test_updating_twice_does_not_duplicate_items(isolated_menu_service, isolated_data_dir):
-    isolated_menu_service.update_menu_item("r01", "m01", {"price": 8.0})
-    isolated_menu_service.update_menu_item("r01", "m01", {"price": 8.5})
+    isolated_menu_service.update_menu_item("r01", "m01", {"price": 8.0}, current_user=admin_user())
+    isolated_menu_service.update_menu_item("r01", "m01", {"price": 8.5}, current_user=admin_user())
 
     after = reload_menu(isolated_data_dir, "r01")
     assert menu_ids(after).count("m01") == 1
@@ -51,14 +65,14 @@ def test_updating_twice_does_not_duplicate_items(isolated_menu_service, isolated
 def test_partial_update_keeps_other_fields(isolated_menu_service, changes):
     before = isolated_menu_service.get_menu_item("r01", "m01").model_dump()
 
-    updated = isolated_menu_service.update_menu_item("r01", "m01", changes)
+    updated = isolated_menu_service.update_menu_item("r01", "m01", changes, current_user=admin_user())
 
     assert updated == {**before, **changes}
 
 
 def test_update_cannot_change_item_or_restaurant_id(isolated_menu_service):
     updated = isolated_menu_service.update_menu_item(
-        "r01", "m01", {"id": "m99", "restaurant_id": "r02", "price": 4.0})
+        "r01", "m01", {"id": "m99", "restaurant_id": "r02", "price": 4.0}, current_user=admin_user())
 
     assert updated["id"] == "m01"
     assert updated["restaurant_id"] == "r01"
@@ -68,18 +82,18 @@ def test_invalid_update_is_rejected_before_writing(isolated_menu_service, isolat
     before = isolated_restaurant_repo.master_file.read_bytes()
 
     with pytest.raises(ValidationError):
-        isolated_menu_service.update_menu_item("r01", "m01", {"price": -1})
+        isolated_menu_service.update_menu_item("r01", "m01", {"price": -1}, current_user=admin_user())
 
     assert isolated_restaurant_repo.master_file.read_bytes() == before
 
 
 def test_update_unknown_item_or_restaurant_raises_domain_errors(isolated_menu_service, isolated_menu_repo):
     with pytest.raises(MenuItemNotFoundError):
-        isolated_menu_service.update_menu_item("r01", "m99", {"price": 1})
+        isolated_menu_service.update_menu_item("r01", "m99", {"price": 1}, current_user=admin_user())
     with pytest.raises(MenuItemNotFoundError):
         isolated_menu_repo.update_menu_item("r01", "m99", {"price": 1})
     with pytest.raises(RestaurantNotFoundError):
-        isolated_menu_service.update_menu_item("unknown", "m01", {"price": 1})
+        isolated_menu_service.update_menu_item("unknown", "m01", {"price": 1}, current_user=admin_user())
 
 
 def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_menu_service):
@@ -88,7 +102,7 @@ def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_m
         "cuisine": "Thai", "address": "123 Main St", "postal_code": "V1W 3Z9", "opening_hours": "10:00-20:00"}).json()
 
     with pytest.raises((MenuItemNotFoundError, EmptyMenuError)):
-        isolated_menu_service.update_menu_item(created["id"], "m01", {"price": 1})
+        isolated_menu_service.update_menu_item(created["id"], "m01", {"price": 1}, current_user=admin_user())
 
 
 @pytest.mark.parametrize("method", ["put", "patch"])
@@ -201,6 +215,6 @@ def test_repository_remove_unknown_item_raises(isolated_menu_repo):
 
 
 def test_service_remove_then_get_raises(isolated_menu_service):
-    isolated_menu_service.remove_menu_item("r01", "m02")
+    isolated_menu_service.remove_menu_item("r01", "m02", current_user=admin_user())
     with pytest.raises(MenuItemNotFoundError):
         isolated_menu_service.get_menu_item("r01", "m02")

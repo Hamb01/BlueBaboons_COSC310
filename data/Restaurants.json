@@ -3,11 +3,12 @@
         "id": "r01",
         "name": "Authentic_Tacos",
         "location": "Kelowna",
-        "address": "6767 Leon Ave, Kelowna, BC",
-        "postal_code": "V1W 3Z9",
+        "address": "6767 Leon Ave, Kelowna, BC",      
+        "postal_code": "V1W 3Z9",                    
         "isOpen": true,
         "cuisine": "Mexican",
         "opening_hours": "09:00-21:00",
+        "owner_id": "u01",                          
         "menu": [
             {
                 "id": "m01",
@@ -31,11 +32,12 @@
         "id": "r02",
         "name": "Coolio_Sushi",
         "location": "Rutland",
-        "address": "10-233 Bottom Wood Lake Rd, Lake Country, BC",
-        "postal_code": "V4V 1W5",
+        "address": "10-233 Bottom Wood Lake Rd, Lake Country, BC", 
+        "postal_code": "V4V 1W5",                               
         "isOpen": true,
         "cuisine": "Japanese",
         "opening_hours": "08:00-21:00",
+        "owner_id": "u01",                                     
         "menu": [
             {
                 "id": "m01",

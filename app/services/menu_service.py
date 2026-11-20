@@ -2,9 +2,11 @@
 
 from typing import Any, Dict
 
-from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAuthorizedError, UserAuthenticationError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
+from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner, User
 
 # Coding Notes:
 # The service layer acts as the business controller for menus.
@@ -24,6 +26,7 @@ class MenuService:
 
     def __init__(self, repository: MenuRepository):
         self.repository = repository
+        self.restaurant_repository = RestaurantRepository()
 
     def get_menu(self, restaurant_id: str) -> list[MenuItem]:
         """
@@ -82,6 +85,7 @@ class MenuService:
         self,
         restaurant_id: str,
         menu_item: Dict[str, Any],
+        current_user: User | None = None,
     ) -> Dict[str, Any]:
         """
         add_new_menu_item
@@ -101,6 +105,7 @@ class MenuService:
             RestaurantNotFoundError -> The Restaurant is not stored in the restaurants.json file
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self.verify_admin_or_owner(restaurant_id, current_user)
         self.repository.get_menu_data(restaurant_id)
 
         new_menu_item = MenuItem(
@@ -118,6 +123,7 @@ class MenuService:
         restaurant_id: str,
         item_id: str,
         updated_data: Dict[str, Any],
+        current_user: User | None = None,
     ) -> Dict[str, Any]:
         """
         update_menu_item
@@ -140,6 +146,7 @@ class MenuService:
             MenuItemNotFoundError -> The restaurant does not have that
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self.verify_admin_or_owner(restaurant_id, current_user)
         current = self.get_menu_item(restaurant_id, item_id)
         changes = {
             key: value for key, value in updated_data.items() if key in EDITABLE_FIELDS
@@ -147,7 +154,9 @@ class MenuService:
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
         return self.repository.update_menu_item(restaurant_id, item_id, updated.model_dump())
 
-    def remove_menu_item(self, restaurant_id: str, item_id: str) -> None:
+    def remove_menu_item(
+        self, restaurant_id: str, item_id: str, current_user: User | None = None
+    ) -> None:
         """
         remove_menu_item
         -------------------
@@ -167,4 +176,47 @@ class MenuService:
             MenuItemNotFoundError -> The restaurant does not have that
             DataPersistenceError -> There was an error while saving you changes to the Json file
         """
+        self.verify_admin_or_owner(restaurant_id, current_user)
         self.repository.remove_menu_item(restaurant_id, item_id)
+    
+    
+    def verify_admin_or_owner(
+        self, restaurant_id: str, current_user: User | None = None
+    ) -> None:
+        """
+            verify_admin_or_owner
+            -------------------
+        
+            Description:
+                Verifies if the current user is an admin or the owner of a restaurant. Helper method.
+        
+
+            Args: 
+                restaurant_id : string -> unique ID belonging to the restaurant in question
+                current_user : User -> Information about the currently logged-in user
+
+            Returns:
+                Nothing, raises an exception if user isn't authorized.
+    
+            Raises: 
+                RestaurantNotFoundError -> Restaurant isn't stored in the restaurants.json file
+                UserNotAuthorizedError -> User isn't an admin or the restaurant's owner, raising 403.
+        """
+        if current_user is None:
+            raise UserAuthenticationError(forbidden_action="restaurant management")
+            
+        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
+        
+        try:
+            restaurant = self.restaurant_repository.get_restaurant_data(restaurant_id)
+        except Exception:
+            restaurant = None
+
+        owner_id = restaurant.get("owner_id") if restaurant else None
+        is_owner = (
+            isinstance(current_user, RestaurantOwner)
+            and current_user.id == owner_id
+        )
+        
+        if not is_admin and not is_owner:
+            raise UserNotAuthorizedError(forbidden_action="restaurant management")

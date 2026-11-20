@@ -1,15 +1,17 @@
 """Dependency wiring for repositories and services used throughout the API."""
 
-from fastapi import Depends
+from typing import Dict, Optional
+
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from app.core.exceptions import AccountNotActiveError
+from app.core.exceptions import AccountNotActiveError, UserNotAuthorizedError
 from app.repositories.health_repository import HealthRepository
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import User
+from app.schemas.user_schema import Customer, User
 from app.services.cart_service import CartRepositoryInterface, CartService
 from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
@@ -17,8 +19,9 @@ from app.services.order_service import OrderService
 from app.services.restaurant_service import RestaurantService
 from app.services.user_service import UserService
 
-# Tell fastapi to expect an Authentication header
-user_token = OAuth2PasswordBearer(tokenUrl="token")
+# Tell fastapi to expect an Authentication header without auto-rejecting with 422
+user_token = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+
 
 def get_health_repository() -> HealthRepository:
     """Build a health repository instance for dependency injection."""
@@ -57,6 +60,7 @@ def get_menu_service(
     """Provide a menu service backed by the repository dependency."""
     return MenuService(repository=repository)
 
+
 def get_user_repository() -> UserRepository:
     """Build a user repository instance for dependency injection."""
     return UserRepository()
@@ -69,21 +73,64 @@ def get_user_service(
     return UserService(repository=repository)
 
 
-def get_current_user(token: str = Depends(user_token), repository: UserRepository = Depends(get_user_repository)):
-    """Gets the current user from the token"""
-    return repository.get_current_user(token)
+def get_current_user(
+    token: Optional[str] = Depends(user_token),
+    repository: UserRepository = Depends(get_user_repository),
+) -> User:
+    """Gets the current user from the token."""
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        user = repository.get_current_user(token)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
 
 
-def get_current_active_customer(current_user: User = Depends(get_current_user)) -> User:
-    """Return the signed-in user, or raise AccountNotActiveError (403) if their account is deactivated."""
+def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Return the authenticated active user; reject malformed principals."""
+    if not isinstance(current_user, User):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authenticated user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if not current_user.account_is_active:
-        raise AccountNotActiveError(current_user.reason_for_deactivation or "Unspecified")
+        raise AccountNotActiveError(
+            current_user.reason_for_deactivation or "Unspecified"
+        )
+    return current_user
+
+
+def get_current_active_customer(
+    current_user: User = Depends(get_current_active_user),
+) -> Customer:
+    """Return the authenticated active customer, rejecting other user types."""
+    if not isinstance(current_user, Customer):
+        raise UserNotAuthorizedError(forbidden_action="customer features")
     return current_user
 
 
 def get_cart_repository() -> CartRepositoryInterface:
-    """Build the cart repository (#95). Imported here so the app still starts before it exists."""
-    # CartRepository arrives with #95; until then this import fails only when the cart is used.
+    """Build the cart repository (#95)."""
     from app.repositories.cart_repository import CartRepository  # pylint: disable=import-outside-toplevel,no-name-in-module
     return CartRepository()
 
