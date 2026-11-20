@@ -203,7 +203,7 @@ This document records externally assisted content, AI tooling, and design assist
 ## Writing Tests 2026-11-20
 - **Tool / Assistant:** Copilot
 - **Scope / Assistance:**
-- Asked Copilot to write tests for the implementation of updating item quantity in a cart, deleting an item, and clearing the cart.
+- Asked Copilot to write tests for the implementation of updating item quantity in a cart, deleting an item, and clearing the cart. Also tests for owners setting menu items to active/inactive, and how that status interacts with the checkout.
 
 - **Verificaton**
 - Asked copilot to explain what each of the tests do, how they work, and why it chose to implement them.
