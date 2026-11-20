@@ -171,6 +171,25 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verification:** 
   - I carefully read through all of the code that the AI modified and verified that the AI didn't generate any code, it mearly reformatted existing code to improve the lint score
   - In addition, all the tests passed
+
+## Customer update: required address — 2026-11-19
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
+- **Scope / Assistance:**
+  - Explained how to make the address required in `CustomerUpdate`, and that FastAPI
+    returns the 422 itself when the schema's validation fails, so the validator only raises `ValueError`.
+  - Changed `address`, `city`, `province` and `postal_code` in `CustomerUpdate`
+    (`app/schemas/user_schema.py`) from `Field(default=None)` to `Field(...)`, because
+    a default value still let the fields be left out of a request.
+  - Updated the `CustomerUpdate` tests in `tests/test_user_services.py` for the required address:
+    - Added a `NEW_ADDRESS` fixture with all four address parts.
+    - Added tests that reject a missing address part, an empty body, and a name/email
+      change sent without the address.
+    - Replaced the empty-body test with one that resends the current address with
+      a new email and checks that only the email changed on disk.
+- **Verification & Ownership:**
+  - Claude did not run the tests: pytest stopped while loading `conftest.py` because PyJWT was
+    not installed in the local `.venv`.
+  - The student installed the requirements, ran the test suite and reviewed the changes.
 ---
 ## Bug Fixing 2026-11-18
 - **Tool / Assistant:** Copilot
