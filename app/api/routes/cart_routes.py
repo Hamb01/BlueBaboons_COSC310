@@ -2,8 +2,10 @@
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.deps import get_cart_service, get_current_active_customer
+from app.api.deps import (get_cart_service, get_current_active_customer, get_order_repository)
 from app.schemas.cart_schema import (CartItemAdd, CartItemQuantityUpdate, CartResponse)
+from app.schemas.order_schema import Order
+from app.repositories.order_repository import OrderRepository
 from app.services.cart_service import CartService
 
 router = APIRouter(tags=["Cart"])
@@ -57,6 +59,43 @@ def add_item_to_cart(
 ) -> CartResponse:
     """Add a menu item to the customer's active cart and return the updated cart."""
     return service.add_item(customer.id, payload)
+
+
+@router.post(
+    "/cart/checkout",
+    response_model=Order,
+    status_code=status.HTTP_200_OK,
+    summary="Checkout Active Cart",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+        status.HTTP_404_NOT_FOUND: {"description": "Cart item no longer exists"},
+        status.HTTP_409_CONFLICT: {
+            "description": "A cart item is unavailable or inactive"
+        },
+        status.HTTP_400_BAD_REQUEST: {"description": "Cart is empty"},
+    },
+)
+@router.post(
+    "/orders/checkout",
+    response_model=Order,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+def checkout_cart(
+    customer=Depends(get_current_active_customer),
+    cart_service: CartService = Depends(get_cart_service),
+    order_repository: OrderRepository = Depends(get_order_repository),
+) -> Order:
+    """Create an order only when every active-cart item is orderable."""
+    delivery_address = (
+        f"{customer.address}, {customer.city}, {customer.province} "
+        f"{customer.postal_code}"
+    )
+    return cart_service.checkout(
+        customer.id,
+        delivery_address,
+        order_repository,
+    )
 
 
 @router.patch(

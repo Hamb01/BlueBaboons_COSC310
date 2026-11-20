@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAuthorizedError, UserAuthenticationError
+from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, MenuItemUnavailableError, UserNotAuthorizedError, UserAuthenticationError
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 from app.repositories.restaurant_repository import RestaurantRepository
@@ -54,6 +54,7 @@ class MenuService:
             MenuItem.model_validate(item)
             for item in menu_data
             if item.get("restaurant_id") == restaurant_id
+            and item.get("is_active", True)
         ]
 
     def get_menu_item(self, restaurant_id: str, item_id: str) -> MenuItem:
@@ -78,6 +79,18 @@ class MenuService:
         """
         for item in self.get_menu(restaurant_id):
             if item.id == item_id:
+                return item
+        raise MenuItemNotFoundError(restaurant_id, item_id)
+
+    def get_orderable_item(self, restaurant_id: str, item_id: str) -> MenuItem:
+        """Return an item only when it is active and currently available."""
+        for item_data in self.repository.get_menu_data(restaurant_id):
+            if item_data.get("restaurant_id") != restaurant_id:
+                continue
+            if item_data.get("id") == item_id:
+                item = MenuItem.model_validate(item_data)
+                if not item.is_active or not item.availability:
+                    raise MenuItemUnavailableError(restaurant_id, item_id)
                 return item
         raise MenuItemNotFoundError(restaurant_id, item_id)
 

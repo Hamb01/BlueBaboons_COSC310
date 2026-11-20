@@ -10,7 +10,7 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_cart_repository, get_current_user, get_user_repository
+from app.api.deps import (get_cart_repository, get_current_user, get_order_repository, get_user_repository)
 from app.core.exceptions import (
     CartItemNotFoundError,
     CartRestaurantConflictError,
@@ -19,6 +19,7 @@ from app.core.exceptions import (
 )
 from app.main import app
 from app.repositories.user_repository import UserRepository
+from app.repositories.order_repository import OrderRepository
 from app.schemas.cart_schema import CartItemAdd, CartItemQuantityUpdate
 from app.schemas.menu_item import MenuItem
 from app.services.cart_service import CartService
@@ -75,6 +76,12 @@ def menu():
         return items[(restaurant_id, item_id)]
 
     mock.get_menu_item.side_effect = get_menu_item
+    def get_orderable_item(restaurant_id, item_id):
+        item = get_menu_item(restaurant_id, item_id)
+        if not item.availability or not item.is_active:
+            raise MenuItemUnavailableError(restaurant_id, item_id)
+        return item
+    mock.get_orderable_item.side_effect = get_orderable_item
     return mock
 
 
@@ -150,7 +157,7 @@ def test_items_from_a_second_restaurant_are_rejected_and_cart_is_unchanged(servi
 def test_totals_always_use_the_current_menu_price(service, menu):
     service.add_item("c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01", quantity=2))
     cheaper = TACO.model_copy(update={"price": 5.0})
-    menu.get_menu_item.side_effect = lambda restaurant_id, item_id: cheaper
+    menu.get_orderable_item.side_effect = lambda restaurant_id, item_id: cheaper
 
     cart = service.get_active_cart("c01")
 
@@ -160,7 +167,7 @@ def test_totals_always_use_the_current_menu_price(service, menu):
 
 def test_item_removed_from_the_menu_stays_visible_but_is_not_charged(service, menu):
     service.add_item("c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01"))
-    menu.get_menu_item.side_effect = MenuItemNotFoundError("r01", "m01")
+    menu.get_orderable_item.side_effect = MenuItemNotFoundError("r01", "m01")
 
     cart = service.get_active_cart("c01")
 
@@ -363,6 +370,54 @@ def test_unknown_item_returns_404(cart_client, auth):
 def test_unavailable_item_returns_409(cart_client, auth):
     response = cart_client.post("/cart/items", headers=auth, json={"restaurant_id": "r02", "menu_item_id": "m03"})
     assert response.status_code == 409
+
+
+def test_inactive_item_returns_409(cart_client, auth, isolated_menu_repo):
+    item = next(
+        item for item in isolated_menu_repo.get_menu_data("r01")
+        if item["id"] == "m01"
+    )
+    isolated_menu_repo.update_menu_item(
+        "r01", "m01", {**item, "is_active": False}
+    )
+
+    response = cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+
+    assert response.status_code == 409
+
+
+@pytest.mark.parametrize("change", [{"availability": False}, {"is_active": False}])
+def test_checkout_rejects_unavailable_or_inactive_cart_items(
+    cart_client,
+    auth,
+    isolated_menu_repo,
+    isolated_data_dir,
+    change,
+):
+    add_response = cart_client.post(
+        "/cart/items",
+        headers=auth,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+    assert add_response.status_code == 200
+
+    item = next(
+        item for item in isolated_menu_repo.get_menu_data("r01")
+        if item["id"] == "m01"
+    )
+    isolated_menu_repo.update_menu_item("r01", "m01", {**item, **change})
+
+    order_repo = OrderRepository(data_dir=isolated_data_dir)
+    app.dependency_overrides[get_order_repository] = lambda: order_repo
+
+    response = cart_client.post("/cart/checkout", headers=auth)
+
+    assert response.status_code == 409
+    assert order_repo.orders == {}
 
 
 def test_mixing_restaurants_returns_409(cart_client, auth):
