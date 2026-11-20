@@ -15,14 +15,14 @@ router = APIRouter(tags=["Customers"])
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
        description=(
-            "Updates the authenticated customer's information. Only fields that are "
-            "provided in the request body will be updated; all other fields remain "
-            "unchanged."
+            "Updates the authenticated customer's information. The full delivery "
+            "address (address, city, province, postal_code) is required on every "
+            "update; name and email are optional and unchanged when left out."
        ),
         responses={
             status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
             status.HTTP_422_UNPROCESSABLE_CONTENT: {
-                "description": "Invalid body, e.g. invalid address"
+                "description": "Invalid body, e.g. a missing or empty address part"
             },
         },
 )

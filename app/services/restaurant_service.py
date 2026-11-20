@@ -196,8 +196,10 @@ class RestaurantService:
             raise UserAuthenticationError(forbidden_action="restaurant update")
 
         restaurant = self.repository.get_restaurant_data(restaurant_id)
-        
-        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
+
+        # RestaurantOwner subclasses RestaurantAdmin, so owners must not pass the admin check
+        is_admin = (isinstance(current_user, (RestaurantAdmin, Developer))
+                    and not isinstance(current_user, RestaurantOwner))
         is_owner = (
             isinstance(current_user, RestaurantOwner)
             and current_user.id == restaurant.get("owner_id")

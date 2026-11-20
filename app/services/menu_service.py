@@ -205,8 +205,10 @@ class MenuService:
         if current_user is None:
             raise UserAuthenticationError(forbidden_action="restaurant management")
             
-        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
-        
+        # RestaurantOwner subclasses RestaurantAdmin, so owners must not pass the admin check
+        is_admin = (isinstance(current_user, (RestaurantAdmin, Developer))
+                    and not isinstance(current_user, RestaurantOwner))
+
         try:
             restaurant = self.restaurant_repository.get_restaurant_data(restaurant_id)
         except Exception:

@@ -33,7 +33,7 @@ router = APIRouter(tags=["Menu"])
     status_code=status.HTTP_200_OK,
 )
 def replace_menu_item(
-    restaurant_id: int,
+    restaurant_id: str,
     item_id: str,
     updated_data: dict,
     service: MenuService = Depends(get_menu_service),
@@ -46,7 +46,7 @@ def replace_menu_item(
 
 @router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
 def modify_menu_item(
-    restaurant_id: int,
+    restaurant_id: str,
     item_id: str,
     updated_data: dict,
     service: MenuService = Depends(get_menu_service),

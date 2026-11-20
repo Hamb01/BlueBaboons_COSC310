@@ -38,7 +38,7 @@ def test_get_restaurant_details_returns_200(client: TestClient):
         "isOpen": True,
         "cuisine": "Mexican",
         "opening_hours": "09:00-21:00",
-        "owner_id": "u01",
+        "owner_id": "o01",
     }
 
 
