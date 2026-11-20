@@ -175,11 +175,26 @@ def test_add_menu_item_to_new_restaurant_without_menu_key(client):
     assert menu_ids(client.get(f"/restaurants/{created['id']}/menu").json()) == ["m01"]
 
 
+@pytest.mark.parametrize("method", ["put", "patch"])
+def test_update_menu_item_accepts_string_restaurant_id(client, isolated_data_dir, method):
+    """#60: restaurant ids are strings like r01, so the update routes must accept them."""
+    response = getattr(client, method)("/restaurant/r01/menu/m01", json={"price": 9.99})
+
+    assert response.status_code == 200
+    assert response.json()["item"]["price"] == 9.99
+    saved = [item for item in reload_menu(isolated_data_dir, "r01") if item["id"] == "m01"][0]
+    assert saved["price"] == 9.99
+
+
+def test_update_menu_item_unknown_item_returns_404(client):
+    assert client.patch("/restaurant/r01/menu/m99", json={"price": 1}).status_code == 404
+
+
 def test_menu_writes_never_touch_committed_data(client):
     before = COMMITTED_DATA.read_bytes()
 
     client.post("/restaurant/r01/menu", json=NEW_ITEM)
-    client.patch("/restaurant/1/menu/m01", json={"price": 1})
+    client.patch("/restaurant/r01/menu/m01", json={"price": 1})
     client.delete("/restaurants/r01/menu/m02")
 
     assert COMMITTED_DATA.read_bytes() == before
