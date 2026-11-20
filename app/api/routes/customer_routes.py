@@ -21,6 +21,7 @@ router = APIRouter(tags=["Customers"])
        ),
         responses={
             status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
             status.HTTP_422_UNPROCESSABLE_CONTENT: {
                 "description": "Invalid body, e.g. invalid address"
             },
@@ -59,6 +60,16 @@ def update_customer_me(
     "/customers/me",
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
+        description=(
+            "Retrives the information for the current customer"
+        ),
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Invalid body, e.g. invalid address"
+            },
+        },
 )
 def get_customer_me(
     current_user: User = Depends(get_current_user),
@@ -94,6 +105,16 @@ def get_customer_me(
     "/customers/me",
     response_model=CustomerResponse,
     status_code=status.HTTP_200_OK,
+        description=(
+            "Retrives the information for a specific customer"
+        ),
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated or User is not authorized"},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Invalid body, e.g. invalid address"
+            },
+        },
 )
 def get_customer_me(
     current_user: User = Depends(get_current_user),
