@@ -33,6 +33,7 @@ def owner_user() -> RestaurantOwner:
         password="hashed",
         hash_salt="salt",
         account_is_active=True,
+        managed_restaurants=["r01"],
         owned_restaurants=["r01"],
     )
 

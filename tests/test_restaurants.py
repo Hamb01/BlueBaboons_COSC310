@@ -30,6 +30,7 @@ def test_restaurant_creation_uses_typed_owner_and_rejects_customer():
         password="hashed",
         hash_salt="salt",
         account_is_active=True,
+        managed_restaurants=[],
         owned_restaurants=[],
     )
     customer = Customer(
