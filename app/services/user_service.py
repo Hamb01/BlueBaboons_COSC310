@@ -179,7 +179,7 @@ class UserService:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
 
         if current_user.id == id_to_get or (
-            self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
+            self.get_account_status_and_role(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, AccountStatusAndRole.ACTIVE_DEVELOPER)
         ):
             customer_data = self.repository.get_user_data_from_id(id_to_get)
         else:
@@ -218,11 +218,11 @@ class UserService:
         """
         if not current_user.account_is_active:
             raise AccountNotActiveError(current_user.reason_for_deactivation)
-        if not self.repository.verify_user_account(id_to_deactivate) in (AccountStatusAndRole.ACTIVE_CUSTOMER, AccountStatusAndRole.DEACTIVATED_CUSTOMER):
+        if not self.get_account_status_and_role(id_to_deactivate) in (AccountStatusAndRole.ACTIVE_CUSTOMER, AccountStatusAndRole.DEACTIVATED_CUSTOMER):
             raise InvalidRequestError("Cannot remove user through cusomer endpoint")
         if current_user.id == id_to_deactivate:
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
-        elif self.repository.verify_user_account(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER, 
+        elif self.get_account_status_and_role(current_user.id) in (AccountStatusAndRole.ACTIVE_RESTAURANT_OWNER, 
                                                                       AccountStatusAndRole.ACTIVE_RESTAURANT_ADMIN, 
                                                                       AccountStatusAndRole.ACTIVE_DEVELOPER):
             self.repository.deactivate_user(id_to_deactivate, reason_for_deactivation)
@@ -256,3 +256,23 @@ class UserService:
             raise AccountNotActiveError(userdata.reason_for_deactivation or "Unspecified")
 
         return True
+
+    def get_account_status_and_role(self, user_id: str) -> AccountStatusAndRole :
+        """
+        get_account_status_and_role
+        ----------------------------
+
+        Description:
+            returns an enumeration representing the user's current account status and their role
+
+        Args: 
+            user_id : string -> unique identifier belonging to the user you wish to look up
+
+        Returns:
+            AccountStatusAndRole -> Enumeration that tells us a user's role and if their account is active
+
+        Raises: 
+            BadDataInPersistenceLayerError -> get_user_data_from_id returned the wrong type
+            UserNotFoundError -> No such user exists in our system
+        """
+        return self.repository.verify_user_account(user_id)
