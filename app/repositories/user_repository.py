@@ -136,6 +136,7 @@ class UserRepository:
 
         Raises: 
             UserNotFoundError -> No such user exists in our system
+            BadDataInPersistenceLayerError -> Stored data is in the wrong form
         """
 
         try:

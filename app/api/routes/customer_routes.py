@@ -37,8 +37,24 @@ def update_customer_me(
 
     Description:
         updates the information related to the customer with the specified ID
+
+    Args:
+        none
+
+    Returns:
+        CustomerResponse -> Information related to the specified customer
+            (minus anything that is not readable, not user editable or meant to
+            be accessed via another endpoint)
+
+    Raises:
+        UserAuthentificationError -> an incorrect username or password was entered
+        UserNotAuthorizedError -> User does not have permission to fetch the data
+        UserNotFoundError -> No such user could be found in the system
+        AccountNotActiveError -> the user cannot login because an admin has
+                deactivated their account
     """
     return service.update_customer(current_user.id, updated_data, current_user)
+
 @router.get(
     "/customers/me",
     response_model=CustomerResponse,
