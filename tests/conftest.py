@@ -23,6 +23,7 @@ from app.repositories.cart_repository import CartRepository
 from app.api.deps import get_cart_repository
 
 from app.api.deps import get_current_user
+from app.schemas.user_schema import RestaurantAdmin
 # this document contains pytest fixtures,
 # fixtures are functions that can be injected into other tests 
 # they are just setup code so we don't need to redefine this stuff for every indivdual test
@@ -67,7 +68,16 @@ def client(
     app.dependency_overrides[get_user_repository] = lambda: isolated_user_repo
     app.dependency_overrides[get_user_service] = lambda: isolated_user_service
     app.dependency_overrides[get_cart_repository] = lambda: isolated_cart_repo
-    app.dependency_overrides[get_current_user] = lambda: {"id": "u01", "role": "admin"}
+    app.dependency_overrides[get_current_user] = lambda: RestaurantAdmin(
+        id="a01",
+        username="admin",
+        name="Test Admin",
+        email="admin@example.com",
+        password="hashed",
+        hash_salt="salt",
+        account_is_active=True,
+        managed_restaurants=["r01", "r02"],
+    )
     
     try:
         with TestClient(app) as test_client:

@@ -76,7 +76,7 @@ def get_user_service(
 def get_current_user(
     token: Optional[str] = Depends(user_token),
     repository: UserRepository = Depends(get_user_repository),
-):
+) -> User:
     """Gets the current user from the token."""
     if not token:
         raise HTTPException(

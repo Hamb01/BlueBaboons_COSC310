@@ -6,6 +6,7 @@ from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, UserNotAu
 from app.repositories.menu_repository import MenuRepository
 from app.schemas.menu_item import MenuItem
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner, User
 
 # Coding Notes:
 # The service layer acts as the business controller for menus.
@@ -84,7 +85,7 @@ class MenuService:
         self,
         restaurant_id: str,
         menu_item: Dict[str, Any],
-        current_user: dict = None,
+        current_user: User | None = None,
     ) -> Dict[str, Any]:
         """
         add_new_menu_item
@@ -122,7 +123,7 @@ class MenuService:
         restaurant_id: str,
         item_id: str,
         updated_data: Dict[str, Any],
-        current_user: dict = None,
+        current_user: User | None = None,
     ) -> Dict[str, Any]:
         """
         update_menu_item
@@ -153,7 +154,9 @@ class MenuService:
         updated = MenuItem.model_validate({**current.model_dump(), **changes})
         return self.repository.update_menu_item(restaurant_id, item_id, updated.model_dump())
 
-    def remove_menu_item(self, restaurant_id: str, item_id: str, current_user: dict = None) -> None:
+    def remove_menu_item(
+        self, restaurant_id: str, item_id: str, current_user: User | None = None
+    ) -> None:
         """
         remove_menu_item
         -------------------
@@ -177,7 +180,9 @@ class MenuService:
         self.repository.remove_menu_item(restaurant_id, item_id)
     
     
-    def verify_admin_or_owner(self, restaurant_id: str, current_user: dict = None):
+    def verify_admin_or_owner(
+        self, restaurant_id: str, current_user: User | None = None
+    ) -> None:
         """
             verify_admin_or_owner
             -------------------
@@ -188,7 +193,7 @@ class MenuService:
 
             Args: 
                 restaurant_id : string -> unique ID belonging to the restaurant in question
-                current_user : dict -> Information about the currently logged-in user
+                current_user : User -> Information about the currently logged-in user
 
             Returns:
                 Nothing, raises an exception if user isn't authorized.
@@ -200,7 +205,7 @@ class MenuService:
         if current_user is None:
             raise UserAuthenticationError(forbidden_action="restaurant management")
             
-        is_admin = current_user.get("role") == "admin"
+        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
         
         try:
             restaurant = self.restaurant_repository.get_restaurant_data(restaurant_id)
@@ -208,7 +213,10 @@ class MenuService:
             restaurant = None
 
         owner_id = restaurant.get("owner_id") if restaurant else None
-        is_owner = current_user.get("id") == owner_id if owner_id else False
+        is_owner = (
+            isinstance(current_user, RestaurantOwner)
+            and current_user.id == owner_id
+        )
         
         if not is_admin and not is_owner:
             raise UserNotAuthorizedError(forbidden_action="restaurant management")

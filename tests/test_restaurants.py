@@ -1,6 +1,57 @@
+from unittest.mock import Mock
+
+import pytest
+
+from app.core.exceptions import UserNotAuthorizedError
 from app.repositories.restaurant_repository import RestaurantRepository
-from app.services.restaurant_service import RestaurantService
 from app.schemas.restaurant_schema import RestaurantCreate
+from app.schemas.user_schema import Customer, RestaurantOwner
+from app.services.restaurant_service import RestaurantService
+
+
+def test_restaurant_creation_uses_typed_owner_and_rejects_customer():
+    repository = Mock()
+    repository.create_restaurant.side_effect = lambda data: {**data, "id": "r99"}
+    service = RestaurantService(repository)
+    payload = RestaurantCreate(
+        name="Test Restaurant",
+        location="Kelowna",
+        address="123 Main St",
+        postal_code="V1W 1A1",
+        isOpen=True,
+        cuisine="Seafood",
+        opening_hours="09:00-21:00",
+    )
+    owner = RestaurantOwner(
+        id="o01",
+        username="owner",
+        name="Test Owner",
+        email="owner@example.com",
+        password="hashed",
+        hash_salt="salt",
+        account_is_active=True,
+        owned_restaurants=[],
+    )
+    customer = Customer(
+        id="c01",
+        username="customer",
+        name="Test Customer",
+        email="customer@example.com",
+        password="hashed",
+        hash_salt="salt",
+        account_is_active=True,
+        address="1 Main St",
+        city="Kelowna",
+        province="BC",
+        postal_code="V1W 1A1",
+        balance=0,
+    )
+
+    created = service.create_restaurant(payload, owner)
+
+    assert created.owner_id == owner.id
+    with pytest.raises(UserNotAuthorizedError):
+        service.create_restaurant(payload, customer)
 
 def test_get_restaurants(isolated_restaurant_repo: RestaurantRepository):
     """Verify that the get_restaurant_data function correctly reads the JSON files when it must lookup the restaurant id"""
