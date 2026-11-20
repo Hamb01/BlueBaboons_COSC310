@@ -139,7 +139,7 @@ def get_customer(
 @router.post(
     "/customers/me/deactivate",
     response_model=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
         description=(
             "Retrives the information for a specific customer"
         ),
@@ -175,7 +175,7 @@ def deactivate_my_customer_account(current_user = Depends(get_current_user), ser
 @router.post(
     "/customers/{customer_id}/deactivate",
     response_model=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
         description=(
             "Retrives the information for a specific customer"
         ),

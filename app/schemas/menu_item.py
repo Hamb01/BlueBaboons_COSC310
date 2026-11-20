@@ -12,3 +12,9 @@ class MenuItem(BaseModel):
     description: str
     price: float = Field(ge=0)
     availability: bool
+
+class MenuResponse(BaseModel):
+    """Return type of certain menu endpoints"""
+
+    message: str
+    item: MenuItem
