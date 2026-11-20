@@ -29,7 +29,7 @@ router = APIRouter(tags=["Menu"])
 
 
 @router.put(
-    "/restaurant/{restaurant_id}/menu/{item_id}",
+    "/restaurants/{restaurant_id}/menu/{item_id}",
     status_code=status.HTTP_200_OK,
 )
 def replace_menu_item(
@@ -44,23 +44,15 @@ def replace_menu_item(
     return {"message": "Menu item updated successfully", "item": updated_item}
 
 
-@router.patch("/restaurant/{restaurant_id}/menu/{item_id}")
-def modify_menu_item(
-    restaurant_id: str,
-    item_id: str,
-    updated_data: dict,
-    service: MenuService = Depends(get_menu_service),
-    current_user: User = Depends(get_current_user)
-):
-    """Modify an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
-    return {"message": "Menu item updated successfully", "item": updated_item}
-
-
 @router.patch(
     "/restaurants/{restaurant_id}/menu/{item_id}",
     response_model=MenuItem,
     status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Owner or admin permission required"},
+        status.HTTP_404_NOT_FOUND: {"description": "Restaurant or menu item not found"},
+    },
 )
 def patch_menu_item(
     restaurant_id: str,
@@ -76,7 +68,7 @@ def patch_menu_item(
     return MenuItem.model_validate(updated_item)
 
 
-@router.post("/restaurant/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
+@router.post("/restaurants/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
 def add_menu_item(
     restaurant_id: str,
     payload: MenuItemRequest,
