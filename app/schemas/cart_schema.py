@@ -38,6 +38,12 @@ class CartItemAdd(BaseModel):
     quantity: int = Field(1, ge=1, description="How many to add (at least 1)")
 
 
+class CartItemQuantityUpdate(BaseModel):
+    """Request body for changing the quantity of an item already in the cart."""
+
+    quantity: int = Field(..., ge=1, description="New quantity (at least 1)")
+
+
 class CartLine(BaseModel):
     """One cart line in an API response, priced with the current menu."""
 

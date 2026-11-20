@@ -47,7 +47,9 @@ def test_failed_save_changes_nothing(cart_repo):
     assert cart_repo.get_active_cart("c01")["restaurant_id"] is None
 
 
-def test_cart_api_works_end_to_end_with_the_real_repository(client, cart_repo, isolated_user_repo):
+def test_cart_api_works_end_to_end_with_the_real_repository(
+    client, cart_repo, isolated_user_repo, isolated_data_dir
+):
     app.dependency_overrides[get_cart_repository] = lambda: cart_repo
     app.dependency_overrides[get_user_repository] = lambda: isolated_user_repo
     app.dependency_overrides.pop(get_current_user, None)
@@ -72,9 +74,34 @@ def test_cart_api_works_end_to_end_with_the_real_repository(client, cart_repo, i
 
     added = client.post("/cart/items", headers=headers,
                         json={"restaurant_id": "r01", "menu_item_id": "m01", "quantity": 2})
-    fetched = client.get("/cart", headers=headers)
-
     assert added.status_code == 200
-    assert fetched.status_code == 200
-    assert fetched.json()["id"] == added.json()["id"] == "k01"
-    assert fetched.json()["total"] == 15.98
+    assert added.json()["id"] == "k01"
+    assert added.json()["total"] == 15.98
+
+    updated = client.patch("/cart/items/m01", headers=headers, json={"quantity": 3})
+    assert updated.status_code == 200
+    assert updated.json()["total"] == 23.97
+    
+    # A fresh repository simulates a restart; reload after each mutation so a later save
+    # cannot mask an earlier persistence failure.
+    
+    reloaded = CartRepository(data_dir=isolated_data_dir)
+    assert reloaded.get_active_cart("c01")["items"][0]["quantity"] == 3
+
+    removed = client.delete("/cart/items/m01", headers=headers)
+    assert removed.status_code == 200
+    reloaded = CartRepository(data_dir=isolated_data_dir)
+    assert reloaded.get_active_cart("c01")["items"] == []
+    assert reloaded.get_active_cart("c01")["restaurant_id"] is None
+
+    # Refill the cart so DELETE /cart is tested against a non-empty cart.
+    client.post(
+        "/cart/items",
+        headers=headers,
+        json={"restaurant_id": "r01", "menu_item_id": "m01"},
+    )
+    cleared = client.delete("/cart", headers=headers)
+    assert cleared.status_code == 200
+    reloaded = CartRepository(data_dir=isolated_data_dir)
+    assert reloaded.get_active_cart("c01")["items"] == []
+    assert reloaded.get_active_cart("c01")["restaurant_id"] is None

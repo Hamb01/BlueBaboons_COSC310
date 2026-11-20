@@ -87,6 +87,16 @@ class CartRestaurantConflictError(DomainError):
             f"tried to add an item from {requested_restaurant_id}."
         )
 
+
+class CartItemNotFoundError(DomainError):
+    """Raised when a requested menu item is not in the customer's active cart."""
+
+    def __init__(self, menu_item_id: str):
+        super().__init__()
+        self.message = f"Menu item {menu_item_id} was not found in the active cart."
+        self.details = ""
+
+
 ###########################################################################################################################################
 ## Order errors
 ###########################################################################################################################################
