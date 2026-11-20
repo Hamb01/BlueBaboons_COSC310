@@ -1,9 +1,10 @@
 """Order tests."""
 import pytest
 
-from app.api.deps import get_order_repository
+from app.api.deps import get_current_user, get_order_repository
 from app.main import app
 from app.repositories.order_repository import OrderRepository
+from app.schemas.user_schema import RestaurantAdmin
 
 
 def make_order(customer_id="c01", created_at="2026-11-17T10:00:00+00:00"):
@@ -27,6 +28,7 @@ def order_repo(isolated_data_dir):
 @pytest.fixture
 def api(client, order_repo):
     app.dependency_overrides[get_order_repository] = lambda: order_repo
+    app.dependency_overrides.pop(get_current_user, None)
     return client
 
 
@@ -80,7 +82,21 @@ def test_my_orders_only_has_mine_newest_first(api, order_repo, isolated_user_rep
 
 def test_order_keeps_its_price_after_the_menu_changes(api, order_repo, isolated_user_repo, isolated_menu_service):
     created = order_repo.create_order(make_order(customer_id="c01"))
-    isolated_menu_service.update_menu_item("r01", "m01", {"price": 99.0})
+    isolated_menu_service.update_menu_item(
+        "r01",
+        "m01",
+        {"price": 99.0},
+        current_user=RestaurantAdmin(
+            id="a01",
+            username="admin",
+            name="Test Admin",
+            email="admin@example.com",
+            password="hashed",
+            hash_salt="salt",
+            account_is_active=True,
+            managed_restaurants=["r01", "r02"],
+        ),
+    )
 
     order = api.get(f"/orders/{created['id']}", headers=login(isolated_user_repo, "c01")).json()
 

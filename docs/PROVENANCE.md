@@ -172,3 +172,11 @@ This document records externally assisted content, AI tooling, and design assist
   - I carefully read through all of the code that the AI modified and verified that the AI didn't generate any code, it mearly reformatted existing code to improve the lint score
   - In addition, all the tests passed
 ---
+## Bug Fixing 2026-11-18
+- **Tool / Assistant:** Copilot
+- **Scope / Assistance:**
+- Changed test_orders.py and main.py to avoid 5 tests from failing
+
+- **Verificaton**
+- I read trough the changed it made to both files, ensuring no major reformating was done and that only lines necessary for bug fixign were altered.
+- All tests passed.

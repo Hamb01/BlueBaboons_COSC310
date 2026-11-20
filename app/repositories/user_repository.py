@@ -62,19 +62,24 @@ class UserRepository:
 
     def save_to_file(self):
         """Persist all user data to the master JSON file."""
-        fd, temp_path = tempfile.mkstemp(dir=self.data_dir, suffix=".temp")
+        data_dir_str = str(self.data_dir)
+        master_file_str = str(self.master_file)
+        os.makedirs(data_dir_str, exist_ok=True)
+        
+        fd, temp_path = tempfile.mkstemp(dir=data_dir_str, suffix=".temp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as file:
                 json.dump(self.users, file, indent=4)
                 file.flush()
                 os.fsync(file.fileno())
-                os.replace(temp_path, self.master_file)
+            # Ensure both paths are native strings for os.replace
+            os.replace(temp_path, master_file_str)
         except (OSError, TypeError, ValueError) as exc:
             try:
                 os.unlink(temp_path)
             except FileNotFoundError:
                 pass
-            raise DataPersistenceError(str(self.master_file), "write") from exc
+            raise DataPersistenceError(master_file_str, "write") from exc
 
     def get_user_data(self, username: str) -> User:
         """
@@ -100,7 +105,7 @@ class UserRepository:
                 if username == data["username"]:
                     first_character = user_id[0]
                     match first_character:
-                        case 'c':
+                        case 'c' | 'u':
                             userdata = Customer.model_validate(data)
                         case 'a':
                             userdata = RestaurantAdmin.model_validate(data)
@@ -144,7 +149,7 @@ class UserRepository:
                 data = self.users[user_id]
                 first_character = user_id[0]
                 match first_character:
-                    case 'c':
+                    case 'c' | 'u':
                         userdata = Customer.model_validate(data)
                     case 'a':
                         userdata = RestaurantAdmin.model_validate(data)

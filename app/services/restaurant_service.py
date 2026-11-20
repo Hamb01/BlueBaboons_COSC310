@@ -15,7 +15,8 @@
 
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
-
+from app.core.exceptions import RestaurantNotFoundError, UserNotAuthorizedError, UserAuthenticationError
+from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner, User
 
 class RestaurantService:
     """Service layer coordinates restaurant business logic."""
@@ -132,7 +133,9 @@ class RestaurantService:
         restaurants_data = self.repository.get_all_restaurant()
         return [RestaurantResponse.model_validate(item) for item in restaurants_data]
 
-    def create_restaurant(self, payload: RestaurantCreate) -> RestaurantResponse:
+    def create_restaurant(
+        self, payload: RestaurantCreate, current_user: User | None = None
+    ) -> RestaurantResponse:
         """
         create_restaurant
         -------------------
@@ -150,13 +153,24 @@ class RestaurantService:
             ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
             DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
         """
-        information = self.repository.create_restaurant(payload.model_dump())
+        if current_user is None:
+            raise UserAuthenticationError(forbidden_action="restaurant creation")
+            
+        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
+        is_owner = isinstance(current_user, RestaurantOwner)
+        if not is_admin and not is_owner:
+            raise UserNotAuthorizedError(forbidden_action="restaurant creation")
+        data = payload.model_dump()
+        data["owner_id"] = current_user.id
+        
+        information = self.repository.create_restaurant(data)
         return RestaurantResponse.model_validate(information)
 
     def update_restaurant(
         self,
         restaurant_id: str,
         payload: RestaurantUpdate,
+        current_user: User | None = None,
     ) -> RestaurantResponse:
         """
         update_restaurant
@@ -178,8 +192,22 @@ class RestaurantService:
             DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
             ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
         """
+        if current_user is None:
+            raise UserAuthenticationError(forbidden_action="restaurant update")
+
+        restaurant = self.repository.get_restaurant_data(restaurant_id)
+        
+        is_admin = isinstance(current_user, (RestaurantAdmin, Developer))
+        is_owner = (
+            isinstance(current_user, RestaurantOwner)
+            and current_user.id == restaurant.get("owner_id")
+        )
+        if not is_admin and not is_owner:
+            raise UserNotAuthorizedError(forbidden_action="restaurant update")
+        
         information = self.repository.update_restaurant(
             restaurant_id,
             payload.model_dump(exclude_unset=True),
         )
         return RestaurantResponse.model_validate(information)
+    

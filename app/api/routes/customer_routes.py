@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, Depends, responses, status
 
-from app.api.deps import get_current_user, get_user_service
-from app.schemas.user_schema import CustomerResponse, CustomerUpdate, User
+from app.api.deps import (get_current_active_customer, get_current_active_user, get_current_user, get_user_service)
+from app.schemas.user_schema import Customer, CustomerResponse, CustomerUpdate, User
 from app.services.user_service import UserService
 
 router = APIRouter(tags=["Customers"])
@@ -29,7 +29,7 @@ router = APIRouter(tags=["Customers"])
 )
 def update_customer_me(
     updated_data: CustomerUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: Customer = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 )-> CustomerResponse:
     """
@@ -118,6 +118,7 @@ def get_customer_me(
 )
 def get_customer_me(
     current_user: User = Depends(get_current_user),
+    current_user: Customer = Depends(get_current_active_customer),
     service: UserService = Depends(get_user_service),
 ):
     """
@@ -209,7 +210,7 @@ def deactivate_customer_account(customer_id: str, current_user = Depends(get_cur
 )
 def get_customer(
     customer_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     service: UserService = Depends(get_user_service),
 ):
     """
@@ -225,14 +226,5 @@ def get_customer(
 
     Returns:
         CustomerResponse -> Information related to the specified customer
-            (minus anything that is not readable, not user editable or meant to
-            be accessed via another endpoint)
-
-    Raises:
-        UserAuthentificationError -> an incorrect username or password was entered
-        UserNotAuthorizedError -> User does not have permission to fetch the data
-        UserNotFoundError -> No such user could be found in the system
-        AccountNotActiveError -> the user cannot login because an admin has
-            deactivated their account
     """
     return service.get_customer(customer_id, current_user)

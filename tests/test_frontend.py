@@ -3,7 +3,8 @@ from app.api.deps import get_cart_repository
 from app.main import app
 from app.repositories.cart_repository import CartRepository
 from app.repositories.restaurant_repository import RestaurantRepository
-
+from app.repositories.user_repository import UserRepository
+from app.api.deps import get_current_user
 
 def test_frontend_and_assets_are_served(client: TestClient):
     """The frontend loads alongside the API without a separate build server."""
@@ -21,8 +22,8 @@ def test_frontend_management_api_flow(client: TestClient, isolated_data_dir):
     """The form's create/edit payloads persist and remain discoverable."""
     payload = {
         'name': 'Campus Cafe', 'cuisine': 'Cafe', 'location': 'Kelowna',
+        'opening_hours': '08:00-17:00', 'isOpen': True, 'owner_id': 'u99',
         'address': '123 Main Street', 'postal_code': 'v1y 2b3',
-        'opening_hours': '08:00-17:00', 'isOpen': True,
     }
     response = client.post('/restaurants', json=payload)
     assert response.status_code == 201
@@ -58,6 +59,7 @@ def test_frontend_has_sign_in_and_cart(client: TestClient):
 def test_frontend_sign_in_and_cart_flow(client: TestClient, isolated_data_dir):
     """The same calls the page makes: log in, who am I, add to cart, open the cart."""
     app.dependency_overrides[get_cart_repository] = lambda: CartRepository(data_dir=isolated_data_dir)
+    app.dependency_overrides.pop(get_current_user, None)
 
     token = client.post('/auth/login', json={'username': 'UserName1', 'password': 'HardPassword1234'}).json()
     headers = {'Authorization': f'Bearer {token}'}

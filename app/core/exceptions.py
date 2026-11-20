@@ -130,7 +130,7 @@ class BadDataInPersistenceLayerError(DomainError):
 class UserAuthenticationError(DomainError):
     """Raised when there was an error when authenticating the user"""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         self.message = "User Authentification Failed"
         self.details = "Incorrect username or password"
