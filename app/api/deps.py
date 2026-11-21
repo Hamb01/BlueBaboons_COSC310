@@ -133,7 +133,6 @@ def get_current_active_customer(
 def get_cart_repository() -> CartRepositoryInterface:
     """Build the cart repository (#95)."""
     from app.repositories.cart_repository import CartRepository  # pylint: disable=import-outside-toplevel,no-name-in-module
-
     return CartRepository()
 
 

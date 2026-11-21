@@ -134,7 +134,8 @@ class CheckoutService:
 
     def require_active_customer(self, customer_id: str) -> Any:
         if hasattr(self.user_service, "require_active"):
-            return self.user_service.require_active(customer_id)
+            self.user_service.require_active(customer_id)
+            return self.user_service.repository.get_user_data_from_id(customer_id)
 
         customer = self.user_service.get_user_by_id(customer_id)
         if not getattr(customer, "account_is_active", True):

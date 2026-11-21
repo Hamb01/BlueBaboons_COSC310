@@ -111,11 +111,11 @@ class OrderNotFoundError(DomainError):
 
 class CheckoutConflictError(DomainError):
     """Raised when checkout can't proceed due to cart state or item availability"""
-    
-    def __init__(self, additional_details: str):
+
+    def __init__(self, message: str, details: str = ""):
         super().__init__()
-        self.message = "Checkout cannot proceed"
-        self.details = additional_details
+        self.message = message
+        self.details = details
 
 ###########################################################################################################################################
 ## Persistence Layer Errors
