@@ -609,5 +609,33 @@ editor.addEventListener('cancel', event => {
   if ($('#save-restaurant').disabled) event.preventDefault();
 });
 
+// ---------------------------------------------------------------- hero baboon looks at the cursor
+// Sets --look-x / --look-y (-1..1) once per frame; CSS turns them into a head tilt and pupil shift.
+// Skipped for reduced motion and touch-only devices.
+(() => {
+  const baboon = $('#hero-baboon');
+  const stillPlease = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    || !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!baboon || stillPlease) return;
+  let pointer = null;
+  let frame = 0;
+  const clamp = value => Math.max(-1, Math.min(1, value));
+  const update = () => {
+    frame = 0;
+    if (!pointer) {
+      baboon.style.setProperty('--look-x', 0);
+      baboon.style.setProperty('--look-y', 0);
+      return;
+    }
+    const box = baboon.getBoundingClientRect();
+    const reach = Math.max(window.innerWidth, window.innerHeight) / 2;
+    baboon.style.setProperty('--look-x', clamp((pointer.x - (box.left + box.width / 2)) / reach).toFixed(3));
+    baboon.style.setProperty('--look-y', clamp((pointer.y - (box.top + box.height * 0.42)) / reach).toFixed(3));
+  };
+  const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+  window.addEventListener('pointermove', event => { pointer = {x: event.clientX, y: event.clientY}; schedule(); }, {passive: true});
+  document.documentElement.addEventListener('pointerleave', () => { pointer = null; schedule(); });
+})();
+
 loadRestaurants();
 refreshAccount();
