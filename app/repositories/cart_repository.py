@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Any, Dict, Optional
-
+from app.repositories.generate_id_method import make_id_generator
 from app.core.config import get_settings
 from app.repositories.jsonstore import JsonStore
 from app.schemas.cart_schema import Cart
@@ -10,6 +10,8 @@ from app.schemas.cart_schema import Cart
 
 class CartRepository:
     """Stores carts in data/Carts.json, keyed by stable cart id (k01, k02, ...)."""
+
+    _new_id = staticmethod(make_id_generator("k"))  # k01, k02, ...
 
     # Coding Notes:
     # This class only loads and saves carts. All the cart rules (one restaurant per cart,
@@ -36,9 +38,7 @@ class CartRepository:
 
     def create_cart(self, customer_id: str) -> Dict[str, Any]:
         """Create, save and return a new empty active cart with the next id (k01, k02, ...)."""
-        # same idea as the r01 / o01 ids: find the biggest number we have and add 1
-        numbers = [int(key[1:]) for key in self.carts if key.startswith("k") and key[1:].isdigit()]
-        cart_id = f"k{(max(numbers) + 1) if numbers else 1:02d}"
+        cart_id = self._new_id(self.carts.keys())
         return self.save_cart(Cart(id=cart_id, customer_id=customer_id).model_dump())
 
     def save_cart(self, cart: Dict[str, Any]) -> Dict[str, Any]:

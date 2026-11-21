@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from app.repositories.jsonstore import JsonStore
+from app.repositories.generate_id_method import make_id_generator
 
 from app.core.config import get_settings
 from app.core.exceptions import DataPersistenceError, RestaurantNotFoundError
@@ -11,6 +12,8 @@ from app.core.exceptions import DataPersistenceError, RestaurantNotFoundError
 
 class RestaurantRepository:
     """Repository layer responsible for reading and writing restaurant data."""
+
+    _new_id = staticmethod(make_id_generator("r"))  # r01, r02, ...
 
     # Coding Notes:
     # Local file path is defined as a constant that points toward the master JSON.
@@ -132,13 +135,7 @@ class RestaurantRepository:
         Raises: 
             none
         """
-        existing_ids = [
-            int(rest_id[1:])
-            for rest_id in self.restaurants.keys()
-            if rest_id.startswith("r") and rest_id[1:].isdigit()
-        ]
-        next_num = max(existing_ids) + 1 if existing_ids else 1
-        return f"r{next_num:02d}"
+        return self._new_id(self.restaurants.keys())
 
     def create_restaurant(self, restaurant_data: Dict[str, Any]) -> Dict[str, Any]:
         """
