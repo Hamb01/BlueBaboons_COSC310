@@ -14,21 +14,31 @@ import jwt
 from pydantic import ValidationError
 
 from app.core.config import get_settings
+from app.repositories.jsonstore import JsonStore
+from app.repositories.generate_id_method import next_id_in_store
 from app.core.exceptions import (
     BadDataInPersistenceLayerError,
     DataPersistenceError,
     ExpiredTokenError,
+    InvalidRequestError,
     TokenIsInvalidError,
+    UserNameAlreadyTakenError,
     UserNotFoundError,
 )
 from app.schemas.user_schema import (
     AccountStatusAndRole,
     Customer,
+    CustomerCreate,
     Developer,
+    DeveloperCreate,
     RestaurantAdmin,
+    RestaurantAdminCreate,
     RestaurantOwner,
+    RestaurantOwnerCreate,
     SupportStaff,
+    SupportStaffCreate,
     User,
+    UserCreate,
     UserLogin,
 )
 
@@ -40,46 +50,11 @@ class UserRepository:
         self.data_dir = data_dir or get_settings().data_dir
         self.master_file = self.data_dir / "Users.json"
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.store = JsonStore(self.master_file)
+        self.users = self.store.load()
         self.jwt_encode_key = get_settings().jwt_encode_key
         self.jwt_lifetime = get_settings().jwt_lifetime
 
-        if self.master_file.exists():
-            try:
-                self.users = self.check_user_json_persistence(str(self.master_file))
-            except json.JSONDecodeError:
-                self.users = {}
-        else:
-            self.users = {}
-            self.save_to_file()
-
-    def check_user_json_persistence(self, path: str) -> dict:
-        """Check that the JSON persistence file can be opened and contains data."""
-        with open(path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-        if not data:
-            raise DataPersistenceError(str(self.master_file), "read")
-        return data
-
-    def save_to_file(self):
-        """Persist all user data to the master JSON file."""
-        data_dir_str = str(self.data_dir)
-        master_file_str = str(self.master_file)
-        os.makedirs(data_dir_str, exist_ok=True)
-        
-        fd, temp_path = tempfile.mkstemp(dir=data_dir_str, suffix=".temp")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as file:
-                json.dump(self.users, file, indent=4)
-                file.flush()
-                os.fsync(file.fileno())
-            # Ensure both paths are native strings for os.replace
-            os.replace(temp_path, master_file_str)
-        except (OSError, TypeError, ValueError) as exc:
-            try:
-                os.unlink(temp_path)
-            except FileNotFoundError:
-                pass
-            raise DataPersistenceError(master_file_str, "write") from exc
 
     def get_user_data(self, username: str) -> User:
         """
@@ -280,7 +255,7 @@ class UserRepository:
         Returns:
             string -> the ID of the user
 
-        Raises: 
+        Raises: password
             none
         """
 
@@ -406,7 +381,7 @@ class UserRepository:
         except Exception as exc:
             raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
 
-        self.save_to_file()
+        self.store.save(self.users)
 
     def activate_user(self, user_id: str):
         """
@@ -436,4 +411,85 @@ class UserRepository:
         except Exception as exc:
             raise BadDataInPersistenceLayerError(str(self.master_file)) from exc
 
-        self.save_to_file()
+        self.store.save(self.users)
+
+    def add_new_user(self, new_user: UserCreate) -> User:
+        """
+        add_new_user
+        -------------------
+
+        Description:
+            Hashes the password and creates a new entry in the users.json file for the new user's data
+
+        Args: 
+            new_user : User -> User object with the new user's information
+
+        Returns:
+            User -> the information that got saved to the system
+
+        Raises: 
+            DataPersistenceError -> Error while saving the user's data
+            InvalidRequestError  -> Data does not belong to a UserCreateObject
+            UserNameAlreadyTakenError -> Username is already in use
+        """
+
+        self.users = self.store.load()
+
+        for user_id, data in self.users.items():
+            if new_user.username == data["username"]:
+                raise UserNameAlreadyTakenError()
+
+        data = new_user.model_dump()
+        hashed_password_and_salt = self.hash_new_password(new_user.password)
+        data["password"] = hashed_password_and_salt["password"]
+        data["hash_salt"] = hashed_password_and_salt["salt"]
+
+        if isinstance(new_user, CustomerCreate):
+            user_id = next_id_in_store(self.store, "c")
+            data.update({
+                "id": user_id,
+                "account_is_active": True,
+                "reason_for_deactivation": "",
+                "balance": 99.99,
+            })
+            created_user = Customer.model_validate(data)
+        elif isinstance(new_user, RestaurantOwnerCreate):
+            user_id = next_id_in_store(self.store, "o")
+            data.update({
+                "id": user_id,
+                "account_is_active": False,
+                "reason_for_deactivation": "User Account may be approved by Developer",
+            })
+            created_user = RestaurantOwner.model_validate(data)
+        elif isinstance(new_user, RestaurantAdminCreate):
+            user_id = next_id_in_store(self.store, "a")
+            data.update({
+                "id": user_id,
+                "account_is_active": False,
+                "reason_for_deactivation": "User Account may be approved by Developer or Restaurant Owner",
+            })
+            created_user = RestaurantAdmin.model_validate(data)
+        elif isinstance(new_user, DeveloperCreate):
+            user_id = next_id_in_store(self.store, "d")
+            data.update({
+                "id": user_id,
+                "account_is_active": False,
+                "reason_for_deactivation": "User Account may be approved by Developer",
+            })
+            created_user = Developer.model_validate(data)
+        elif isinstance(new_user, SupportStaffCreate):
+            user_id = next_id_in_store(self.store, "s")
+            data.update({
+                "id": user_id,
+                "account_is_active": False,
+                "reason_for_deactivation": "User Account may be approved by Developer or Restaurant Admin",
+            })
+            created_user = SupportStaff.model_validate(data)
+        else:
+            raise InvalidRequestError("data does not sufficiently represent a new user")
+
+        self.users[user_id] = created_user.model_dump()
+        self.store.save(self.users)
+        return created_user
+
+        

@@ -3,7 +3,13 @@
 from fastapi import APIRouter, Depends, responses, status
 
 from app.api.deps import (get_current_active_customer, get_current_active_user, get_current_user, get_user_service)
-from app.schemas.user_schema import Customer, CustomerResponse, CustomerUpdate, User
+from app.schemas.user_schema import (
+    Customer, 
+    CustomerCreate,
+    CustomerResponse, 
+    CustomerUpdate, 
+    User
+)
 from app.services.user_service import UserService
 
 router = APIRouter(tags=["Customers"])
@@ -100,9 +106,18 @@ def get_customer_me(
     """
     return service.get_customer(current_user.id, current_user)
 
+
 @router.post(
     "/customers/me/deactivate",
-    status_code=status.HTTP_200_OK,
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+        description=(
+            "Retrives the information for a specific customer"
+        ),
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
+        },
 )
 def deactivate_my_customer_account(current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
     """
@@ -194,17 +209,19 @@ def get_customer(
     return service.get_customer(customer_id, current_user)
 
 @router.post(
-    "/customers/me/deactivate",
-    response_model=None,
-    status_code=status.HTTP_204_NO_CONTENT,
-        description=(
-            "Retrives the information for a specific customer"
-        ),
+    "/customers",
+    response_model=CustomerResponse,
+    status_code=status.HTTP_201_CREATED,
+        description="used to create a new customer account",
         responses={
-            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
-            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
+            status.HTTP_409_CONFLICT: {"description": "The username is already in use"},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "error in input data"},
         },
 )
+def register_customer(new_customer: CustomerCreate,service = Depends(get_user_service)):
+    """create a new customer account and add it to the system"""
+    return service.create_new_customer(new_customer)
+    
 def deactivate_my_customer_account(current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
     """
     deactivate_my_customer_account

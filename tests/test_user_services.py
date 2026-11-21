@@ -7,11 +7,30 @@ from app.core.exceptions import (
     AccountNotActiveError,
     BadDataInPersistenceLayerError,
     TokenBelongsToUnknownUserError,
+    UserNameAlreadyTakenError,
     UserAuthenticationError,
     UserNotAuthorizedError,
     UserNotFoundError,
 )
-from app.schemas.user_schema import AccountStatusAndRole, CustomerUpdate, Developer, UserLogin, CustomerResponse
+from app.schemas.user_schema import (
+    AccountStatusAndRole,
+    Customer,
+    CustomerCreate,
+    CustomerUpdate,
+    Developer,
+    DeveloperCreate,
+    RestaurantAdmin,
+    RestaurantAdminCreate,
+    RestaurantAdminResponse,
+    RestaurantOwner,
+    RestaurantOwnerCreate,
+    RestaurantOwnerResponse,
+    SupportStaff,
+    SupportStaffCreate,
+    UserLogin,
+    UserResponse,
+    CustomerResponse,
+)
 from pydantic import ValidationError
 ADDRESS_FIELDS = ["address", "city", "province", "postal_code"]
 EDITABLE_FIELDS = ["name", "email", *ADDRESS_FIELDS]
@@ -82,7 +101,7 @@ def seeded_service(isolated_user_service):
     isolated_user_service.repository.users = {
         user_id: copy.deepcopy(expected_data[user_id]) for user_id in ("c02", "c03")
     }
-    isolated_user_service.repository.save_to_file()
+    isolated_user_service.repository.store.save(isolated_user_service.repository.users)
     return isolated_user_service
 
 def test_get_customer(isolated_user_service):
@@ -90,7 +109,7 @@ def test_get_customer(isolated_user_service):
 
 
     isolated_user_service.repository.users = expected_data
-    isolated_user_service.repository.save_to_file()
+    isolated_user_service.repository.store.save(isolated_user_service.repository.users)
 
     deactivated_customer = isolated_user_service.repository.get_user_data_from_id("c03")
     active_customer = isolated_user_service.repository.get_user_data_from_id("c02")
@@ -175,7 +194,7 @@ def test_deactivate_customer(isolated_user_service):
 
     }
     isolated_user_service.repository.users = expected_data
-    isolated_user_service.repository.save_to_file()
+    isolated_user_service.repository.store.save(isolated_user_service.repository.users)
 
     deactivated_customer = isolated_user_service.repository.get_user_data_from_id("c03")
     active_customer = isolated_user_service.repository.get_user_data_from_id("c02")
@@ -297,6 +316,153 @@ def test_update_email_with_unchanged_address(seeded_service):
 
     on_disk = json.loads(seeded_service.repository.master_file.read_text(encoding="utf-8"))["c02"]
     assert on_disk == {**expected_data["c02"], "email": "new@example.com"}
+
+
+def test_create_new_customer_returns_public_response_and_persists_account(
+    isolated_user_service,
+):
+    new_customer = CustomerCreate(
+        username="new_service_customer",
+        name="New Customer",
+        email="customer@example.com",
+        password="customer-password",
+        address="12 Main St",
+        city="Kelowna",
+        province="BC",
+        postal_code="V1Y1A1",
+    )
+
+    response = isolated_user_service.create_new_customer(new_customer)
+
+    assert response.model_dump() == {
+        "username": "new_service_customer",
+        "name": "New Customer",
+        "email": "customer@example.com",
+        "account_is_active": True,
+        "address": "12 Main St",
+        "city": "Kelowna",
+        "province": "BC",
+        "postal_code": "V1Y1A1",
+        "balance": 99.99,
+    }
+
+    stored_customer = isolated_user_service.repository.get_user_data(
+        new_customer.username
+    )
+    assert isinstance(stored_customer, Customer)
+    assert new_customer.password == "customer-password"
+    assert stored_customer.password != new_customer.password
+    assert isolated_user_service.repository.check_login_info(
+        UserLogin(username=new_customer.username, password=new_customer.password),
+        stored_customer,
+    )
+
+    on_disk = json.loads(
+        isolated_user_service.repository.master_file.read_text(encoding="utf-8")
+    )
+    assert on_disk[stored_customer.id] == stored_customer.model_dump()
+
+
+def test_create_new_customer_propagates_duplicate_username_error(
+    isolated_user_service,
+):
+    new_customer = CustomerCreate(
+        username="duplicate_service_customer",
+        name="New Customer",
+        email="customer@example.com",
+        password="customer-password",
+        address="12 Main St",
+        city="Kelowna",
+        province="BC",
+        postal_code="V1Y1A1",
+    )
+
+    isolated_user_service.create_new_customer(new_customer)
+
+    with pytest.raises(UserNameAlreadyTakenError):
+        isolated_user_service.create_new_customer(new_customer)
+
+
+@pytest.mark.parametrize(
+    ("new_user", "response_type", "stored_type", "expected_extra"),
+    [
+        (
+            RestaurantAdminCreate(
+                username="new_admin",
+                name="New Admin",
+                email="admin@example.com",
+                password="test-password",
+                managed_restaurants=["r01"],
+            ),
+            RestaurantAdminResponse,
+            RestaurantAdmin,
+            {"managed_restaurants": ["r01"]},
+        ),
+        (
+            RestaurantOwnerCreate(
+                username="new_owner",
+                name="New Owner",
+                email="owner@example.com",
+                password="test-password",
+                managed_restaurants=["r01"],
+                owned_restaurants=["r01"],
+            ),
+            RestaurantOwnerResponse,
+            RestaurantOwner,
+            {"managed_restaurants": ["r01"], "owned_restaurants": ["r01"]},
+        ),
+        (
+            DeveloperCreate(
+                username="new_developer",
+                name="New Developer",
+                email="developer@example.com",
+                password="test-password",
+            ),
+            UserResponse,
+            Developer,
+            {},
+        ),
+        (
+            SupportStaffCreate(
+                username="new_support_staff",
+                name="New Support Staff",
+                email="staff@example.com",
+                password="test-password",
+            ),
+            UserResponse,
+            SupportStaff,
+            {},
+        ),
+    ],
+)
+def test_create_new_user_returns_role_specific_response(
+    isolated_user_service, new_user, response_type, stored_type, expected_extra
+):
+    response = isolated_user_service.create_new_user(new_user)
+
+    assert isinstance(response, response_type)
+    assert response.model_dump() == {
+        "username": new_user.username,
+        "name": new_user.name,
+        "email": new_user.email,
+        **expected_extra,
+    }
+
+    stored_user = isolated_user_service.repository.get_user_data(new_user.username)
+    assert isinstance(stored_user, stored_type)
+    assert not stored_user.account_is_active
+    assert stored_user.password != new_user.password
+    assert isolated_user_service.repository.check_login_info(
+        UserLogin(username=new_user.username, password=new_user.password),
+        stored_user,
+    )
+    assert new_user.password == "test-password"
+
+    on_disk = json.loads(
+        isolated_user_service.repository.master_file.read_text(encoding="utf-8")
+    )
+    assert on_disk[stored_user.id] == stored_user.model_dump()
+
 
 def restart(service):
     """Simulate a server restart: build a brand-new repository pointed at the

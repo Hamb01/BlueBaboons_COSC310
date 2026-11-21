@@ -68,7 +68,7 @@ def test_cart_api_works_end_to_end_with_the_real_repository(
         "postal_code": "V1W 1A1",
         "balance": 0,
     }
-    isolated_user_repo.save_to_file()
+    isolated_user_repo.store.save(isolated_user_repo.users)
     
     headers = {"Authorization": f"Bearer {isolated_user_repo.generate_web_token('c01')}"}
 
