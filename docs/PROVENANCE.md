@@ -209,3 +209,14 @@ This document records externally assisted content, AI tooling, and design assist
 - Asked copilot to explain what each of the tests do, how they work, and why it chose to implement them.
 - Ensured tests made sense for the scope of our project.
 - Verified all tests passed.
+
+## Bug locating, code copying and writing tests 2026-11-20
+- **Tool / Assistant:** Copilot
+- **Scope / Assistance:**
+- Asked Copilot to write tests for the implementation of the create new user service and repository layer methods
+- Had copilot take a method that I wrote and make a version that will work for each role (the method was _to_customer_response and all it did was cut some fields from the return)
+- Had copilot go through an error tracebackand tell me where the error was located
+
+- **Verificaton**
+- I reviewed every line of code and rewrote much of it
+- in addition all tests pass

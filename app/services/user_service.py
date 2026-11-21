@@ -1,18 +1,29 @@
 
 """Business logic for user authentication and authorization."""
 
+from pydantic import ValidationError
 from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import (
     AccountStatusAndRole,
     CustomerResponse,
     CustomerUpdate,
+    CustomerCreate,
     Customer,
+    Developer,
+    RestaurantAdminResponse,
+    RestaurantOwnerResponse,
+    RestaurantAdmin,
+    RestaurantOwner,
+    SupportStaff,
     User,
+    UserCreate,
+    UserResponse,
     UserLogin
 )
 from app.core.exceptions import (
     AccountNotActiveError,
     InvalidRequestError,
+    ServerError,
     UserAuthenticationError,
     UserNotAuthorizedError,
     UserNotFoundError,
@@ -105,7 +116,7 @@ class UserService:
 
         if changes:
             self.repository.users[id_to_update].update(changes)
-            self.repository.save_to_file()
+            self.repository.store.save(self.repository.users)
         # An empty body means nothing changed, so we skip the disk write.
 
         # Re-read the customer so the response reflects what is now stored,
@@ -150,6 +161,37 @@ class UserService:
             province=customer_data.province,
             postal_code=customer_data.postal_code,
             balance=customer_data.balance,
+        )
+
+    @staticmethod
+    def _to_admin_response(
+        admin_data: RestaurantAdmin,
+    ) -> RestaurantAdminResponse:
+        return RestaurantAdminResponse(
+            username=admin_data.username,
+            name=admin_data.name,
+            email=admin_data.email,
+            managed_restaurants=admin_data.managed_restaurants,
+        )
+
+    @staticmethod
+    def _to_owner_response(
+        owner_data: RestaurantOwner,
+    ) -> RestaurantOwnerResponse:
+        return RestaurantOwnerResponse(
+            username=owner_data.username,
+            name=owner_data.name,
+            email=owner_data.email,
+            managed_restaurants=owner_data.managed_restaurants,
+            owned_restaurants=owner_data.owned_restaurants,
+        )
+
+    @staticmethod
+    def _to_user_response(user_data: User) -> UserResponse:
+        return UserResponse(
+            username=user_data.username,
+            name=user_data.name,
+            email=user_data.email,
         )
 
     def get_customer(self, id_to_get: str, current_user: User) -> CustomerResponse:
@@ -256,3 +298,68 @@ class UserService:
             raise AccountNotActiveError(userdata.reason_for_deactivation or "Unspecified")
 
         return True
+
+    def create_new_customer(self, new_customer: CustomerCreate) -> CustomerResponse :
+        """
+        create_new_customer
+        --------------------
+
+        Description:
+            Creates a new customer account
+
+        Args: 
+            new_customer : string -> the unique id of the user that you need to be active
+
+        Returns:
+            CustomerResponse -> data now stored in the system (minus unneccessary fields)
+
+        Raises: 
+            DataPersistenceError -> Error while saving the user's data
+            InvalidRequestError  -> Data does not belong to a UserCreateObject
+            UserNameAlreadyTakenError -> Username is already in use
+        """
+
+        CustomerCreate.model_validate(new_customer)
+
+        try:
+            user_data = Customer.model_validate(self.repository.add_new_user(new_customer))
+        except ValidationError as exc:
+            raise ServerError("Account Creation method returned wrong type")
+
+        return self._to_customer_response(user_data)
+
+    def create_new_user(self, new_user: UserCreate) -> UserResponse:
+        """
+        create_new_user
+        --------------------
+
+        Description:
+            Creates a new user account
+
+        Args: 
+            new_user : string -> the unique id of the user that you need to be active
+
+        Returns:
+            userResponse -> data now stored in the system (minus unneccessary fields)
+
+        Raises: 
+            DataPersistenceError -> Error while saving the user's data
+            InvalidRequestError  -> Data does not belong to a UserCreateObject
+            UserNameAlreadyTakenError -> Username is already in use
+        """
+
+        UserCreate.model_validate(new_user)
+
+        try:
+            user_data = self.repository.add_new_user(new_user)
+        except ValidationError as exc:
+            raise ServerError("Account creation returned invalid user data") from exc
+
+        if isinstance(user_data, RestaurantOwner):
+            return self._to_owner_response(user_data)
+        if isinstance(user_data, RestaurantAdmin):
+            return self._to_admin_response(user_data)
+        if isinstance(user_data, (Developer, SupportStaff)):
+            return self._to_user_response(user_data)
+
+        raise ServerError("Account creation returned an unsupported user type")

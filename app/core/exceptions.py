@@ -27,6 +27,14 @@ class DomainError(Exception):
         self.message = "Unknown error"
         self.details = "Exception never identified in exception handler"
 
+class ServerError(DomainError):
+    """Raised when we encounter an internal ServerError"""
+
+    def __init__(self, message: str, details: str = ""):
+            super().__init__()
+            self.message = message
+            self.details = details
+
 ###########################################################################################################################################
 ## Restaurant and menu errors
 ###########################################################################################################################################
@@ -198,3 +206,11 @@ class InvalidRequestError(DomainError):
         super().__init__()
         self.message = "Invalid Request"
         self.details = additional_details
+
+class UserNameAlreadyTakenError(DomainError):
+    """Raised when you try to create an account with the same username as another user"""
+
+    def __init__(self):
+        super().__init__()
+        self.message = "User name is already taken"
+        self.details = "Please try another username"

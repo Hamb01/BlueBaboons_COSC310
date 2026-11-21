@@ -17,6 +17,7 @@ from app.api.routes import (
     order_routes,
     restaurant_routes,
     user_authentication_routes,
+    user_routes,
 )
 from app.core.config import get_settings
 from app.core.exceptions import (
@@ -33,8 +34,10 @@ from app.core.exceptions import (
     MenuItemUnavailableError,
     OrderNotFoundError,
     RestaurantNotFoundError,
+    ServerError,
     TokenBelongsToUnknownUserError,
     TokenIsInvalidError,
+    UserNameAlreadyTakenError,
     UserAuthenticationError,
     UserNotFoundError,
     UserNotAuthorizedError,
@@ -73,6 +76,7 @@ app.include_router(user_authentication_routes.router)
 app.include_router(customer_routes.router)
 app.include_router(cart_routes.router)
 app.include_router(order_routes.router)
+app.include_router(user_routes.router)
 
 # Serve the frontend alongside the REST API (also included in the Docker image).
 app.mount(
@@ -131,9 +135,14 @@ def handle_application_domain_exceptions(
         OrderNotFoundError,
         UserNotFoundError)):
         exception.status_code = status.HTTP_404_NOT_FOUND
-    elif isinstance(exception, (CartRestaurantConflictError, MenuItemUnavailableError)):
+    elif isinstance(exception, (
+        CartRestaurantConflictError, 
+        MenuItemUnavailableError,
+        UserNameAlreadyTakenError
+        )):
         exception.status_code = status.HTTP_409_CONFLICT
     elif isinstance(exception, (
+        ServerError,
         BadDataInPersistenceLayerError, 
         DataPersistenceError, 
         )):

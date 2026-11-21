@@ -51,7 +51,7 @@ def test_get_user_data_by_username(isolated_user_repo):
         }
     }
     isolated_user_repo.users = expected_data
-    isolated_user_repo.save_to_file()
+    isolated_user_repo.store.save(isolated_user_repo.users)
     retrieved_data = isolated_user_repo.get_user_data("harambe47")
     assert retrieved_data.name == expected_data["d02"]["name"]
     assert isinstance(retrieved_data, Developer)
@@ -81,7 +81,7 @@ def test_get_user_data_by_id(isolated_user_repo):
         }
     }
     isolated_user_repo.users = expected_data
-    isolated_user_repo.save_to_file()
+    isolated_user_repo.store.save(isolated_user_repo.users)
     retrieved_data = isolated_user_repo.get_user_data_from_id("d02")
     assert retrieved_data.model_dump(exclude_none=True) == expected_data["d02"]
     assert isinstance(retrieved_data, Developer)
@@ -124,7 +124,7 @@ def test_verify_user_account(isolated_user_repo):
         }
     }
     isolated_user_repo.users = expected_data
-    isolated_user_repo.save_to_file()
+    isolated_user_repo.store.save(isolated_user_repo.users)
     assert isolated_user_repo.verify_user_account("d02") == AccountStatusAndRole.ACTIVE_DEVELOPER
     assert isolated_user_repo.verify_user_account("a03") == AccountStatusAndRole.DEACTIVATED_RESTAURANT_ADMIN
     with pytest.raises(UserNotFoundError):

@@ -2,7 +2,7 @@
 
 from enum import Enum
 from typing import Dict, List, Any, Optional, Annotated
-from pydantic import BaseModel, Field, StringConstraints, field_validator, ConfigDict
+from pydantic import BaseModel, Field, StringConstraints, field_validator, ConfigDict, EmailStr
 from app.schemas.cart_schema import Cart
 
 #############################################################################################################
@@ -15,7 +15,7 @@ class User(BaseModel):
     id: str = Field(..., description="unique Id for the user")
     username: str = Field(..., description="username for the account")
     name: str = Field(..., description="First and Last name of the user")
-    email: str = Field(..., description="Email that the user used while setting up account")
+    email: EmailStr
     password: str = Field(..., description="Hashed password used by the user to sign in")
     hash_salt: str = Field(..., description="Random salt used when hashing password")
     account_is_active: bool = Field(..., description="boolean to reflect if the account is currently allowed to interact with the system")
@@ -78,6 +78,14 @@ class UserLogin(BaseModel):
     username: str = Field(..., description="Unique user name associated with the user")
     password: int | float | str = Field(..., description="Password associated with the user") # allowing many types because we will ensure it matches later
 
+
+class UserResponse(BaseModel):
+    """Pydantic Model dictating the response to the create user endpoint"""
+    username: str = Field(..., description="username for the account")
+    name: str = Field(..., description="First and Last name of the user")
+    email: str = Field(..., description="Email that the user used while setting up account")
+
+
 class CustomerResponse(BaseModel):
     """Pydantic model dictating the form of the return for the get customer endpoints"""
 
@@ -92,6 +100,18 @@ class CustomerResponse(BaseModel):
     postal_code: str = Field(..., description="Postal conde for the users primary address")
 
     balance: float = Field(..., description="In store credit that the customer may use to pay for orders")
+
+
+class RestaurantAdminResponse(UserResponse):
+    """Pydantic Model dictating the response to the create user endpoint"""
+    managed_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they have permission to edit")
+
+
+class RestaurantOwnerResponse(RestaurantAdminResponse):
+    """Pydantic Model dictating the response to the create user endpoint"""
+    owned_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they have permission to edit")
+    
+
 class CustomerUpdate(BaseModel):
     """Pydantic model dictating the form of the request body for updating a customer"""
 
@@ -113,3 +133,39 @@ class CustomerUpdate(BaseModel):
         if not value:
             raise ValueError("must not be empty or whitespace")
         return value
+
+#############################################################################################################
+## Schemas for creating new users
+#############################################################################################################
+
+class UserCreate(BaseModel):
+    """Pydantic model holding all the information required to make a new user"""
+
+    username: str = Field(..., description="username for the account")
+    name: str = Field(..., description="First and Last name of the user")
+    email: EmailStr
+    password: str = Field(..., description="Hashed password used by the user to sign in", min_length=8)
+
+class CustomerCreate(UserCreate):
+    """Pydantic model for holdiong the information required to create a new customer"""
+
+    address: str = Field(..., description="street address of the user")
+    city: str = Field(..., description="The city that the user lives in")
+    province: str = Field(..., description="the Province that the user lives in")
+    postal_code: str = Field(..., description="Postal conde for the users primary address")
+
+class RestaurantAdminCreate(UserCreate):
+    """Pydantic model for holdiong the information required to create a new Restaurant Admin"""
+
+    managed_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they have permission to edit")
+
+class RestaurantOwnerCreate(RestaurantAdminCreate):
+    """Pydantic model for holdiong the information required to create a new Restaurant Owner"""
+
+    owned_restaurants: List[str] = Field(..., description="the Ids of the restaurant that they own")
+
+class DeveloperCreate(UserCreate):
+    """Pydantic model for holdiong the information required to create a new Developer"""
+
+class SupportStaffCreate(UserCreate):
+    """Pydantic model for holdiong the information required to create a new Support Staff"""
