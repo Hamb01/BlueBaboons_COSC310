@@ -245,3 +245,17 @@ This document records externally assisted content, AI tooling, and design assist
   - Tests were written before the fixes in PR #134 and PR #135 and failed on the old code.
   - The student reviewed each change, and each PR was reviewed by a teammate who is not the
     author before merging.
+
+## Rewriting Code and Bug Fixing 2026-11-20
+- **Tool / Assistant:** Copilot and Google Gemini
+- **Scope / Assistance:**
+- Asked Gemini to rewrite checkout_service file so it could properly conduct its functionality.
+- Asked Copilot to upgrade the test in test_checkout that goes through the entire API flow, as it wasn't doing so properly beforehand.
+- Copilot also added a few extra tests, which I ensured passed and were useful.
+- Asked Copilot to fix bugs that were causing new tests to file, changes were fairly simple mismatch fixes.
+
+- **Verificaton**
+- Asked questions to team about business rules and logic before prompting the AIs to do anything, ensuring I had a firm grasp on project requirements before using AI to assist with coding. 
+- Asked both AIs to explain what their code did, ensuring I understood it before writing it into the project.
+- Ensured tests fulfill all requirements and that any new tests were helpful and functional.
+- Verified all tests passed.
