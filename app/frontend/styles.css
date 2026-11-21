@@ -177,6 +177,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
 .detail-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; color: var(--muted); font-size: 15px; }
 .detail-meta span { display: inline-flex; align-items: center; gap: 6px; }
 .menu-title { margin: 28px 0 14px; padding-top: 20px; border-top: 1px solid var(--line); }
+.menu-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 14px; padding-top: 20px; border-top: 1px solid var(--line); }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .menu-item { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; padding: 16px; border-radius: var(--r-card); background: var(--surface-2); border: 1px solid transparent; animation: rise .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
 .menu-item.unavailable { opacity: .75; }
