@@ -13,3 +13,9 @@ class MenuItem(BaseModel):
     price: float = Field(ge=0)
     availability: bool
     is_active: bool = True
+
+class MenuResponse(BaseModel):
+    """Simple response for some menu endpoints"""
+
+    message: str
+    item: MenuItem
