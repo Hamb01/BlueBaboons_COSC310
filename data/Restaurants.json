@@ -16,7 +16,8 @@
                 "name": "Beef Taco",
                 "description": "Beef tacos with sour cream, onions and salsa",
                 "price": 7.99,
-                "availability": true
+                "availability": true,
+                "is_active": true
             },
             {
                 "id": "m02",
@@ -24,7 +25,8 @@
                 "name": "Chicken Taco",
                 "description": "Chicken tacos with sour cream, onions and salsa",
                 "price": 7.99,
-                "availability": true
+                "availability": true,
+                "is_active": true
             }
         ]
     },
@@ -45,7 +47,8 @@
                 "name": "California Rolls",
                 "description": "8 rolls with crab and avacado",
                 "price": 12.99,
-                "availability": true
+                "availability": true,
+                "is_active": true
             },
             {
                 "id": "m02",
@@ -53,7 +56,8 @@
                 "name": "Tuna rolls",
                 "description": "8 rolls with raw tuna",
                 "price": 15.99,
-                "availability": true
+                "availability": true,
+                "is_active": true
             },
             {
                 "id": "m03",
@@ -61,7 +65,8 @@
                 "name": "Dynamite rolls",
                 "description": "coming soon",
                 "price": 15.99,
-                "availability": false
+                "availability": false,
+                "is_active": true
             }
         ]
     }

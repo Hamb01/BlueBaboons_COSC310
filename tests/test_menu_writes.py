@@ -5,8 +5,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.exceptions import EmptyMenuError, MenuItemNotFoundError, RestaurantNotFoundError
+from app.main import app
 from app.repositories.menu_repository import MenuRepository
 from app.repositories.restaurant_repository import RestaurantRepository
+from app.schemas.menu_item import MenuItem
 from app.schemas.user_schema import RestaurantAdmin
 
 
@@ -32,6 +34,27 @@ def reload_menu(data_dir: Path, restaurant_id: str) -> list:
 
 def menu_ids(menu: list) -> list:
     return [item["id"] for item in menu]
+
+
+def test_legacy_menu_item_defaults_to_active():
+    item = MenuItem.model_validate({
+        "id": "m01",
+        "restaurant_id": "r01",
+        "name": "Soup",
+        "description": "Daily soup",
+        "price": 6.0,
+        "availability": True,
+    })
+
+    assert item.is_active is True
+
+
+def test_menu_item_patch_documents_expected_error_responses():
+    responses = app.openapi()["paths"][
+        "/restaurants/{restaurant_id}/menu/{item_id}"
+    ]["patch"]["responses"]
+
+    assert {"200", "401", "403", "404", "422"} <= responses.keys()
 
 
 ############################################################################################
@@ -107,8 +130,7 @@ def test_update_on_restaurant_without_menu_key_is_not_a_crash(client, isolated_m
 
 @pytest.mark.parametrize("method", ["put", "patch"])
 def test_update_route_unknown_restaurant_returns_404_not_500(client, method):
-    # Path restaurant_id is still typed int until issue #60 lands, so use a numeric id.
-    response = getattr(client, method)("/restaurant/1/menu/m01", json={"price": 1})
+    response = getattr(client, method)("/restaurants/unknown/menu/m01", json={"price": 1})
     assert response.status_code == 404
 
 
@@ -116,12 +138,12 @@ def test_update_route_unknown_restaurant_returns_404_not_500(client, method):
 ### #62 Add a menu item (POST)
 ############################################################################################
 
-NEW_ITEM = {"restaurant_id": 0, "name": "Fish Taco", "price": 8.25,
+NEW_ITEM = {"restaurant_id": "r01", "name": "Fish Taco", "price": 8.25,
             "description": "Battered fish with slaw", "availability": True}
 
 
 def test_add_menu_item_returns_201_with_new_id(client):
-    response = client.post("/restaurant/r01/menu", json=NEW_ITEM)
+    response = client.post("/restaurants/r01/menu", json=NEW_ITEM)
 
     assert response.status_code == 201
     item = response.json()["item"]
@@ -130,10 +152,11 @@ def test_add_menu_item_returns_201_with_new_id(client):
     assert item["name"] == "Fish Taco"
     assert item["price"] == 8.25
     assert item["availability"] is True
+    assert item["is_active"] is True
 
 
 def test_added_item_is_listed_and_persisted(client, isolated_data_dir):
-    client.post("/restaurant/r01/menu", json=NEW_ITEM)
+    client.post("/restaurants/r01/menu", json=NEW_ITEM)
 
     listed = client.get("/restaurants/r01/menu").json()
     assert [item["name"] for item in listed].count("Fish Taco") == 1
@@ -142,26 +165,26 @@ def test_added_item_is_listed_and_persisted(client, isolated_data_dir):
 
 @pytest.mark.parametrize("availability", [True, False])
 def test_add_menu_item_keeps_client_availability(client, availability):
-    response = client.post("/restaurant/r01/menu", json={**NEW_ITEM, "availability": availability})
+    response = client.post("/restaurants/r01/menu", json={**NEW_ITEM, "availability": availability})
     assert response.json()["item"]["availability"] is availability
 
 
 def test_add_menu_item_defaults_to_available(client):
     payload = {key: value for key, value in NEW_ITEM.items() if key != "availability"}
-    assert client.post("/restaurant/r01/menu", json=payload).json()["item"]["availability"] is True
+    assert client.post("/restaurants/r01/menu", json=payload).json()["item"]["availability"] is True
 
 
 def test_add_menu_item_rejects_negative_price(client, isolated_restaurant_repo):
     before = isolated_restaurant_repo.master_file.read_bytes()
 
-    response = client.post("/restaurant/r01/menu", json={**NEW_ITEM, "price": -1})
+    response = client.post("/restaurants/r01/menu", json={**NEW_ITEM, "price": -1})
 
     assert response.status_code == 422
     assert isolated_restaurant_repo.master_file.read_bytes() == before
 
 
 def test_add_menu_item_unknown_restaurant_returns_404(client):
-    assert client.post("/restaurant/unknown/menu", json=NEW_ITEM).status_code == 404
+    assert client.post("/restaurants/unknown/menu", json=NEW_ITEM).status_code == 404
 
 
 def test_add_menu_item_to_new_restaurant_without_menu_key(client):
@@ -169,7 +192,7 @@ def test_add_menu_item_to_new_restaurant_without_menu_key(client):
         "name": "New Place", "location": "Kelowna", "isOpen": True,
         "cuisine": "Thai", "address": "123 Main St", "postal_code": "V1W 3Z9", "opening_hours": "10:00-20:00"}).json()
 
-    response = client.post(f"/restaurant/{created['id']}/menu", json=NEW_ITEM)
+    response = client.post(f"/restaurants/{created['id']}/menu", json=NEW_ITEM)
 
     assert response.status_code == 201
     assert menu_ids(client.get(f"/restaurants/{created['id']}/menu").json()) == ["m01"]
@@ -178,23 +201,25 @@ def test_add_menu_item_to_new_restaurant_without_menu_key(client):
 @pytest.mark.parametrize("method", ["put", "patch"])
 def test_update_menu_item_accepts_string_restaurant_id(client, isolated_data_dir, method):
     """#60: restaurant ids are strings like r01, so the update routes must accept them."""
-    response = getattr(client, method)("/restaurant/r01/menu/m01", json={"price": 9.99})
+    response = getattr(client, method)("/restaurants/r01/menu/m01", json={"price": 9.99})
 
     assert response.status_code == 200
-    assert response.json()["item"]["price"] == 9.99
+    body = response.json()
+    item = body if method == "patch" else body["item"]
+    assert item["price"] == 9.99
     saved = [item for item in reload_menu(isolated_data_dir, "r01") if item["id"] == "m01"][0]
     assert saved["price"] == 9.99
 
 
 def test_update_menu_item_unknown_item_returns_404(client):
-    assert client.patch("/restaurant/r01/menu/m99", json={"price": 1}).status_code == 404
+    assert client.patch("/restaurants/r01/menu/m99", json={"price": 1}).status_code == 404
 
 
 def test_menu_writes_never_touch_committed_data(client):
     before = COMMITTED_DATA.read_bytes()
 
-    client.post("/restaurant/r01/menu", json=NEW_ITEM)
-    client.patch("/restaurant/r01/menu/m01", json={"price": 1})
+    client.post("/restaurants/r01/menu", json=NEW_ITEM)
+    client.patch("/restaurants/r01/menu/m01", json={"price": 1})
     client.delete("/restaurants/r01/menu/m02")
 
     assert COMMITTED_DATA.read_bytes() == before

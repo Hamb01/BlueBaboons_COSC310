@@ -12,3 +12,4 @@ class MenuItem(BaseModel):
     description: str
     price: float = Field(ge=0)
     availability: bool
+    is_active: bool = True

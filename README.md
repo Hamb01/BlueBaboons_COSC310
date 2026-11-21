@@ -118,19 +118,13 @@ The current frontend management forms cover restaurant creation and editing.
 | PUT | `/restaurants/{restaurant_id}` | Update restaurant information |
 | GET | `/restaurants/{restaurant_id}/menu` | Restaurant menu |
 | GET | `/restaurants/{restaurant_id}/menu/{item_id}` | Individual menu item |
-| POST | `/restaurant/{restaurant_id}/menu` | Registered menu-create route |
-| PUT / PATCH | `/restaurant/{restaurant_id}/menu/{item_id}` | Registered menu-update routes |
+| POST | `/restaurants/{restaurant_id}/menu` | Add menu item |
+| PUT / PATCH | `/restaurants/{restaurant_id}/menu/{item_id}` | Replace or update menu item |
 | DELETE | `/restaurants/{restaurant_id}/menu/{menu_item}` | Registered menu-delete route |
 | GET | `/ui/` | Restaurant frontend |
 | GET | `/docs` | Interactive Swagger documentation |
 | GET | `/redoc` | ReDoc documentation |
 | GET | `/openapi.json` | Generated API contract |
-
-Menu-write routes currently use different naming from menu reads. In the locally
-verified backend, update IDs are typed as integers despite string seed IDs,
-creation bypasses dependency injection, and the delete route's path parameter
-name differs from its function argument. Verify these routes before relying on
-menu management; repository/service tests alone do not verify these HTTP writes.
 
 Unknown restaurant/item reads return 404. A restaurant without menu items returns
 an empty menu. Menu item responses use `availability`, not `available`.
