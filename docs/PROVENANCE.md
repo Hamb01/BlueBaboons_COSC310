@@ -216,6 +216,7 @@ This document records externally assisted content, AI tooling, and design assist
 - Asked Copilot to write tests for the implementation of the create new user service and repository layer methods
 - Had copilot take a method that I wrote and make a version that will work for each role (the method was _to_customer_response and all it did was cut some fields from the return)
 - Had copilot go through an error tracebackand tell me where the error was located
+- Had copilot go through an make it so that checking out charges a user
 
 - **Verificaton**
 - I reviewed every line of code and rewrote much of it

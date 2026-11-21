@@ -125,6 +125,17 @@ class CheckoutConflictError(DomainError):
         self.message = message
         self.details = details
 
+
+class InsufficientBalanceError(DomainError):
+    """Raised when a customer's balance cannot cover an order total."""
+
+    def __init__(self, required: float, available: float):
+        super().__init__()
+        self.message = "Insufficient balance to complete checkout."
+        self.details = (
+            f"Order total is {required:.2f}; available balance is {available:.2f}."
+        )
+
 ###########################################################################################################################################
 ## Persistence Layer Errors
 ###########################################################################################################################################

@@ -99,10 +99,12 @@ def checkout_client(
 
 def test_full_checkout_flow_creates_order_and_closes_cart(
     checkout_client: TestClient,
+    isolated_user_repo,
     isolated_cart_repo,
     isolated_order_repo,
 ):
     """Run the Customer -> Menu -> Cart -> Checkout -> Order flow through the API."""
+    starting_balance = isolated_user_repo.get_user_data_from_id("c01").balance
     login_response = checkout_client.post(
         "/auth/login",
         json={"username": "UserName1", "password": "HardPassword1234"},
@@ -146,6 +148,12 @@ def test_full_checkout_flow_creates_order_and_closes_cart(
     ]
     assert order["subtotal"] == expected_total
     assert order["total"] == expected_total
+    assert isolated_user_repo.get_user_data_from_id("c01").balance == pytest.approx(
+        starting_balance - expected_total
+    )
+    assert isolated_user_repo.store.load()["c01"]["balance"] == pytest.approx(
+        starting_balance - expected_total
+    )
     order_response = checkout_client.get("/orders/o01", headers=headers)
     assert order_response.status_code == 200
     assert order_response.json() == order
@@ -257,6 +265,32 @@ def test_checkout_empty_cart_returns_409(
     assert isolated_order_repo.orders == {}
 
 
+def test_checkout_with_insufficient_balance_keeps_cart_and_creates_no_order(
+    checkout_client: TestClient,
+    isolated_user_repo,
+    isolated_cart_repo,
+    isolated_cart_service,
+    isolated_order_repo,
+):
+    """Insufficient funds reject checkout without charging or modifying the cart."""
+    isolated_user_repo.users["c01"]["balance"] = 1.00
+    isolated_user_repo.store.save(isolated_user_repo.users)
+    isolated_cart_service.add_item(
+        "c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01", quantity=1)
+    )
+    cart_before = isolated_cart_repo.get_active_cart("c01")
+
+    response = checkout_client.post(
+        "/checkout", headers=auth_headers(isolated_user_repo, "c01")
+    )
+
+    assert response.status_code == 409
+    assert "Insufficient balance" in response.json()["message"]
+    assert isolated_user_repo.get_user_data_from_id("c01").balance == 1.00
+    assert isolated_cart_repo.get_active_cart("c01") == cart_before
+    assert isolated_order_repo.orders == {}
+
+
 @pytest.mark.parametrize(
     ("menu_change", "remove_item"),
     [
@@ -333,6 +367,7 @@ def test_checkout_order_save_failure_returns_500_and_leaves_cart_intact(
     isolated_order_repo,
 ):
     """Simulated order save failure returns 500, stores no order, and keeps cart active."""
+    starting_balance = isolated_user_repo.get_user_data_from_id("c01").balance
     isolated_cart_service.add_item(
         "c01", CartItemAdd(restaurant_id="r01", menu_item_id="m01", quantity=1)
     )
@@ -348,3 +383,4 @@ def test_checkout_order_save_failure_returns_500_and_leaves_cart_intact(
     assert response.status_code == 500
     assert isolated_cart_repo.get_active_cart("c01") == cart_before
     assert getattr(isolated_order_repo, "orders", {}) == {}
+    assert isolated_user_repo.get_user_data_from_id("c01").balance == starting_balance
