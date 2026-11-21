@@ -106,9 +106,18 @@ def get_customer_me(
     """
     return service.get_customer(current_user.id, current_user)
 
+
 @router.post(
     "/customers/me/deactivate",
-    status_code=status.HTTP_200_OK,
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+        description=(
+            "Retrives the information for a specific customer"
+        ),
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
+        },
 )
 def deactivate_my_customer_account(current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
     """
@@ -212,17 +221,7 @@ def get_customer(
 def register_customer(new_customer: CustomerCreate,service = Depends(get_user_service)):
     """create a new customer account and add it to the system"""
     return service.create_new_customer(new_customer)
-    "/customers/me/deactivate",
-    response_model=None,
-    status_code=status.HTTP_204_NO_CONTENT,
-        description=(
-            "Retrives the information for a specific customer"
-        ),
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
-            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
-        },
-)
+    
 def deactivate_my_customer_account(current_user = Depends(get_current_user), service = Depends(get_user_service), reason_for_deactivation: str = ""):
     """
     deactivate_my_customer_account
