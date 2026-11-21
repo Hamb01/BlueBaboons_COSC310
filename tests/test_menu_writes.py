@@ -142,6 +142,17 @@ NEW_ITEM = {"restaurant_id": "r01", "name": "Fish Taco", "price": 8.25,
             "description": "Battered fish with slaw", "availability": True}
 
 
+def test_add_menu_item_without_restaurant_id_uses_the_path(client):
+    """The path names the restaurant, so the body does not need to repeat it."""
+    body = {key: value for key, value in NEW_ITEM.items() if key != "restaurant_id"}
+
+    response = client.post("/restaurants/r02/menu", json=body)
+
+    assert response.status_code == 201
+    assert response.json()["item"]["restaurant_id"] == "r02"
+    assert "Fish Taco" in [item["name"] for item in client.get("/restaurants/r02/menu").json()]
+
+
 def test_add_menu_item_returns_201_with_new_id(client):
     response = client.post("/restaurants/r01/menu", json=NEW_ITEM)
 

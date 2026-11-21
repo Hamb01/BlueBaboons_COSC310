@@ -120,6 +120,18 @@
     </form>
   </dialog>
 
+  <dialog id="item-dialog" class="modal">
+    <form id="item-form">
+      <div class="modal-head"><h2 id="item-title">Add menu item</h2><button id="close-item" type="button" class="icon-button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+      <label class="field"><span>Name</span><input name="name" required maxlength="200"></label>
+      <label class="field"><span>Description</span><input name="description" required maxlength="500"></label>
+      <label class="field"><span>Price ($)</span><input name="price" type="number" required min="0" step="0.01" inputmode="decimal" placeholder="9.99"></label>
+      <label class="checkbox"><input name="availability" type="checkbox" checked> Available to order</label>
+      <p id="item-error" class="error" role="alert"></p>
+      <button id="save-item" type="submit" class="primary wide">Add item</button>
+    </form>
+  </dialog>
+
   <dialog id="login-dialog" class="modal">
     <form id="login-form">
       <div class="modal-head"><h2>Sign in</h2><button id="close-login" type="button" class="icon-button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button></div>

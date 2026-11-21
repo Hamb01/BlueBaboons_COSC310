@@ -106,9 +106,9 @@ class RestaurantUpdate(BaseModel):
 class MenuItemRequest(BaseModel):
     """Request schema for a menu item added to a restaurant."""
 
-    restaurant_id: str = Field(
-        ...,
-        description="ID of the restaurant to which the menu item will be added",
+    restaurant_id: Optional[str] = Field(
+        default=None,
+        description="Optional and ignored: the restaurant in the URL path is used",
     )
     name: str = Field(..., description="Name of the menu item")
     price: float = Field(..., ge=0, description="Price of the menu item")

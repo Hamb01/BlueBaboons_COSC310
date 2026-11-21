@@ -531,7 +531,14 @@ async function showRestaurant(id) {
     meta.prepend(statusBadge(restaurant.isOpen));
     const menu = element('div', undefined, 'menu-grid');
     menu.append(element('div', undefined, 'skeleton'), element('div', undefined, 'skeleton'));
-    details.replaceChildren(head, meta, element('h3', 'Menu', 'menu-title'), menu);
+    const menuHead = element('div', undefined, 'menu-head');
+    menuHead.append(element('h3', 'Menu'));
+    if (canManage(restaurant)) {
+      const addItem = button('Add item', 'ghost small', 'plus');
+      addItem.addEventListener('click', () => openItemDialog(restaurant));
+      menuHead.append(addItem);
+    }
+    details.replaceChildren(head, meta, menuHead, menu);
     if (window.matchMedia('(max-width: 820px)').matches) details.scrollIntoView({block: 'start'});
     try {
       const items = await request(`${path}/menu`);
@@ -547,6 +554,52 @@ async function showRestaurant(id) {
     if (currentRequest === detailRequest) details.replaceChildren(element('p', error.message, 'error'));
   }
 }
+
+// ---------------------------------------------------------------- add menu item (owners and admins)
+const itemDialog = $('#item-dialog');
+const itemForm = $('#item-form');
+let itemRestaurant = null;
+
+function openItemDialog(restaurant) {
+  itemRestaurant = restaurant;
+  itemForm.reset();
+  $('#item-title').textContent = `Add item to ${restaurant.name}`;
+  $('#item-error').textContent = '';
+  itemDialog.showModal();
+  itemForm.elements.name.focus();
+}
+
+itemForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const name = itemForm.elements.name.value.trim();
+  const description = itemForm.elements.description.value.trim();
+  const price = Number(itemForm.elements.price.value);
+  if (!name || !description) {
+    $('#item-error').textContent = 'Please fill in the name and description.';
+    return;
+  }
+  if (!Number.isFinite(price) || price < 0) {
+    $('#item-error').textContent = 'Price must be 0 or more.';
+    return;
+  }
+  const save = $('#save-item');
+  save.disabled = true;
+  $('#item-error').textContent = '';
+  try {
+    const result = await authRequest(`/restaurants/${encodeURIComponent(itemRestaurant.id)}/menu`,
+      jsonBody('POST', {name, description, price, availability: itemForm.elements.availability.checked}));
+    itemDialog.close();
+    showMessage(`Added ${result.item?.name || name} to the menu.`);
+    await showRestaurant(itemRestaurant.id);
+  } catch (error) {
+    $('#item-error').textContent = error.message;
+  } finally {
+    save.disabled = false;
+  }
+});
+
+$('#close-item').addEventListener('click', () => itemDialog.close());
+itemDialog.addEventListener('click', event => { if (event.target === itemDialog) itemDialog.close(); });
 
 // ---------------------------------------------------------------- restaurant editor (owners and admins)
 function openEditor(restaurant = null) {
