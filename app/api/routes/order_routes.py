@@ -21,14 +21,18 @@ router = APIRouter(tags=["Orders"])
     summary="Checkout Active Cart",
     description=(
         "Validates the customer and active cart, revalidates menu items and prices, "
-        "persists a new order, and closes/clears the cart only after saving succeeds."
+        "checks and deducts the customer's balance, persists a new order, and "
+        "closes/clears the cart only after saving succeeds."
     ),
     responses={
         status.HTTP_201_CREATED: {"description": "Order created from active cart"},
         status.HTTP_401_UNAUTHORIZED: {"description": "Not signed in"},
         status.HTTP_403_FORBIDDEN: {"description": "Account is deactivated or forbidden"},
         status.HTTP_409_CONFLICT: {
-            "description": "Cart is missing/empty or a menu item is unavailable/missing"
+            "description": (
+                "Cart is missing/empty, a menu item is unavailable/missing, "
+                "or the customer has insufficient balance"
+            )
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Failed to persist order; cart remains unchanged"

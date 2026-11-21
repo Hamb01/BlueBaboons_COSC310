@@ -19,8 +19,9 @@ def api(client, isolated_data_dir):
     return client
 
 #Customer order flow: login ->menu -> cart -> checkout -> order -> verify order saved to disk``
-def test_customer_can_order_from_a_menu(api, isolated_data_dir):
+def test_customer_can_order_from_a_menu(api, isolated_data_dir, isolated_user_repo):
     # 1. Customer logs in
+    starting_balance = isolated_user_repo.get_user_data_from_id("c02").balance
     login = api.post("/auth/login", json={"username": "UserName2", "password": "superHardPassword1234"})
     assert login.status_code == 200
     auth = {"Authorization": f"Bearer {login.json()}"}
@@ -41,6 +42,12 @@ def test_customer_can_order_from_a_menu(api, isolated_data_dir):
     order = checkout.json()
     assert order["customer_id"] == "c02"
     assert order["total"] == pytest.approx(item["price"] * 2)
+    assert isolated_user_repo.get_user_data_from_id("c02").balance == pytest.approx(
+        starting_balance - order["total"]
+    )
+    assert isolated_user_repo.store.load()["c02"]["balance"] == pytest.approx(
+        starting_balance - order["total"]
+    )
 
     # 5. The order can be fetched back, and it was saved to disk
     assert api.get(f"/orders/{order['id']}", headers=auth).json() == order

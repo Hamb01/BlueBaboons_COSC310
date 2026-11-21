@@ -1,6 +1,8 @@
 
 """Business logic for user authentication and authorization."""
 
+from decimal import Decimal
+
 from pydantic import ValidationError
 from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import (
@@ -22,6 +24,7 @@ from app.schemas.user_schema import (
 )
 from app.core.exceptions import (
     AccountNotActiveError,
+    InsufficientBalanceError,
     InvalidRequestError,
     ServerError,
     UserAuthenticationError,
@@ -298,6 +301,41 @@ class UserService:
             raise AccountNotActiveError(userdata.reason_for_deactivation or "Unspecified")
 
         return True
+
+    def charge_customer(self, customer_id: str, amount: Decimal) -> None:
+        """Subtract an order amount from a customer's persisted balance."""
+        if amount < 0:
+            raise InvalidRequestError("A customer charge cannot be negative.")
+        self._change_customer_balance(customer_id, -amount)
+
+    def refund_customer(self, customer_id: str, amount: Decimal) -> None:
+        """Restore a charge when checkout cannot persist its order."""
+        if amount < 0:
+            raise InvalidRequestError("A customer refund cannot be negative.")
+        self._change_customer_balance(customer_id, amount)
+
+    def _change_customer_balance(self, customer_id: str, change: Decimal) -> None:
+        customer = self.repository.get_user_data_from_id(customer_id)
+        if not isinstance(customer, Customer):
+            raise InvalidRequestError("Only customers have a balance.")
+
+        current_balance = Decimal(str(customer.balance))
+        new_balance = current_balance + change
+        if new_balance < 0:
+            raise InsufficientBalanceError(
+                required=float(-change),
+                available=float(current_balance),
+            )
+        if change == 0:
+            return
+
+        updated_users = dict(self.repository.users)
+        updated_users[customer_id] = {
+            **updated_users[customer_id],
+            "balance": float(new_balance),
+        }
+        self.repository.store.save(updated_users)
+        self.repository.users = updated_users
 
     def create_new_customer(self, new_customer: CustomerCreate) -> CustomerResponse :
         """

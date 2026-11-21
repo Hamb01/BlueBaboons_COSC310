@@ -111,12 +111,16 @@ class CheckoutService:
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        #Persist order first; if saving fails (500), do NOT clear or close the cart
+        # Charge before saving the order so an insufficient balance cannot create
+        # an unpaid order. Restore the balance if order persistence fails.
+        self.user_service.charge_customer(customer_id, total_dec)
         try:
             saved_order = self.order_repository.create_order(order_payload)
         except DomainError:
+            self.user_service.refund_customer(customer_id, total_dec)
             raise
         except Exception as exc:
+            self.user_service.refund_customer(customer_id, total_dec)
             raise DataPersistenceError("Orders.json", access_type="write") from exc
 
         order = Order.model_validate(saved_order)
