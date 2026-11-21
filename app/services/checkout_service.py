@@ -97,7 +97,7 @@ class CheckoutService:
                 }
             )
 
-        delivery_address = self._extract_delivery_address(customer)
+        delivery_address = self.extract_delivery_address(customer)
         total_dec = subtotal_dec
 
         order_payload: dict[str, Any] = {

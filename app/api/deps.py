@@ -1,6 +1,6 @@
 """Dependency wiring for repositories and services used throughout the API."""
 
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -13,6 +13,7 @@ from app.repositories.restaurant_repository import RestaurantRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import Customer, User
 from app.services.cart_service import CartRepositoryInterface, CartService
+from app.services.checkout_service import CheckoutService
 from app.services.health_service import HealthService
 from app.services.menu_service import MenuService
 from app.services.order_service import OrderService
@@ -132,6 +133,7 @@ def get_current_active_customer(
 def get_cart_repository() -> CartRepositoryInterface:
     """Build the cart repository (#95)."""
     from app.repositories.cart_repository import CartRepository  # pylint: disable=import-outside-toplevel,no-name-in-module
+
     return CartRepository()
 
 
@@ -153,3 +155,18 @@ def get_order_service(
 ) -> OrderService:
     """Provide an order service backed by the order repository."""
     return OrderService(repository=repository)
+
+
+def get_checkout_service(
+    user_service: UserService = Depends(get_user_service),
+    cart_service: CartService = Depends(get_cart_service),
+    menu_service: MenuService = Depends(get_menu_service),
+    order_repository: OrderRepository = Depends(get_order_repository),
+) -> CheckoutService:
+    """Provide a checkout service backed by user, cart, menu, and order dependencies."""
+    return CheckoutService(
+        user_service=user_service,
+        cart_service=cart_service,
+        menu_service=menu_service,
+        order_repository=order_repository,
+    )
