@@ -153,6 +153,57 @@ def test_full_checkout_flow_creates_order_and_closes_cart(
     assert isolated_cart_repo.get_active_cart("c01") is None
 
 
+def test_checkout_rejects_mixed_restaurants_and_orders_first_cart(
+    checkout_client: TestClient,
+    isolated_cart_repo,
+    isolated_order_repo,
+):
+    """Test mixed-restaurant rejection and the address"""
+    login_response = checkout_client.post(
+        "/auth/login",
+        json={"username": "UserName1", "password": "HardPassword1234"},
+    )
+    assert login_response.status_code == 200
+    headers = {"Authorization": f"Bearer {login_response.json()}"}
+    customer = checkout_client.get("/customers/me", headers=headers).json()
+    menus = [
+        checkout_client.get("/restaurants/r01/menu"),
+        checkout_client.get("/restaurants/r02/menu"),
+    ]
+    assert all(menu.status_code == 200 for menu in menus)
+    first_item = next(item for item in menus[0].json() if item["id"] == "m01")
+    second_item = next(item for item in menus[1].json() if item["id"] == "m01")
+
+    assert checkout_client.post(
+        "/cart/items",
+        headers=headers,
+        json={"restaurant_id": "r01", "menu_item_id": first_item["id"]},
+    ).status_code == 200
+    rejected_add = checkout_client.post(
+        "/cart/items",
+        headers=headers,
+        json={"restaurant_id": "r02", "menu_item_id": second_item["id"]},
+    )
+    assert rejected_add.status_code == 409
+
+    cart = checkout_client.get("/cart", headers=headers).json()
+    assert cart["restaurant_id"] == "r01"
+    assert [line["menu_item_id"] for line in cart["items"]] == [first_item["id"]]
+
+    checkout_response = checkout_client.post("/checkout", headers=headers)
+    assert checkout_response.status_code == 201
+    order = checkout_response.json()
+    assert order["customer_id"] == "c01"
+    assert order["restaurant_id"] == "r01"
+    assert order["delivery_address"] == customer["address"]
+    assert [line["menu_item_id"] for line in order["items"]] == [first_item["id"]]
+    assert checkout_client.get(
+        f"/orders/{order['id']}", headers=headers
+    ).json() == order
+    assert isolated_order_repo.get_order(order["id"]) == order
+    assert isolated_cart_repo.get_active_cart("c01") is None
+
+
 def test_checkout_deactivated_customer_returns_403(
     checkout_client: TestClient,
     isolated_user_repo,
