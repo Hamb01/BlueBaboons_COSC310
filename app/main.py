@@ -1,5 +1,11 @@
 """FastAPI app configuration and global exception handling for the Blue Baboons API."""
 
+
+
+"""We used centralized error handling through exception translators to map domain exceptions to 
+HTTP responses. This allows us to keep our route handlers clean and focused on business logic, while still providing 
+meaningful error messages to clients.
+***Accredited to: Issac ***"""
 import logging
 from pathlib import Path
 
