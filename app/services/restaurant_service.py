@@ -12,10 +12,16 @@
 # - create restaurant
 # - update restaurant
 # - menu operations live in menu_service.py
+from pydantic import ValidationError
 
 from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.restaurant_schema import RestaurantCreate, RestaurantResponse, RestaurantUpdate
-from app.core.exceptions import RestaurantNotFoundError, UserNotAuthorizedError, UserAuthenticationError
+from app.core.exceptions import (
+    RestaurantNotFoundError,
+    BadDataInPersistenceLayerError,
+    UserNotAuthorizedError, 
+    UserAuthenticationError,
+)
 from app.schemas.user_schema import Developer, RestaurantAdmin, RestaurantOwner, User
 
 class RestaurantService:
@@ -48,7 +54,7 @@ class RestaurantService:
             matching_restaurants : List -> All restaurants that match your search parameters
 
         Raises:
-            none ***BUG : This should have some kind of check to verify the data exists***
+            BadDataInPersistenceLayer -> data stored in the system is in the wrong form
         
         """
         if search is None:
@@ -89,6 +95,7 @@ class RestaurantService:
                 continue
 
             matching_restaurants.append(restaurant)
+        
 
         return matching_restaurants
 
@@ -107,11 +114,15 @@ class RestaurantService:
             RestaurantResponse -> Data related to the restaurant (documented in the restaurant schemas) 
 
         Raises:
-            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            BadDataInPersistenceLayer -> The data stored in the restaurant respository is of the wrong shape 
             RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
         """
         information = self.repository.get_restaurant_data(restaurant_id)
-        return RestaurantResponse.model_validate(information)
+        try: 
+            response = RestaurantResponse.model_validate(information)
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError("Restaurants.json", "error while getting restaurant data")
+        return response
 
     def get_all_restaurants(self) -> list[RestaurantResponse]:
         """
@@ -128,10 +139,13 @@ class RestaurantService:
             Restaurant_data : List -> List of all restaurants currently stored in the system (each restaurant is stored as a dictionary)
 
         Raises: 
-            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            BadDataInPersistenceLayer -> The data stored in the restaurant respository is of the wrong shape 
         """
         restaurants_data = self.repository.get_all_restaurant()
-        return [RestaurantResponse.model_validate(item) for item in restaurants_data]
+        try:
+            response = [RestaurantResponse.model_validate(item) for item in restaurants_data]
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError("Restaurants.json", "error while reading restaurant data") from exc
 
     def create_restaurant(
         self, payload: RestaurantCreate, current_user: User | None = None
@@ -150,8 +164,9 @@ class RestaurantService:
             RestaurantResponse -> all data pertaining to the restaurant (defined in Restaurant_Schemas)
 
         Raises: 
-            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            BadDataInPersistenceLayerError -> The data stored in the restaurant respository is of the wrong shape 
             DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
+            UserNotAuthorizedError -> User does not have permission to create a restaurant
         """
         if current_user is None:
             raise UserAuthenticationError(forbidden_action="restaurant creation")
@@ -164,7 +179,12 @@ class RestaurantService:
         data["owner_id"] = current_user.id
         
         information = self.repository.create_restaurant(data)
-        return RestaurantResponse.model_validate(information)
+
+        try:
+            response = RestaurantResponse.model_validate(information)
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError("Restaurants.json", "error while reading restaurant data") from exc
+        return response
 
     def update_restaurant(
         self,
@@ -190,7 +210,7 @@ class RestaurantService:
         Raises: 
             RestaurantNotFoundError -> The restaurant is not stored in the restaurants.json file (raised by self.repository.get_restaurant_data(restaurant_id))
             DataPersistenceError -> There was an error while adding the new restaurant to the JSON (Raised by restaurant_repository.save_to_file())
-            ValidationError -> The data stored in the restaurant respository is of the wrong shape ***BUG : This will return 422, but it should return 500 ***
+            BadDataInPersistenceLayerError -> The data stored in the restaurant respository is of the wrong shape 
         """
         if current_user is None:
             raise UserAuthenticationError(forbidden_action="restaurant update")
@@ -211,5 +231,8 @@ class RestaurantService:
             restaurant_id,
             payload.model_dump(exclude_unset=True),
         )
-        return RestaurantResponse.model_validate(information)
-    
+        try: 
+            response = RestaurantResponse.model_validate(information)
+        except ValidationError as exc:
+            raise BadDataInPersistenceLayerError("Restaurants.json", "error while reading restaurant data") from exc
+        return response
