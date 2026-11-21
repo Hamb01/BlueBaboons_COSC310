@@ -209,3 +209,39 @@ This document records externally assisted content, AI tooling, and design assist
 - Asked copilot to explain what each of the tests do, how they work, and why it chose to implement them.
 - Ensured tests made sense for the scope of our project.
 - Verified all tests passed.
+## M2 accounts, cart, orders, fixes and docs - 2026-11-16 to 2026-11-20
+
+- **Student:** Turbileg Uurtsaikh (prompted the AI, reviewed its output and opened the PRs)
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
+- **Scope / Assistance:**
+  - **Login wiring (PR #119):** fixed `DomainError.status_code` typing and two dependency
+    wiring bugs that made every login return 500. Added `tests/test_auth_wiring.py`, which
+    runs login with only the repository overridden; both tests fail on the old code.
+  - **Cart (PR #123, issues #95, #96):** cart schemas, `CartService` with the M2 rules
+    (one restaurant per cart, unavailable item -> 409, same item merges quantity, nothing
+    saved when a rule fails), the `CartRepositoryInterface`, and the cart routes. Wrote
+    18 tests in `tests/test_cart.py` using an in-memory repository.
+  - **Orders (PR #125, issues #99, #100):** view an order and my order history, with the
+    item name and price stored at order time. Tests for 401/403/404, history, and the price
+    staying the same after a menu change. Later simplified the order code and trimmed comments.
+  - **Frontend (PR #126):** sign in, add to cart and view cart in `app/frontend/`, plus a
+    page test and a sign in -> add to cart -> view cart test.
+  - **Bug fixes (PR #134):** menu PUT/PATCH took an `int` restaurant id, so `r01` returned
+    422 (#60); seeded owner and admin accounts and pointed restaurants at real owners;
+    owners passed the admin check because `RestaurantOwner` subclasses `RestaurantAdmin`,
+    so any owner could edit any restaurant (#89). Added `tests/test_roles.py`, which signs
+    in with the seed accounts.
+  - **OpenAPI (PR #135, issue #69):** typed `MenuItemUpdate` body and documented error
+    responses. This PR was merged into the #134 branch after #134 had merged, so it did not
+    reach `main`.
+  - **Documentation:** updated `README.md` for Milestone 2 (features, demo accounts, endpoints,
+    error codes, workflow, persistence) and this entry.
+  - **Planning and analysis:** M2 progress reports (16-20 Nov) built from tests, lint and HTTP
+    requests run on a copy of the data; drafts of the M2 decision receipt answers.
+- **Verification & Ownership:**
+  - Claude ran pytest and pylint after each change: 152 tests on main before PR #134, 171
+    after it, 189 with PR #135. Bugs were reproduced over HTTP before fixing and re-checked
+    afterwards with the same requests.
+  - Tests were written before the fixes in PR #134 and PR #135 and failed on the old code.
+  - The student reviewed each change, and each PR was reviewed by a teammate who is not the
+    author before merging.
