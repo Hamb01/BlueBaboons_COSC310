@@ -1,5 +1,11 @@
 """FastAPI app configuration and global exception handling for the Blue Baboons API."""
 
+
+
+"""We used centralized error handling through exception translators to map domain exceptions to 
+HTTP responses. This allows us to keep our route handlers clean and focused on business logic, while still providing 
+meaningful error messages to clients.
+***Accredited to: Issac ***"""
 import logging
 from pathlib import Path
 
@@ -25,6 +31,7 @@ from app.core.exceptions import (
     BadDataInPersistenceLayerError,
     CartItemNotFoundError,
     CartRestaurantConflictError,
+    CheckoutConflictError,
     DataPersistenceError,
     DomainError,
     EmptyMenuError,
@@ -39,8 +46,8 @@ from app.core.exceptions import (
     TokenIsInvalidError,
     UserNameAlreadyTakenError,
     UserAuthenticationError,
-    UserNotFoundError,
     UserNotAuthorizedError,
+    UserNotFoundError,
 )
 from app.schemas.exception_schema import System_Error_Message
 
@@ -111,41 +118,56 @@ def handle_application_domain_exceptions(
     _request: Request, exception: DomainError
 ) -> JSONResponse:
     """Map domain exceptions to their corresponding HTTP responses."""
-    if isinstance(exception, (
-            InvalidRequestError
-            )):
-            exception.status_code = status.HTTP_400_BAD_REQUEST
-    elif isinstance(exception, (
-        ExpiredTokenError,
-        TokenBelongsToUnknownUserError,
-        TokenIsInvalidError,
-        UserAuthenticationError 
-        )):
+    if isinstance(exception, (InvalidRequestError,)):
+        exception.status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(
+        exception,
+        (
+            ExpiredTokenError,
+            TokenBelongsToUnknownUserError,
+            TokenIsInvalidError,
+            UserAuthenticationError,
+        ),
+    ):
         exception.status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exception, (
-        AccountNotActiveError, 
-        UserNotAuthorizedError
-        )):
+    elif isinstance(
+        exception,
+        (
+            AccountNotActiveError,
+            UserNotAuthorizedError,
+        ),
+    ):
         exception.status_code = status.HTTP_403_FORBIDDEN
-    elif isinstance(exception, (
-        RestaurantNotFoundError,
-        MenuItemNotFoundError,
-        CartItemNotFoundError,
-        EmptyMenuError,
-        OrderNotFoundError,
-        UserNotFoundError)):
+    elif isinstance(
+        exception,
+        (
+            RestaurantNotFoundError,
+            MenuItemNotFoundError,
+            CartItemNotFoundError,
+            EmptyMenuError,
+            OrderNotFoundError,
+            UserNotFoundError,
+        ),
+    ):
         exception.status_code = status.HTTP_404_NOT_FOUND
-    elif isinstance(exception, (
-        CartRestaurantConflictError, 
-        MenuItemUnavailableError,
-        UserNameAlreadyTakenError
-        )):
+    elif isinstance(
+        exception,
+        (
+            CartRestaurantConflictError,
+            CheckoutConflictError,
+            MenuItemUnavailableError,
+            UserNameAlreadyTakenError
+        ),
+    ):
         exception.status_code = status.HTTP_409_CONFLICT
-    elif isinstance(exception, (
-        ServerError,
-        BadDataInPersistenceLayerError, 
-        DataPersistenceError, 
-        )):
+    elif isinstance(
+        exception,
+        (
+            ServerError,
+            BadDataInPersistenceLayerError,
+            DataPersistenceError,
+        ),
+    ):
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         exception.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -181,10 +203,11 @@ def handle_application_domain_exceptions(
 @app.exception_handler(ValidationError)
 def handle_system_exceptions(_request: Request, exception: ValidationError) -> JSONResponse:
     """Handle request-validation failures for Pydantic models."""
+    error_count = exception.error_count()
     error_logger.error(
         "Status code: %s, Message: %s errors when validating model, Details: %s",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
-        exception.error_count,
+        error_count,
         str(exception),
     )
 
@@ -192,7 +215,7 @@ def handle_system_exceptions(_request: Request, exception: ValidationError) -> J
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "status_code": status.HTTP_422_UNPROCESSABLE_CONTENT,
-            "message": f"{exception.error_count} errors when validating model",
+            "message": f"{error_count} errors when validating model",
             "details": "",
         },
     )

@@ -3,64 +3,158 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Blue Baboons | Restaurants</title>
+  <meta name="color-scheme" content="light dark">
+  <title>Blue Baboons | Food delivery</title>
+  <link rel="icon" href="/ui/baboon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
   <link rel="stylesheet" href="/ui/styles.css">
   <script src="/ui/app.js" defer></script>
 </head>
 <body>
-  <header>
-    <a class="brand" href="/ui/">BLUE BABOONS <span>Food discovery</span></a>
-    <div class="header-actions">
-      <span id="account"></span>
-      <button id="sign-in" type="button" class="secondary">Sign in</button>
-      <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
-      <button id="open-cart" type="button">Cart (0)</button>
-      <a href="/docs">API docs ↗</a>
+  <a class="skip-link" href="#restaurants-title">Skip to restaurants</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/ui/" aria-label="Blue Baboons home">
+        <img src="/ui/baboon.svg" alt="" width="40" height="40">
+        <span class="brand-name">Blue Baboons</span>
+      </a>
+      <nav class="header-actions" aria-label="Account">
+        <span id="account" class="account-chip" hidden></span>
+        <button id="open-orders" type="button" class="ghost" hidden><i class="ph ph-receipt" aria-hidden="true"></i><span>My orders</span></button>
+        <button id="sign-in" type="button" class="ghost"><i class="ph ph-sign-in" aria-hidden="true"></i><span>Sign in</span></button>
+        <button id="sign-out" type="button" class="ghost" hidden><i class="ph ph-sign-out" aria-hidden="true"></i><span>Sign out</span></button>
+        <button id="open-cart" type="button" class="cart-button" aria-label="Cart, 0 items"><i class="ph ph-shopping-bag" aria-hidden="true"></i><span>Cart</span><span id="cart-count" class="count-pill">0</span></button>
+        <a class="docs-link" href="/docs" target="_blank" rel="noopener">API docs<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+      </nav>
     </div>
   </header>
+
   <main>
-    <div class="intro"><div><p class="eyebrow">FIND YOUR NEXT FAVORITE</p><h1>Good food. Close by.</h1><p>Explore local restaurants, see what's on the menu, and find your next meal.</p></div><button id="create-restaurant" type="button">+ Add restaurant</button></div>
-    <form id="filters" class="panel filters">
-      <label>Search<input name="search" type="search" placeholder="Name, cuisine, or location"></label>
-      <label>Cuisine<input name="cuisine" placeholder="e.g. Japanese"></label>
-      <label>Location<input name="location" placeholder="City or neighborhood"></label>
-      <label>Status<select name="is_open"><option value="">All restaurants</option><option value="true">Open</option><option value="false">Closed</option></select></label>
-      <button type="submit">Search</button><button type="reset" class="secondary">Clear</button>
-    </form>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Hungry? The baboons are on it.</h1>
+        <p class="hero-sub">Browse local restaurants, fill your cart from one kitchen, and check out in a few taps.</p>
+        <form id="filters" class="filters" role="search">
+          <label class="field field-search">
+            <span>Search</span>
+            <span class="input-icon"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input name="search" type="search" placeholder="Tacos, sushi, Kelowna..." autocomplete="off"></span>
+          </label>
+          <label class="field"><span>Cuisine</span><input name="cuisine" placeholder="Any cuisine"></label>
+          <label class="field"><span>Location</span><input name="location" placeholder="Any area"></label>
+          <label class="field"><span>Status</span><select name="is_open"><option value="">All</option><option value="true">Open now</option><option value="false">Closed</option></select></label>
+          <div class="filter-actions">
+            <button type="submit" class="primary">Search</button>
+            <button type="reset" class="ghost">Clear</button>
+          </div>
+        </form>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-52 -56 104 102" id="hero-baboon" width="260" height="255" focusable="false">
+          <path fill="#0E2A47" d="M 0.00 -54.00 L -5.72 -44.58 L -13.80 -51.97 L -16.69 -41.29 L -26.49 -46.06 L -26.31 -34.99 L -37.03 -36.74 L -33.80 -26.17 L -44.57 -24.77 L -38.55 -15.55 L -48.50 -11.12 L -40.18 -4.00 L -48.50 3.12 L -38.55 7.55 L -44.57 16.77 L -33.80 18.17 L -37.03 28.74 L -26.31 26.99 L -26.49 38.06 L -16.69 33.29 L -13.80 43.97 L -5.72 36.58 L -0.00 46.00 L 5.72 36.58 L 13.80 43.97 L 16.69 33.29 L 26.49 38.06 L 26.31 26.99 L 37.03 28.74 L 33.80 18.17 L 44.57 16.77 L 38.55 7.55 L 48.50 3.12 L 40.18 -4.00 L 48.50 -11.12 L 38.55 -15.55 L 44.57 -24.77 L 33.80 -26.17 L 37.03 -36.74 L 26.31 -34.99 L 26.49 -46.06 L 16.69 -41.29 L 13.80 -51.97 L 5.72 -44.58 L 0.00 -54.00 Z"/>
+          <circle cx="-33.00" cy="-12.00" r="8.00" fill="#1D6FB8"/>
+          <circle cx="-33.00" cy="-12.00" r="4.00" fill="#6FB1F2"/>
+          <circle cx="33.00" cy="-12.00" r="8.00" fill="#1D6FB8"/>
+          <circle cx="33.00" cy="-12.00" r="4.00" fill="#6FB1F2"/>
+          <ellipse cx="0.00" cy="-12.00" rx="30.00" ry="26.00" fill="#1D6FB8"/>
+          <path fill="#0E2A47" d="M -24.00 -20.00 C -14.00 -28.00 -4.00 -25.00 0.00 -21.00 C 4.00 -25.00 14.00 -28.00 24.00 -20.00 C 14.00 -22.00 4.00 -19.00 0.00 -16.00 C -4.00 -19.00 -14.00 -22.00 -24.00 -20.00 Z"/>
+          <ellipse cx="-12.00" cy="-13.50" rx="5.00" ry="3.50" fill="#FFFFFF"/>
+          <circle class="pupil" cx="-11.00" cy="-13.30" r="2.40" fill="#0E2A47"/>
+          <ellipse cx="12.00" cy="-13.50" rx="5.00" ry="3.50" fill="#FFFFFF"/>
+          <circle class="pupil" cx="11.00" cy="-13.30" r="2.40" fill="#0E2A47"/>
+          <path fill="#6FB1F2" d="M -9.00 -12.00 C -16.00 4.00 -20.00 22.00 -15.00 33.00 C -9.00 42.00 9.00 42.00 15.00 33.00 C 20.00 22.00 16.00 4.00 9.00 -12.00 C 4.00 -15.00 -4.00 -15.00 -9.00 -12.00 Z"/>
+          <path fill="none" stroke="#1D6FB8" stroke-width="1.6" stroke-linecap="round" d="M -5.00 -6.00 C -9.00 6.00 -10.00 16.00 -9.00 24.00"/>
+          <path fill="none" stroke="#1D6FB8" stroke-width="1.6" stroke-linecap="round" d="M 5.00 -6.00 C 9.00 6.00 10.00 16.00 9.00 24.00"/>
+          <ellipse cx="0.00" cy="33.50" rx="12.00" ry="6.50" fill="#DCEBFA"/>
+          <ellipse cx="-5.25" cy="32.75" rx="2.75" ry="2.25" fill="#0E2A47"/>
+          <ellipse cx="5.25" cy="32.75" rx="2.75" ry="2.25" fill="#0E2A47"/>
+          <path fill="none" stroke="#0E2A47" stroke-width="1.4" d="M -7.00 41.00 C -3.00 43.50 3.00 43.50 7.00 41.00"/>
+        </svg>
+      </div>
+    </section>
+
     <p id="notice" role="status" aria-live="polite"></p>
+
     <div class="workspace">
-      <section aria-labelledby="restaurants-title"><div class="section-heading"><h2 id="restaurants-title">Restaurants</h2><span id="count"></span></div><div id="restaurants" class="restaurant-list" aria-live="polite"></div></section>
-      <section id="details" class="panel details" aria-label="Selected restaurant"><p class="empty">Select a restaurant to explore its details and menu.</p></section>
+      <section class="list-column" aria-labelledby="restaurants-title">
+        <div class="section-heading">
+          <h2 id="restaurants-title">Restaurants</h2>
+          <span id="count"></span>
+          <button id="create-restaurant" type="button" class="ghost small" hidden><i class="ph ph-plus" aria-hidden="true"></i>Add restaurant</button>
+        </div>
+        <div id="restaurants" class="restaurant-list" aria-live="polite"></div>
+      </section>
+      <section id="details" class="details" aria-label="Selected restaurant">
+        <div class="empty-state">
+          <img src="/ui/baboon.svg" alt="" width="72" height="71">
+          <p>Pick a restaurant to see its menu.</p>
+        </div>
+      </section>
     </div>
   </main>
-  <dialog id="editor">
+
+  <footer class="site-footer">
+    <span>Blue Baboons, COSC 310 food delivery project.</span>
+    <a href="/docs" target="_blank" rel="noopener">API documentation</a>
+  </footer>
+
+  <dialog id="editor" class="modal">
     <form id="restaurant-form">
-      <div class="section-heading"><h2 id="editor-title">Add restaurant</h2><button id="close-editor" type="button" class="secondary">Close</button></div>
-      <p>Keep restaurant information up to date.</p>
-      <label>Name<input name="name" required maxlength="200"></label>
-      <label>Cuisine<input name="cuisine" required maxlength="100"></label>
-      <label>Location<input name="location" required maxlength="300"></label>
-      <label>Address<input name="address" required maxlength="300"></label>
-      <label>Postal code<input name="postal_code" required maxlength="7" pattern="[A-Za-z][0-9][A-Za-z] [0-9][A-Za-z][0-9]" placeholder="A1A 1A1" title="Use the format A1A 1A1"></label>
-      <label>Opening hours<input name="opening_hours" required placeholder="e.g. 09:00–21:00" maxlength="100"></label>
+      <div class="modal-head"><h2 id="editor-title">Add restaurant</h2><button id="close-editor" type="button" class="icon-button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+      <label class="field"><span>Name</span><input name="name" required maxlength="200"></label>
+      <div class="field-row">
+        <label class="field"><span>Cuisine</span><input name="cuisine" required maxlength="100"></label>
+        <label class="field"><span>Location</span><input name="location" required maxlength="300"></label>
+      </div>
+      <label class="field"><span>Address</span><input name="address" required maxlength="300"></label>
+      <div class="field-row">
+        <label class="field"><span>Postal code</span><input name="postal_code" required maxlength="7" pattern="[A-Za-z][0-9][A-Za-z] [0-9][A-Za-z][0-9]" placeholder="A1A 1A1" title="Use the format A1A 1A1"></label>
+        <label class="field"><span>Opening hours</span><input name="opening_hours" required placeholder="09:00-21:00" maxlength="100"></label>
+      </div>
       <label class="checkbox"><input name="isOpen" type="checkbox" checked> Currently open</label>
-      <p id="form-error" role="alert"></p>
-      <button id="save-restaurant" type="submit">Save restaurant</button>
+      <p id="form-error" class="error" role="alert"></p>
+      <button id="save-restaurant" type="submit" class="primary wide">Save restaurant</button>
     </form>
   </dialog>
-  <dialog id="login-dialog">
+
+  <dialog id="login-dialog" class="modal">
     <form id="login-form">
-      <div class="section-heading"><h2>Sign in</h2><button id="close-login" type="button" class="secondary">Close</button></div>
-      <label>Username<input name="username" required autocomplete="username"></label>
-      <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+      <div class="modal-head"><h2>Sign in</h2><button id="close-login" type="button" class="icon-button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+      <label class="field"><span>Username</span><input name="username" required autocomplete="username"></label>
+      <label class="field"><span>Password</span><input name="password" type="password" required autocomplete="current-password"></label>
       <p id="login-error" class="error" role="alert"></p>
-      <button id="submit-login" type="submit">Sign in</button>
+      <button id="submit-login" type="submit" class="primary wide">Sign in</button>
+      <div class="demo-accounts">
+        <span>Demo accounts</span>
+        <div>
+          <button type="button" class="chip" data-username="UserName1" data-password="HardPassword1234">Customer</button>
+          <button type="button" class="chip" data-username="owner1" data-password="owner1pass">Owner</button>
+          <button type="button" class="chip" data-username="admin1" data-password="admin1pass">Admin</button>
+        </div>
+      </div>
     </form>
   </dialog>
-  <dialog id="cart-dialog">
-    <div class="section-heading"><h2>Your cart</h2><button id="close-cart" type="button" class="secondary">Close</button></div>
-    <div id="cart-items" aria-live="polite"></div>
-    <p id="cart-total" class="cart-total"></p>
+
+  <dialog id="cart-dialog" class="drawer" aria-labelledby="cart-title">
+    <div class="drawer-head"><h2 id="cart-title">Your cart</h2><button id="close-cart" type="button" class="icon-button" aria-label="Close cart"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+    <p id="cart-restaurant" class="cart-restaurant"></p>
+    <div id="cart-items" class="cart-items" aria-live="polite"></div>
+    <p id="cart-error" class="error" role="alert"></p>
+    <div class="drawer-foot">
+      <p id="cart-total" class="cart-total"></p>
+      <div class="drawer-actions">
+        <button id="clear-cart" type="button" class="ghost">Clear</button>
+        <button id="checkout" type="button" class="primary">Check out</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="orders-dialog" class="drawer" aria-labelledby="orders-title">
+    <div class="drawer-head"><h2 id="orders-title">My orders</h2><button id="close-orders" type="button" class="icon-button" aria-label="Close orders"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+    <div id="orders-list" class="orders-list" aria-live="polite"></div>
   </dialog>
 </body>
 </html>

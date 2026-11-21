@@ -106,7 +106,7 @@ class CartItemNotFoundError(DomainError):
 
 
 ###########################################################################################################################################
-## Order errors
+## Order and Checkouterrors
 ###########################################################################################################################################
 
 class OrderNotFoundError(DomainError):
@@ -116,6 +116,14 @@ class OrderNotFoundError(DomainError):
         super().__init__()
         self.message = f"Order with ID {order_id} was not found."
         self.details = ""
+
+class CheckoutConflictError(DomainError):
+    """Raised when checkout can't proceed due to cart state or item availability"""
+
+    def __init__(self, message: str, details: str = ""):
+        super().__init__()
+        self.message = message
+        self.details = details
 
 ###########################################################################################################################################
 ## Persistence Layer Errors

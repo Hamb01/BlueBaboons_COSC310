@@ -145,30 +145,30 @@ This document records externally assisted content, AI tooling, and design assist
 ## User Login Endpoint — 2026-11-12
 
 - **Tool / Assistant:** Github Copilot
-- **Scope / Assistance:** 
+- **Scope / Assistance:**
   - I had it reword error messages so that I would have an easier time fixing the bugs
   - I had it rework the user_login service because the order of the logic was causing errors
   - I also had it go through and reformat some of the code to improve the pylint score
-- **Verification:** 
-  - I carefully read through all of the code that the AI generated and rewrote most of it my self 
+- **Verification:**
+  - I carefully read through all of the code that the AI generated and rewrote most of it my self
   - for any suggestions the AI gave me, I double checked with other online resources like geeksforgeeks.org
   - In addition, all the tests passed
 
 ## User Login Endpoint — 2026-11-15
 
 - **Tool / Assistant:** Google's Gemini
-- **Scope / Assistance:** 
+- **Scope / Assistance:**
   - the code for hashing passwords and extracting the user's JWT from the http header was based off of a gemini generated example. All of the code was modified to fit out project and not directly copied from gemini
-- **Verification:** 
+- **Verification:**
   - I read through the AIs explanation and double checked that it would work by going through the fastapi documentation
   - In addition, all the tests passed
 
 ## get customer Endpoint — 2026-11-16
 
 - **Tool / Assistant:** Github Copilot
-- **Scope / Assistance:** 
+- **Scope / Assistance:**
   - I had it go through and reformat some of the code to improve the pylint score
-- **Verification:** 
+- **Verification:**
   - I carefully read through all of the code that the AI modified and verified that the AI didn't generate any code, it mearly reformatted existing code to improve the lint score
   - In addition, all the tests passed
 
@@ -220,3 +220,53 @@ This document records externally assisted content, AI tooling, and design assist
 - **Verificaton**
 - I reviewed every line of code and rewrote much of it
 - in addition all tests pass
+## M2 accounts, cart, orders, fixes and docs - 2026-11-16 to 2026-11-20
+
+- **Student:** Turbileg Uurtsaikh (prompted the AI, reviewed its output and opened the PRs)
+- **Tool / Assistant:** Claude Code (Anthropic, Claude Opus 5.5)
+- **Scope / Assistance:**
+  - **Login wiring (PR #119):** fixed `DomainError.status_code` typing and two dependency
+    wiring bugs that made every login return 500. Added `tests/test_auth_wiring.py`, which
+    runs login with only the repository overridden; both tests fail on the old code.
+  - **Cart (PR #123, issues #95, #96):** cart schemas, `CartService` with the M2 rules
+    (one restaurant per cart, unavailable item -> 409, same item merges quantity, nothing
+    saved when a rule fails), the `CartRepositoryInterface`, and the cart routes. Wrote
+    18 tests in `tests/test_cart.py` using an in-memory repository.
+  - **Orders (PR #125, issues #99, #100):** view an order and my order history, with the
+    item name and price stored at order time. Tests for 401/403/404, history, and the price
+    staying the same after a menu change. Later simplified the order code and trimmed comments.
+  - **Frontend (PR #126):** sign in, add to cart and view cart in `app/frontend/`, plus a
+    page test and a sign in -> add to cart -> view cart test.
+  - **Bug fixes (PR #134):** menu PUT/PATCH took an `int` restaurant id, so `r01` returned
+    422 (#60); seeded owner and admin accounts and pointed restaurants at real owners;
+    owners passed the admin check because `RestaurantOwner` subclasses `RestaurantAdmin`,
+    so any owner could edit any restaurant (#89). Added `tests/test_roles.py`, which signs
+    in with the seed accounts.
+  - **OpenAPI (PR #135, issue #69):** typed `MenuItemUpdate` body and documented error
+    responses. This PR was merged into the #134 branch after #134 had merged, so it did not
+    reach `main`.
+  - **Documentation:** updated `README.md` for Milestone 2 (features, demo accounts, endpoints,
+    error codes, workflow, persistence) and this entry.
+  - **Planning and analysis:** M2 progress reports (16-20 Nov) built from tests, lint and HTTP
+    requests run on a copy of the data; drafts of the M2 decision receipt answers.
+- **Verification & Ownership:**
+  - Claude ran pytest and pylint after each change: 152 tests on main before PR #134, 171
+    after it, 189 with PR #135. Bugs were reproduced over HTTP before fixing and re-checked
+    afterwards with the same requests.
+  - Tests were written before the fixes in PR #134 and PR #135 and failed on the old code.
+  - The student reviewed each change, and each PR was reviewed by a teammate who is not the
+    author before merging.
+
+## Rewriting Code and Bug Fixing 2026-11-20
+- **Tool / Assistant:** Copilot and Google Gemini
+- **Scope / Assistance:**
+- Asked Gemini to rewrite checkout_service file so it could properly conduct its functionality.
+- Asked Copilot to upgrade the test in test_checkout that goes through the entire API flow, as it wasn't doing so properly beforehand.
+- Copilot also added a few extra tests, which I ensured passed and were useful.
+- Asked Copilot to fix bugs that were causing new tests to file, changes were fairly simple mismatch fixes.
+
+- **Verificaton**
+- Asked questions to team about business rules and logic before prompting the AIs to do anything, ensuring I had a firm grasp on project requirements before using AI to assist with coding. 
+- Asked both AIs to explain what their code did, ensuring I understood it before writing it into the project.
+- Ensured tests fulfill all requirements and that any new tests were helpful and functional.
+- Verified all tests passed.
