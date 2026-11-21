@@ -1,20 +1,43 @@
-const filters = document.querySelector('#filters');
-const restaurantList = document.querySelector('#restaurants');
-const details = document.querySelector('#details');
-const notice = document.querySelector('#notice');
-const editor = document.querySelector('#editor');
-const restaurantForm = document.querySelector('#restaurant-form');
+const $ = selector => document.querySelector(selector);
+const filters = $('#filters');
+const restaurantList = $('#restaurants');
+const details = $('#details');
+const notice = $('#notice');
+const editor = $('#editor');
+const restaurantForm = $('#restaurant-form');
+const loginDialog = $('#login-dialog');
+const loginForm = $('#login-form');
+const cartDialog = $('#cart-dialog');
+const ordersDialog = $('#orders-dialog');
+const restaurantsById = new Map();
 let editingId = null;
 let listRequest = 0;
 let detailRequest = 0;
+let noticeTimer = null;
 
-// Use textContent for API data so restaurant names are always displayed as text.
+// Use textContent for API data so names are always displayed as text.
 function element(tag, text, className) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = text;
   if (className) node.className = className;
   return node;
 }
+
+function icon(name) {
+  const node = element('i', undefined, `ph ph-${name}`);
+  node.setAttribute('aria-hidden', 'true');
+  return node;
+}
+
+function button(label, className, iconName) {
+  const node = element('button', undefined, className);
+  node.type = 'button';
+  if (iconName) node.append(icon(iconName));
+  if (label) node.append(document.createTextNode(label));
+  return node;
+}
+
+const money = value => `$${Number(value).toFixed(2)}`;
 
 async function request(path, options = {}) {
   let response;
@@ -28,12 +51,8 @@ async function request(path, options = {}) {
     try {
       const error = await response.json();
       if (typeof error.message === 'string') {
-        const statusCode = Number.isInteger(error.status_code) ? error.status_code : response.status;
-        message = `${error.message} (HTTP ${statusCode})`;
-        if (error.details !== undefined && error.details !== null && error.details !== '') {
-          const errorDetails = typeof error.details === 'string' ? error.details : JSON.stringify(error.details);
-          message += `: ${errorDetails}`;
-        }
+        message = error.message;
+        if (typeof error.details === 'string' && error.details) message += ` ${error.details}`;
       } else if (typeof error.detail === 'string') {
         message = error.detail;
       } else if (Array.isArray(error.detail)) {
@@ -44,14 +63,18 @@ async function request(path, options = {}) {
     failure.status = response.status;
     throw failure;
   }
-  return response.json();
+  return response.status === 204 ? null : response.json();
 }
 
-// Sign in and cart. The token is kept in localStorage so a refresh keeps you signed in.
-const loginDialog = document.querySelector('#login-dialog');
-const loginForm = document.querySelector('#login-form');
-const cartDialog = document.querySelector('#cart-dialog');
+function showMessage(text, isError = false) {
+  clearTimeout(noticeTimer);
+  notice.textContent = text;
+  notice.className = `show${isError ? ' error' : ''}`;
+  noticeTimer = setTimeout(() => { notice.className = isError ? 'error' : ''; }, isError ? 6000 : 3200);
+}
 
+// ---------------------------------------------------------------- session
+// The token is kept in localStorage so a refresh keeps you signed in.
 function getToken() {
   try { return localStorage.getItem('bb_token'); } catch { return null; }
 }
@@ -61,6 +84,31 @@ function setToken(token) {
     if (token) localStorage.setItem('bb_token', token);
     else localStorage.removeItem('bb_token');
   } catch { /* Private browsing: stay signed in until the page closes. */ }
+}
+
+// Read the user id from the token to decide which controls to show.
+// The server still checks every request; this only hides buttons that would be refused.
+function session() {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+    const roles = {c: 'customer', o: 'owner', a: 'admin', d: 'developer', s: 'support'};
+    return {id: payload.id, role: roles[String(payload.id)[0]] || 'customer'};
+  } catch {
+    return null;
+  }
+}
+
+const isCustomer = () => session()?.role === 'customer';
+const isStaff = () => ['owner', 'admin', 'developer'].includes(session()?.role);
+
+function canManage(restaurant) {
+  const user = session();
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'developer') return true;
+  return user.role === 'owner' && restaurant.owner_id === user.id;
 }
 
 function authRequest(path, options = {}) {
@@ -74,109 +122,194 @@ function authRequest(path, options = {}) {
   });
 }
 
+const jsonBody = (method, body) => ({method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+
+function setAccountLabel(name, role) {
+  const chip = $('#account');
+  chip.replaceChildren(document.createTextNode('Hi, '), element('strong', name));
+  if (role !== 'customer') chip.append(document.createTextNode(` (${role})`));
+  chip.hidden = false;
+}
+
 function showSignedOut() {
-  document.querySelector('#account').textContent = '';
-  document.querySelector('#sign-in').hidden = false;
-  document.querySelector('#sign-out').hidden = true;
-  document.querySelector('#open-cart').textContent = 'Cart (0)';
+  $('#account').hidden = true;
+  $('#sign-in').hidden = false;
+  $('#sign-out').hidden = true;
+  $('#open-orders').hidden = true;
+  $('#open-cart').hidden = false;
+  $('#create-restaurant').hidden = true;
+  setCartCount(0);
 }
 
 async function refreshAccount() {
-  if (!getToken()) return showSignedOut();
-  try {
-    const me = await authRequest('/customers/me');
-    document.querySelector('#account').textContent = `Hi, ${me.name}`;
-    document.querySelector('#sign-in').hidden = true;
-    document.querySelector('#sign-out').hidden = false;
-    await refreshCart();
-  } catch (error) {
-    if (error.status !== 401) showMessage(error.message, true);
+  const user = session();
+  if (!user) {
+    setToken(null);
+    return showSignedOut();
   }
-}
-
-function showMessage(text, isError = false) {
-  notice.className = isError ? 'error' : '';
-  notice.textContent = text;
-}
-
-function renderCart(cart) {
-  const count = cart.items.reduce((total, line) => total + line.quantity, 0);
-  document.querySelector('#open-cart').textContent = `Cart (${count})`;
-  const list = document.querySelector('#cart-items');
-  list.replaceChildren();
-  if (cart.items.length === 0) list.append(element('p', 'Your cart is empty.', 'empty'));
-  for (const line of cart.items) {
-    const row = element('div', undefined, 'cart-line');
-    const name = element('div');
-    name.append(element('strong', `${line.name} × ${line.quantity}`),
-      element('small', line.available ? `$${line.unit_price.toFixed(2)} each` : 'No longer available'));
-    row.append(name, element('span', `$${line.line_total.toFixed(2)}`));
-    list.append(row);
-  }
-  document.querySelector('#cart-total').textContent = `Total: $${cart.total.toFixed(2)}`;
-}
-
-async function refreshCart() {
-  if (!getToken()) return;
-  renderCart(await authRequest('/cart'));
-}
-
-async function addToCart(restaurantId, item) {
-  if (!getToken()) {
-    showMessage('Sign in to add items to your cart.');
-    loginDialog.showModal();
-    return;
-  }
-  try {
-    const cart = await authRequest('/cart/items', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({restaurant_id: restaurantId, menu_item_id: item.id, quantity: 1}),
-    });
-    renderCart(cart);
-    showMessage(`Added ${item.name} to your cart.`);
-  } catch (error) {
-    showMessage(error.message, true);
+  $('#sign-in').hidden = true;
+  $('#sign-out').hidden = false;
+  if (user.role === 'customer') {
+    $('#open-orders').hidden = false;
+    $('#open-cart').hidden = false;
+    $('#create-restaurant').hidden = true;
+    try {
+      const me = await authRequest('/customers/me');
+      setAccountLabel(me.name.split(' ')[0], 'customer');
+      await refreshCart();
+    } catch (error) {
+      if (error.status !== 401) showMessage(error.message, true);
+    }
+  } else {
+    setAccountLabel(user.id, user.role);
+    $('#open-orders').hidden = true;
+    $('#open-cart').hidden = true;
+    $('#create-restaurant').hidden = !isStaff();
   }
 }
 
 loginForm.addEventListener('submit', async event => {
   event.preventDefault();
-  const submit = document.querySelector('#submit-login');
+  const submit = $('#submit-login');
   submit.disabled = true;
-  document.querySelector('#login-error').textContent = '';
+  $('#login-error').textContent = '';
   try {
-    const token = await request('/auth/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: loginForm.elements.username.value.trim(),
-        password: loginForm.elements.password.value}),
-    });
+    const token = await request('/auth/login', jsonBody('POST', {
+      username: loginForm.elements.username.value.trim(),
+      password: loginForm.elements.password.value,
+    }));
     setToken(token);
     loginDialog.close();
     loginForm.reset();
     await refreshAccount();
     showMessage('Signed in.');
+    const selected = restaurantList.querySelector('[aria-pressed="true"]');
+    if (selected) showRestaurant(selected.dataset.id);
   } catch (error) {
-    document.querySelector('#login-error').textContent = error.message;
+    $('#login-error').textContent = error.message;
   } finally {
     submit.disabled = false;
   }
 });
 
-document.querySelector('#sign-in').addEventListener('click', () => loginDialog.showModal());
-document.querySelector('#close-login').addEventListener('click', () => loginDialog.close());
-document.querySelector('#sign-out').addEventListener('click', () => {
+for (const chip of document.querySelectorAll('.demo-accounts .chip')) {
+  chip.addEventListener('click', () => {
+    loginForm.elements.username.value = chip.dataset.username;
+    loginForm.elements.password.value = chip.dataset.password;
+    $('#submit-login').focus();
+  });
+}
+
+$('#sign-in').addEventListener('click', () => loginDialog.showModal());
+$('#close-login').addEventListener('click', () => loginDialog.close());
+$('#sign-out').addEventListener('click', () => {
   setToken(null);
   showSignedOut();
   showMessage('Signed out.');
+  const selected = restaurantList.querySelector('[aria-pressed="true"]');
+  if (selected) showRestaurant(selected.dataset.id);
 });
-document.querySelector('#open-cart').addEventListener('click', async () => {
-  if (!getToken()) {
-    showMessage('Sign in to see your cart.');
-    loginDialog.showModal();
-    return;
+
+function askToSignIn(message) {
+  showMessage(message);
+  loginDialog.showModal();
+}
+
+// ---------------------------------------------------------------- cart
+function setCartCount(count) {
+  const pill = $('#cart-count');
+  if (pill.textContent !== String(count)) {
+    pill.classList.remove('bump');
+    void pill.offsetWidth;
+    pill.classList.add('bump');
   }
+  pill.textContent = String(count);
+  $('#open-cart').setAttribute('aria-label', `Cart, ${count} ${count === 1 ? 'item' : 'items'}`);
+}
+
+async function cartAction(path, options, doneMessage) {
+  $('#cart-error').textContent = '';
+  try {
+    const cart = await authRequest(path, options);
+    renderCart(cart);
+    if (doneMessage) showMessage(doneMessage);
+  } catch (error) {
+    $('#cart-error').textContent = error.message;
+  }
+}
+
+function renderCart(cart) {
+  const count = cart.items.reduce((total, line) => total + line.quantity, 0);
+  setCartCount(count);
+  const list = $('#cart-items');
+  list.replaceChildren();
+  const restaurant = restaurantsById.get(cart.restaurant_id);
+  $('#cart-restaurant').textContent = restaurant ? `From ${restaurant.name}` : '';
+  if (cart.items.length === 0) {
+    const empty = element('div', undefined, 'empty-state');
+    const art = element('img');
+    art.src = '/ui/baboon.svg';
+    art.alt = '';
+    art.width = 64;
+    art.height = 63;
+    empty.append(art, element('p', 'Your cart is empty. Add something from a menu.'));
+    list.append(empty);
+  }
+  for (const line of cart.items) {
+    const row = element('div', undefined, 'cart-line');
+    const name = element('div');
+    name.append(element('strong', line.name),
+      element('small', line.available ? `${money(line.unit_price)} each` : 'Sold out or no longer on the menu'));
+    const controls = element('div', undefined, 'line-controls');
+    const stepper = element('div', undefined, 'stepper');
+    const minus = button('', '', 'minus');
+    minus.setAttribute('aria-label', `One less ${line.name}`);
+    const plus = button('', '', 'plus');
+    plus.setAttribute('aria-label', `One more ${line.name}`);
+    const quantity = element('output', String(line.quantity));
+    quantity.setAttribute('aria-label', 'Quantity');
+    const itemPath = `/cart/items/${encodeURIComponent(line.menu_item_id)}`;
+    minus.addEventListener('click', () => (line.quantity > 1
+      ? cartAction(itemPath, jsonBody('PATCH', {quantity: line.quantity - 1}))
+      : cartAction(itemPath, {method: 'DELETE'}, `Removed ${line.name}.`)));
+    plus.addEventListener('click', () => cartAction(itemPath, jsonBody('PATCH', {quantity: line.quantity + 1})));
+    stepper.append(minus, quantity, plus);
+    const remove = button('', 'icon-button remove-line', 'trash');
+    remove.setAttribute('aria-label', `Remove ${line.name}`);
+    remove.addEventListener('click', () => cartAction(itemPath, {method: 'DELETE'}, `Removed ${line.name}.`));
+    controls.append(stepper, remove);
+    row.append(name, element('span', money(line.line_total), 'line-total'), controls);
+    list.append(row);
+  }
+  const total = $('#cart-total');
+  total.replaceChildren(element('span', 'Total'), element('span', money(cart.total)));
+  $('#checkout').disabled = cart.items.length === 0;
+  $('#clear-cart').disabled = cart.items.length === 0;
+  $('.drawer-foot').hidden = false;
+}
+
+async function refreshCart() {
+  if (!isCustomer()) return;
+  renderCart(await authRequest('/cart'));
+}
+
+async function addToCart(restaurantId, item, trigger) {
+  if (!getToken()) return askToSignIn('Sign in to add items to your cart.');
+  trigger.disabled = true;
+  try {
+    const cart = await authRequest('/cart/items', jsonBody('POST', {restaurant_id: restaurantId, menu_item_id: item.id, quantity: 1}));
+    renderCart(cart);
+    showMessage(`Added ${item.name} to your cart.`);
+  } catch (error) {
+    showMessage(error.message, true);
+  } finally {
+    trigger.disabled = false;
+  }
+}
+
+$('#open-cart').addEventListener('click', async () => {
+  if (!getToken()) return askToSignIn('Sign in to see your cart.');
+  $('#cart-error').textContent = '';
   try {
     await refreshCart();
     cartDialog.showModal();
@@ -184,20 +317,104 @@ document.querySelector('#open-cart').addEventListener('click', async () => {
     showMessage(error.message, true);
   }
 });
-document.querySelector('#close-cart').addEventListener('click', () => cartDialog.close());
+$('#close-cart').addEventListener('click', () => cartDialog.close());
+$('#clear-cart').addEventListener('click', () => cartAction('/cart', {method: 'DELETE'}, 'Cart cleared.'));
+
+$('#checkout').addEventListener('click', async () => {
+  const checkout = $('#checkout');
+  checkout.disabled = true;
+  $('#cart-error').textContent = '';
+  try {
+    const order = await authRequest('/checkout', {method: 'POST'});
+    const done = element('div', undefined, 'success');
+    const view = button('View my orders', 'primary', 'receipt');
+    view.addEventListener('click', () => { cartDialog.close(); openOrders(); });
+    const check = icon('check-circle');
+    check.className = 'ph-fill ph-check-circle';
+    done.append(check, element('h3', 'Order placed'),
+      element('p', `Order ${order.id}, ${money(order.total)}. It will go to ${order.delivery_address}.`), view);
+    $('#cart-items').replaceChildren(done);
+    $('#cart-restaurant').textContent = '';
+    $('.drawer-foot').hidden = true;
+    setCartCount(0);
+    showMessage('Order placed.');
+  } catch (error) {
+    $('#cart-error').textContent = error.message;
+    checkout.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------- orders
+async function openOrders() {
+  const list = $('#orders-list');
+  list.replaceChildren(element('div', undefined, 'skeleton'), element('div', undefined, 'skeleton'));
+  ordersDialog.showModal();
+  try {
+    const orders = await authRequest('/customers/me/orders');
+    list.replaceChildren();
+    if (orders.length === 0) list.append(element('p', 'No orders yet. Your first one will show up here.', 'empty-state'));
+    orders.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    for (const order of orders) {
+      const card = element('article', undefined, 'order-card');
+      const head = element('header');
+      head.append(element('span', restaurantsById.get(order.restaurant_id)?.name || order.restaurant_id), element('span', money(order.total)));
+      const items = element('ul');
+      for (const item of order.items) items.append(element('li', `${item.quantity} x ${item.name} at ${money(item.unit_price)}`));
+      const placed = new Date(order.created_at);
+      const when = Number.isNaN(placed.getTime()) ? '' : placed.toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'});
+      card.append(head, items, element('span', `Order ${order.id}${when ? `, ${when}` : ''}`, 'order-meta'));
+      list.append(card);
+    }
+  } catch (error) {
+    list.replaceChildren(element('p', error.message, 'error'));
+  }
+}
+
+$('#open-orders').addEventListener('click', openOrders);
+$('#close-orders').addEventListener('click', () => ordersDialog.close());
+
+// Close drawers and modals when the backdrop is clicked.
+for (const dialog of [cartDialog, ordersDialog, loginDialog, editor]) {
+  dialog.addEventListener('click', event => {
+    if (event.target === dialog && !(dialog === editor && $('#save-restaurant').disabled)) dialog.close();
+  });
+}
+
+// ---------------------------------------------------------------- restaurants
+const CUISINE_ICONS = [
+  [/mex|taco/i, 'pepper'], [/japan|sushi|seafood|fish/i, 'fish'], [/ital|pizza/i, 'pizza'],
+  [/burger|american|grill/i, 'hamburger'], [/cafe|coffee|bakery/i, 'coffee'],
+  [/chin|thai|viet|korea|asian|ramen|noodle/i, 'bowl-food'], [/indian|curry/i, 'cooking-pot'],
+  [/dessert|ice cream|sweet/i, 'ice-cream'],
+];
+
+function cuisineIcon(cuisine) {
+  const match = CUISINE_ICONS.find(([pattern]) => pattern.test(cuisine || ''));
+  return match ? match[1] : 'fork-knife';
+}
 
 function statusBadge(isOpen) {
   return element('span', isOpen ? 'Open' : 'Closed', isOpen ? 'badge' : 'badge closed');
 }
 
+function emptyDetails() {
+  const empty = element('div', undefined, 'empty-state');
+  const art = element('img');
+  art.src = '/ui/baboon.svg';
+  art.alt = '';
+  art.width = 72;
+  art.height = 71;
+  empty.append(art, element('p', 'Pick a restaurant to see its menu.'));
+  details.replaceChildren(empty);
+}
+
 async function loadRestaurants() {
   const currentRequest = ++listRequest;
   ++detailRequest;
-  details.replaceChildren(element('p', 'Select a restaurant to explore its details and menu.', 'empty'));
-  restaurantList.replaceChildren();
-  document.querySelector('#count').textContent = '';
-  notice.className = '';
-  notice.textContent = 'Loading restaurants…';
+  emptyDetails();
+  restaurantList.replaceChildren(...Array.from({length: 4}, () => element('div', undefined, 'skeleton')));
+  restaurantList.setAttribute('aria-busy', 'true');
+  $('#count').textContent = '';
   const params = new URLSearchParams();
   for (const [name, value] of new FormData(filters)) {
     if (value.trim() !== '') params.set(name, value.trim());
@@ -205,102 +422,138 @@ async function loadRestaurants() {
   try {
     const restaurants = await request(`/restaurants?${params}`);
     if (currentRequest !== listRequest) return;
-    notice.textContent = '';
-    document.querySelector('#count').textContent = `${restaurants.length} found`;
+    restaurantList.replaceChildren();
+    $('#count').textContent = `${restaurants.length} found`;
     if (restaurants.length === 0) {
-      restaurantList.append(element('p', 'No restaurants match. Try clearing your filters.', 'empty'));
+      restaurantList.append(element('p', 'No restaurants match. Try clearing your filters.', 'empty-state'));
     }
-    for (const restaurant of restaurants) {
+    restaurants.forEach((restaurant, index) => {
+      restaurantsById.set(restaurant.id, restaurant);
       const card = element('button', undefined, 'restaurant-card');
       card.type = 'button';
       card.dataset.id = restaurant.id;
+      card.style.setProperty('--i', index);
       card.setAttribute('aria-pressed', 'false');
-      card.append(element('strong', restaurant.name),
-        element('small', `${restaurant.cuisine} · ${restaurant.location}`), statusBadge(restaurant.isOpen));
+      const tile = element('span', undefined, 'cuisine-tile');
+      tile.append(icon(cuisineIcon(restaurant.cuisine)));
+      const text = element('span');
+      text.append(element('strong', restaurant.name), element('small', `${restaurant.cuisine}, ${restaurant.location}`));
+      card.append(tile, text, statusBadge(restaurant.isOpen));
       card.addEventListener('click', () => showRestaurant(restaurant.id));
       restaurantList.append(card);
-    }
+    });
   } catch (error) {
     if (currentRequest !== listRequest) return;
-    notice.className = 'error';
-    notice.textContent = error.message;
+    restaurantList.replaceChildren(element('p', error.message, 'error'));
+  } finally {
+    if (currentRequest === listRequest) restaurantList.removeAttribute('aria-busy');
   }
+}
+
+function menuItemCard(restaurant, item, index, path) {
+  const card = element('article', undefined, item.availability ? 'menu-item' : 'menu-item unavailable');
+  card.style.setProperty('--i', index);
+  const top = element('div', undefined, 'menu-item-top');
+  top.append(element('strong', item.name), element('span', money(item.price), 'item-price'));
+  const actions = element('div', undefined, 'menu-item-actions');
+  if (!item.availability) actions.append(element('span', 'Sold out', 'badge sold-out'));
+  if (item.availability && !isStaff()) {
+    const add = button('Add', 'primary', 'plus');
+    add.setAttribute('aria-label', `Add ${item.name} to cart`);
+    add.addEventListener('click', () => addToCart(restaurant.id, item, add));
+    actions.append(add);
+  }
+  const itemDetails = element('p', undefined, 'item-details');
+  itemDetails.hidden = true;
+  const more = button('Details', 'ghost', 'info');
+  more.addEventListener('click', async () => {
+    more.disabled = true;
+    itemDetails.hidden = false;
+    itemDetails.textContent = 'Loading item...';
+    try {
+      const fullItem = await request(`${path}/menu/${encodeURIComponent(item.id)}`);
+      itemDetails.textContent = `${fullItem.name}, ${money(fullItem.price)}. ${fullItem.availability ? 'Available to order.' : 'Sold out right now.'}`;
+    } catch (error) {
+      itemDetails.textContent = error.message;
+    } finally {
+      more.disabled = false;
+    }
+  });
+  actions.append(more);
+  if (canManage(restaurant)) {
+    const toggle = button(item.availability ? 'Mark sold out' : 'Mark available', 'ghost', item.availability ? 'prohibit' : 'check');
+    toggle.addEventListener('click', async () => {
+      toggle.disabled = true;
+      try {
+        await authRequest(`${path}/menu/${encodeURIComponent(item.id)}`, jsonBody('PATCH', {availability: !item.availability}));
+        showMessage(`${item.name} is now ${item.availability ? 'sold out' : 'available'}.`);
+        showRestaurant(restaurant.id);
+      } catch (error) {
+        showMessage(error.message, true);
+        toggle.disabled = false;
+      }
+    });
+    actions.append(toggle);
+  }
+  card.append(top, element('p', item.description), actions, itemDetails);
+  return card;
 }
 
 async function showRestaurant(id) {
   const currentRequest = ++detailRequest;
-  details.replaceChildren(element('p', 'Loading restaurant…'));
-  for (const card of restaurantList.querySelectorAll('button')) {
+  details.replaceChildren(element('div', undefined, 'skeleton'));
+  for (const card of restaurantList.querySelectorAll('.restaurant-card')) {
     card.setAttribute('aria-pressed', String(card.dataset.id === id));
   }
   const path = `/restaurants/${encodeURIComponent(id)}`;
   try {
     const restaurant = await request(path);
     if (currentRequest !== detailRequest) return;
-    const heading = element('div', undefined, 'section-heading');
-    const edit = element('button', 'Edit restaurant', 'secondary');
-    edit.type = 'button';
-    edit.addEventListener('click', () => openEditor(restaurant));
-    heading.append(element('h2', restaurant.name), edit);
-    const facts = element('dl', undefined, 'facts');
-    for (const [label, value] of [['Cuisine', restaurant.cuisine], ['Location', restaurant.location], ['Address', restaurant.address], ['Postal code', restaurant.postal_code], ['Opening hours', restaurant.opening_hours]]) {
-      const fact = element('div');
-      fact.append(element('dt', label), element('dd', value));
-      facts.append(fact);
+    restaurantsById.set(restaurant.id, restaurant);
+    const head = element('div', undefined, 'detail-head');
+    const title = element('div');
+    const heading = element('h2', restaurant.name);
+    heading.tabIndex = -1;
+    title.append(heading);
+    head.append(title);
+    if (canManage(restaurant)) {
+      const edit = button('Edit', 'ghost small', 'pencil-simple');
+      edit.addEventListener('click', () => openEditor(restaurant));
+      head.append(edit);
     }
-    const menu = element('div');
-    menu.append(element('p', 'Loading menu…'));
-    details.replaceChildren(heading, statusBadge(restaurant.isOpen), facts, element('h3', 'Menu'), menu);
+    const meta = element('div', undefined, 'detail-meta');
+    for (const [iconName, text] of [[cuisineIcon(restaurant.cuisine), restaurant.cuisine],
+      ['map-pin', `${restaurant.address}, ${restaurant.postal_code}`], ['clock', restaurant.opening_hours]]) {
+      const part = element('span');
+      part.append(icon(iconName), document.createTextNode(text));
+      meta.append(part);
+    }
+    meta.prepend(statusBadge(restaurant.isOpen));
+    const menu = element('div', undefined, 'menu-grid');
+    menu.append(element('div', undefined, 'skeleton'), element('div', undefined, 'skeleton'));
+    details.replaceChildren(head, meta, element('h3', 'Menu', 'menu-title'), menu);
+    if (window.matchMedia('(max-width: 820px)').matches) details.scrollIntoView({block: 'start'});
     try {
       const items = await request(`${path}/menu`);
       if (currentRequest !== detailRequest) return;
       menu.replaceChildren();
-      if (items.length === 0) menu.append(element('p', 'No menu items yet.'));
-      for (const item of items) {
-        const row = element('article', undefined, 'menu-item');
-        row.append(element('span', `$${Number(item.price).toFixed(2)}`, 'item-price'),
-          element('strong', item.name), element('p', item.description),
-          element('span', item.availability ? 'Available' : 'Unavailable', item.availability ? 'badge' : 'badge closed'));
-        const button = element('button', 'View item', 'secondary');
-        button.type = 'button';
-        const itemDetails = element('p');
-        itemDetails.hidden = true;
-        button.addEventListener('click', async () => {
-          button.disabled = true;
-          itemDetails.hidden = false;
-          itemDetails.textContent = 'Loading item…';
-          try {
-            const fullItem = await request(`${path}/menu/${encodeURIComponent(item.id)}`);
-            itemDetails.textContent = `${fullItem.name}: ${fullItem.description} — $${Number(fullItem.price).toFixed(2)}. ${fullItem.availability ? 'Available' : 'Unavailable'}.`;
-          } catch (error) {
-            itemDetails.textContent = error.message;
-          } finally {
-            button.disabled = false;
-          }
-        });
-        row.append(element('br'), button);
-        if (item.availability) {
-          const add = element('button', 'Add to cart');
-          add.type = 'button';
-          add.addEventListener('click', () => addToCart(restaurant.id, item));
-          row.append(add);
-        }
-        row.append(itemDetails);
-        menu.append(row);
-      }
+      if (items.length === 0) menu.append(element('p', 'No menu items yet.', 'empty-state'));
+      items.forEach((item, index) => menu.append(menuItemCard(restaurant, item, index, path)));
     } catch (error) {
-      if (currentRequest === detailRequest) menu.replaceChildren(element('p', error.message, 'error'));
+      if (currentRequest !== detailRequest) return;
+      menu.replaceChildren(element('p', error.status === 404 ? 'No menu items yet.' : error.message, error.status === 404 ? 'empty-state' : 'error'));
     }
   } catch (error) {
     if (currentRequest === detailRequest) details.replaceChildren(element('p', error.message, 'error'));
   }
 }
 
+// ---------------------------------------------------------------- restaurant editor (owners and admins)
 function openEditor(restaurant = null) {
   editingId = restaurant ? restaurant.id : null;
   restaurantForm.reset();
-  document.querySelector('#editor-title').textContent = restaurant ? 'Edit restaurant' : 'Add restaurant';
-  document.querySelector('#form-error').textContent = '';
+  $('#editor-title').textContent = restaurant ? 'Edit restaurant' : 'Add restaurant';
+  $('#form-error').textContent = '';
   if (restaurant) {
     for (const name of ['name', 'cuisine', 'location', 'address', 'postal_code', 'opening_hours']) {
       restaurantForm.elements[name].value = restaurant[name];
@@ -316,39 +569,32 @@ restaurantForm.addEventListener('submit', async event => {
   for (const name of ['name', 'cuisine', 'location', 'address', 'postal_code', 'opening_hours']) {
     payload[name] = restaurantForm.elements[name].value.trim();
     if (!payload[name]) {
-      document.querySelector('#form-error').textContent = 'Please fill in every text field.';
+      $('#form-error').textContent = 'Please fill in every text field.';
       return;
     }
   }
-      payload.postal_code = payload.postal_code?.toUpperCase();
-    if (!(/^[A-Z]\d[A-Z] \d[A-Z]\d$/.test(payload.postal_code))) {
-      document.querySelector('#form-error').textContent = 'Postal code must use the format A1A 1A1.';
-      return;
-    }
+  payload.postal_code = payload.postal_code.toUpperCase();
+  if (!/^[A-Z]\d[A-Z] \d[A-Z]\d$/.test(payload.postal_code)) {
+    $('#form-error').textContent = 'Postal code must use the format A1A 1A1.';
+    return;
+  }
   payload.isOpen = restaurantForm.elements.isOpen.checked;
-  const save = document.querySelector('#save-restaurant');
-  const close = document.querySelector('#close-editor');
+  const save = $('#save-restaurant');
+  const close = $('#close-editor');
   save.disabled = true;
   close.disabled = true;
-  document.querySelector('#form-error').textContent = '';
+  $('#form-error').textContent = '';
   try {
     const path = editingId ? `/restaurants/${encodeURIComponent(editingId)}` : '/restaurants';
-    const saved = await request(path, {
-      method: editingId ? 'PUT' : 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
+    const saved = await authRequest(path, jsonBody(editingId ? 'PUT' : 'POST', payload));
     editor.close();
     // Clear filters without triggering the Clear button's reload handler.
-    for (const name of ['search', 'cuisine', 'location', 'is_open']) {
-      filters.elements[name].value = '';
-    }
+    for (const name of ['search', 'cuisine', 'location', 'is_open']) filters.elements[name].value = '';
     await loadRestaurants();
     await showRestaurant(saved.id);
-    notice.className = '';
-    notice.textContent = 'Restaurant saved.';
+    showMessage('Restaurant saved.');
   } catch (error) {
-    document.querySelector('#form-error').textContent = error.message;
+    $('#form-error').textContent = error.message;
   } finally {
     save.disabled = false;
     close.disabled = false;
@@ -357,10 +603,11 @@ restaurantForm.addEventListener('submit', async event => {
 
 filters.addEventListener('submit', event => { event.preventDefault(); loadRestaurants(); });
 filters.addEventListener('reset', () => { setTimeout(loadRestaurants, 0); });
-document.querySelector('#create-restaurant').addEventListener('click', () => openEditor());
-document.querySelector('#close-editor').addEventListener('click', () => editor.close());
+$('#create-restaurant').addEventListener('click', () => openEditor());
+$('#close-editor').addEventListener('click', () => editor.close());
 editor.addEventListener('cancel', event => {
-  if (document.querySelector('#save-restaurant').disabled) event.preventDefault();
+  if ($('#save-restaurant').disabled) event.preventDefault();
 });
+
 loadRestaurants();
 refreshAccount();
