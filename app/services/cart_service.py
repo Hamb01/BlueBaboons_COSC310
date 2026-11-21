@@ -3,11 +3,18 @@
 from typing import Any, Dict, Optional, Protocol
 
 from app.core.exceptions import (
+    CartItemNotFoundError,
     CartRestaurantConflictError,
     DomainError,
     MenuItemUnavailableError,
 )
-from app.schemas.cart_schema import Cart, CartItemAdd, CartLine, CartResponse
+from app.schemas.cart_schema import (
+    Cart,
+    CartItemAdd,
+    CartItemQuantityUpdate,
+    CartLine,
+    CartResponse,
+)
 from app.services.menu_service import MenuService
 
 # Coding Notes:
@@ -99,6 +106,54 @@ class CartService:
 
         updated = Cart.model_validate({**cart, "restaurant_id": payload.restaurant_id, "items": items})
         saved = self.repository.save_cart(updated.model_dump())
+        return self._to_response(saved)
+
+    def update_item_quantity(self, customer_id: str, menu_item_id: str, payload: CartItemQuantityUpdate) -> CartResponse:
+        """Set the quantity of an existing line in the customer's active cart."""
+        cart = self.repository.get_active_cart(customer_id)
+        if cart is None:
+            raise CartItemNotFoundError(menu_item_id)
+
+        items = [dict(line) for line in cart.get("items", [])]
+        for line in items:
+            if line["menu_item_id"] == menu_item_id:
+                line["quantity"] = payload.quantity
+                break
+        else:
+            raise CartItemNotFoundError(menu_item_id)
+
+        updated = Cart.model_validate({**cart, "items": items})
+        saved = self.repository.save_cart(updated.model_dump())
+        return self._to_response(saved)
+
+    def remove_item(self, customer_id: str, menu_item_id: str) -> CartResponse:
+        """Remove an existing line from the customer's active cart."""
+        cart = self.repository.get_active_cart(customer_id)
+        if cart is None:
+            raise CartItemNotFoundError(menu_item_id)
+
+        existing_items = cart.get("items", [])
+        items = [
+            dict(line)
+            for line in existing_items
+            if line["menu_item_id"] != menu_item_id
+        ]
+        if len(items) == len(existing_items):
+            raise CartItemNotFoundError(menu_item_id)
+
+        restaurant_id = cart.get("restaurant_id") if items else None
+        updated = Cart.model_validate({**cart, "restaurant_id": restaurant_id, "items": items})
+        saved = self.repository.save_cart(updated.model_dump())
+        return self._to_response(saved)
+
+    def clear_cart(self, customer_id: str) -> CartResponse:
+        """Empty the customer's active cart and release its restaurant association."""
+        cart = self.repository.get_active_cart(customer_id)
+        if cart is None:
+            return self._to_response(self.repository.create_cart(customer_id))
+
+        cleared = Cart.model_validate({**cart, "restaurant_id": None, "items": []})
+        saved = self.repository.save_cart(cleared.model_dump())
         return self._to_response(saved)
 
     def _get_or_create(self, customer_id: str) -> Dict[str, Any]:
