@@ -20,7 +20,7 @@
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import get_current_user, get_menu_service
-from app.schemas.menu_item import MenuItem
+from app.schemas.menu_item import MenuItem, MenuResponse
 from app.schemas.restaurant_schema import MenuItemRequest
 from app.schemas.user_schema import User
 from app.services.menu_service import MenuService
@@ -31,6 +31,15 @@ router = APIRouter(tags=["Menu"])
 @router.put(
     "/restaurants/{restaurant_id}/menu/{item_id}",
     status_code=status.HTTP_200_OK,
+        description=(
+            "Replaces an existing menu item for the specified restaurant"
+        ),
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
+            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Data given was in the wrong form"}
+        },
 )
 def replace_menu_item(
     restaurant_id: str,
@@ -41,7 +50,7 @@ def replace_menu_item(
 ):
     """Replace an existing menu item for the specified restaurant."""
     updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
-    return {"message": "Menu item updated successfully", "item": updated_item}
+    return MenuResponse(message="Menu item replaced successfully", item=updated_item)
 
 
 @router.patch(
@@ -78,10 +87,20 @@ def add_menu_item(
     """Add a menu item to the restaurant in the path."""
     item_data = payload.model_dump(exclude={"restaurant_id"})
     saved_item = service.add_new_menu_item(restaurant_id, item_data, current_user=current_user)
-    return {"message": "Menu item added successfully", "item": saved_item}
+    return MenuResponse(message="Menu item created successfully", item=saved_item)
 
 
-@router.get("/restaurants/{restaurant_id}/menu", response_model=list[MenuItem])
+@router.get("/restaurants/{restaurant_id}/menu", 
+    response_model=list[MenuItem],
+    status_code=status.HTTP_200_OK,
+        description=(
+            "Return all menu items for a restaurant."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Data given was in the wrong form"}
+        },   
+)
 def get_menu(
     restaurant_id: str,
     service: MenuService = Depends(get_menu_service),
@@ -90,7 +109,16 @@ def get_menu(
     return service.get_menu(restaurant_id)
 
 
-@router.get("/restaurants/{restaurant_id}/menu/{item_id}", response_model=MenuItem)
+@router.get("/restaurants/{restaurant_id}/menu/{item_id}", 
+    response_model=MenuItem,
+    status_code=status.HTTP_200_OK,
+        description=(
+            "Return a specific menu item from one restaurant's menu."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"}
+        },  
+)
 def get_menu_item(
     restaurant_id: str,
     item_id: str,
@@ -102,7 +130,14 @@ def get_menu_item(
 
 @router.delete(
     "/restaurants/{restaurant_id}/menu/{menu_item_id}",
+    response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
+        description=(
+            "Delete a specific menu item from one restaurant's menu."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"}
+        },  
 )
 def remove_menu_item(
     restaurant_id: str,
