@@ -40,7 +40,30 @@ def test_seed_restaurants_belong_to_seed_owners(role_client):
 def test_owner_can_edit_own_restaurant_and_menu(role_client):
     auth = sign_in(role_client, "o01")
     assert role_client.put("/restaurants/r01", headers=auth, json={"name": "Tacos"}).status_code == 200
-    assert role_client.patch("/restaurant/r01/menu/m01", headers=auth, json={"price": 9.99}).status_code == 200
+    assert role_client.patch("/restaurants/r01/menu/m01", headers=auth, json={"price": 9.99}).status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("changes", "availability", "is_active"),
+    [
+        ({"availability": False}, False, True),
+        ({"is_active": False}, True, False),
+    ],
+)
+def test_owner_can_set_menu_item_order_state(
+    role_client, changes, availability, is_active
+):
+    auth = sign_in(role_client, "o01")
+
+    response = role_client.patch(
+        "/restaurants/r01/menu/m01", headers=auth, json=changes
+    )
+
+    assert response.status_code == 200
+    item = response.json()
+    assert item["id"] == "m01"
+    assert item["availability"] is availability
+    assert item["is_active"] is is_active
 
 
 def test_owner_cannot_edit_another_owners_restaurant_or_menu(role_client):
@@ -48,7 +71,7 @@ def test_owner_cannot_edit_another_owners_restaurant_or_menu(role_client):
     before = role_client.get("/restaurants/r02").json()
 
     assert role_client.put("/restaurants/r02", headers=auth, json={"name": "Mine now"}).status_code == 403
-    assert role_client.patch("/restaurant/r02/menu/m01", headers=auth, json={"price": 0.5}).status_code == 403
+    assert role_client.patch("/restaurants/r02/menu/m01", headers=auth, json={"price": 0.5}).status_code == 403
     assert role_client.get("/restaurants/r02").json() == before
 
 

@@ -106,7 +106,7 @@ class RestaurantUpdate(BaseModel):
 class MenuItemRequest(BaseModel):
     """Request schema for a menu item added to a restaurant."""
 
-    restaurant_id: int = Field(
+    restaurant_id: str = Field(
         ...,
         description="ID of the restaurant to which the menu item will be added",
     )

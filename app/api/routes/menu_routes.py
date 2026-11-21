@@ -29,8 +29,7 @@ router = APIRouter(tags=["Menu"])
 
 
 @router.put(
-    "/restaurant/{restaurant_id}/menu/{item_id}",
-    response_model=MenuResponse,
+    "/restaurants/{restaurant_id}/menu/{item_id}",
     status_code=status.HTTP_200_OK,
         description=(
             "Replaces an existing menu item for the specified restaurant"
@@ -53,44 +52,32 @@ def replace_menu_item(
     updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
     return MenuResponse(message="Menu item replaced successfully", item=updated_item)
 
-@router.patch("/restaurant/{restaurant_id}/menu/{item_id}",
-    response_model=MenuResponse,
+
+@router.patch(
+    "/restaurants/{restaurant_id}/menu/{item_id}",
+    response_model=MenuItem,
     status_code=status.HTTP_200_OK,
-        description=(
-            "Updates an existing menu item for the specified restaurant"
-        ),
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
-            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
-            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"},
-            status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Data given was in the wrong form"}
-        },
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Owner or admin permission required"},
+        status.HTTP_404_NOT_FOUND: {"description": "Restaurant or menu item not found"},
+    },
 )
-def modify_menu_item(
+def patch_menu_item(
     restaurant_id: str,
     item_id: str,
     updated_data: dict,
     service: MenuService = Depends(get_menu_service),
-    current_user: User = Depends(get_current_user)
-):
-    """Modify an existing menu item for the specified restaurant."""
-    updated_item = service.update_menu_item(restaurant_id, item_id, updated_data, current_user=current_user)
-    return MenuResponse(message="Menu item updated successfully", item=updated_item)
+    current_user: User = Depends(get_current_user),
+) -> MenuItem:
+    """Partially update a menu item and return the updated item."""
+    updated_item = service.update_menu_item(
+        restaurant_id, item_id, updated_data, current_user=current_user
+    )
+    return MenuItem.model_validate(updated_item)
 
 
-@router.post("/restaurant/{restaurant_id}/menu", 
-    response_model=MenuResponse,
-    status_code=status.HTTP_201_CREATED,
-        description=(
-            "Creates a new menu item for the specified restaurant"
-        ),
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid token"},
-            status.HTTP_403_FORBIDDEN: {"description": "Account has been deactivated"},
-            status.HTTP_404_NOT_FOUND: {"description": "The restaurant or menu could not be found"},
-            status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Data given was in the wrong form"}
-        },
-)
+@router.post("/restaurants/{restaurant_id}/menu", status_code=status.HTTP_201_CREATED)
 def add_menu_item(
     restaurant_id: str,
     payload: MenuItemRequest,

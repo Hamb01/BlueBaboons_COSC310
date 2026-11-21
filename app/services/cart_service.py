@@ -1,12 +1,13 @@
 """Cart service for handling cart-related operations."""
 
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Protocol
 
 from app.core.exceptions import (
     CartItemNotFoundError,
     CartRestaurantConflictError,
     DomainError,
-    MenuItemUnavailableError,
+    InvalidRequestError,
 )
 from app.schemas.cart_schema import (
     Cart,
@@ -15,6 +16,7 @@ from app.schemas.cart_schema import (
     CartLine,
     CartResponse,
 )
+from app.schemas.order_schema import Order
 from app.services.menu_service import MenuService
 
 # Coding Notes:
@@ -87,10 +89,7 @@ class CartService:
             DataPersistenceError -> the cart could not be saved
         """
         cart = self._get_or_create(customer_id)
-        item = self.menu_service.get_menu_item(payload.restaurant_id, payload.menu_item_id)
-
-        if not item.availability:
-            raise MenuItemUnavailableError(payload.restaurant_id, payload.menu_item_id)
+        item = self.menu_service.get_orderable_item(payload.restaurant_id, payload.menu_item_id)
         if cart.get("restaurant_id") and cart["restaurant_id"] != payload.restaurant_id:
             raise CartRestaurantConflictError(cart["restaurant_id"], payload.restaurant_id)
 
@@ -156,6 +155,44 @@ class CartService:
         saved = self.repository.save_cart(cleared.model_dump())
         return self._to_response(saved)
 
+    def checkout(self, customer_id: str, delivery_address: str, order_repository) -> Order:
+        """Reject unavailable cart lines and create an order from an active cart."""
+        cart = self.repository.get_active_cart(customer_id)
+        if cart is None or not cart.get("items"):
+            raise InvalidRequestError("Cannot check out an empty cart")
+
+        stored = Cart.model_validate(cart)
+        order_items = []
+        for line in stored.items:
+            item = self.menu_service.get_orderable_item(
+                line.restaurant_id, line.menu_item_id
+            )
+            order_items.append({
+                "menu_item_id": item.id,
+                "name": item.name,
+                "unit_price": item.price,
+                "quantity": line.quantity,
+            })
+
+        subtotal = round(sum(
+            order_item["unit_price"] * order_item["quantity"]
+            for order_item in order_items
+        ), 2)
+        order_data = {
+            "customer_id": customer_id,
+            "restaurant_id": stored.restaurant_id,
+            "status": "placed",
+            "delivery_address": delivery_address,
+            "items": order_items,
+            "subtotal": subtotal,
+            "total": subtotal,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        created = order_repository.create_order(order_data)
+        checked_out = Cart.model_validate({**stored.model_dump(), "status": "checked_out"})
+        self.repository.save_cart(checked_out.model_dump())
+        return Order.model_validate(created)
+
     def _get_or_create(self, customer_id: str) -> Dict[str, Any]:
         """Return the stored active cart for the customer, creating it if needed."""
         cart = self.repository.get_active_cart(customer_id)
@@ -167,8 +204,8 @@ class CartService:
         lines = []
         for line in stored.items:
             try:
-                item = self.menu_service.get_menu_item(line.restaurant_id, line.menu_item_id)
-                name, price, available = item.name, item.price, item.availability
+                item = self.menu_service.get_orderable_item(line.restaurant_id, line.menu_item_id)
+                name, price, available = item.name, item.price, True
             except DomainError:
                 # The item was removed from the menu after it was added; checkout will reject it.
                 name, price, available = "Item no longer on the menu", 0.0, False

@@ -69,6 +69,20 @@ def test_seed_menus_and_item_details(client, isolated_menu_repo, restaurant_id):
         assert detail.json() == item
 
 
+def test_menu_hides_inactive_items_but_keeps_unavailable_items(client):
+    deactivated = client.patch(
+        "/restaurants/r02/menu/m01", json={"is_active": False}
+    )
+    assert deactivated.status_code == 200
+
+    response = client.get("/restaurants/r02/menu")
+
+    assert response.status_code == 200
+    items = {item["id"]: item for item in response.json()}
+    assert "m01" not in items
+    assert items["m03"]["availability"] is False
+
+
 @pytest.mark.parametrize("explicit_empty_menu", [True, False])
 def test_empty_menu(request, isolated_data_dir, explicit_empty_menu):
     path = isolated_data_dir / "Restaurants.json"
@@ -108,6 +122,27 @@ def test_service_menu_and_item():
         service.get_menu_item("restaurant", "missing")
 
 
+def test_get_orderable_item_rejects_inactive_and_unavailable_items():
+    from app.core.exceptions import MenuItemUnavailableError
+
+    items = [
+        {"id": "m01", "restaurant_id": "r01", "name": "Taco",
+         "description": "Taco", "price": 5, "availability": True,
+         "is_active": False},
+        {"id": "m02", "restaurant_id": "r01", "name": "Soup",
+         "description": "Soup", "price": 4, "availability": False,
+         "is_active": True},
+    ]
+    repository = Mock()
+    repository.get_menu_data.return_value = items
+    service = MenuService(repository)
+
+    with pytest.raises(MenuItemUnavailableError):
+        service.get_orderable_item("r01", "m01")
+    with pytest.raises(MenuItemUnavailableError):
+        service.get_orderable_item("r01", "m02")
+
+
 def test_service_rejects_item_from_another_restaurant():
     repository = Mock()
     repository.get_menu_data.return_value = [dict(
@@ -143,6 +178,7 @@ def test_service_add_menu_item_converts_price_and_uses_repository():
         "description": "Vegetable soup",
         "price": 5.25,
         "availability": True,
+        "is_active": True,
     }
 
     result = service.add_new_menu_item("r01", menu_item, current_user=admin_user())
@@ -177,7 +213,8 @@ def test_service_add_invalid_menu_item_never_reaches_repository():
 
 
 SOUP = {"id": "m01", "restaurant_id": "r01", "name": "Soup",
-        "description": "Vegetable soup", "price": 5.25, "availability": True}
+        "description": "Vegetable soup", "price": 5.25, "availability": True,
+        "is_active": True}
 
 
 def test_service_update_menu_item_saves_merged_item():
